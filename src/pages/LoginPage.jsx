@@ -150,12 +150,6 @@ function LoginPage() {
             </Link>
           </p>
         </div>
-
-        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <p className="text-xs text-gray-500 text-center mb-2">🔐 테스트 계정</p>
-          <p className="text-xs text-gray-600">마스터: master / master123</p>
-          <p className="text-xs text-gray-600">학생: 회원가입 후 이용</p>
-        </div>
       </div>
     </div>
   );
