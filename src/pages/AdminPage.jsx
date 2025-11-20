@@ -834,7 +834,6 @@ function AdminPage() {
     );
   };
 
-  // 🔥 승인 관리 탭
   const renderApprovalTab = () => {
     return (
       <div className="space-y-6">
@@ -1145,7 +1144,7 @@ function AdminPage() {
   );
 }
 
-// 프로그램 추가/수정 모달
+// 🔥 프로그램 추가/수정 모달 (이미지 및 파일 첨부 포함)
 function ProgramFormModal({ isOpen, onClose, onSave, programData, setProgramData, isEditing }) {
   if (!isOpen) return null;
 
@@ -1296,6 +1295,40 @@ function ProgramFormModal({ isOpen, onClose, onSave, programData, setProgramData
               placeholder="프로그램 설명을 입력하세요"
             />
           </div>
+
+          {/* 🔥 이미지 URL */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">이미지 URL</label>
+            <input
+              type="text"
+              name="imageUrl"
+              value={programData.imageUrl}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              placeholder="https://example.com/image.jpg"
+            />
+            <p className="text-xs text-gray-500 mt-1">프로그램 대표 이미지 URL을 입력하세요</p>
+          </div>
+
+          {/* 🔥 첨부 파일 URL */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">첨부 파일 URL</label>
+            <input
+              type="text"
+              name="attachedFiles"
+              value={Array.isArray(programData.attachedFiles) ? programData.attachedFiles.join(', ') : ''}
+              onChange={(e) => {
+                const urls = e.target.value.split(',').map(url => url.trim()).filter(url => url);
+                setProgramData(prev => ({
+                  ...prev,
+                  attachedFiles: urls
+                }));
+              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              placeholder="https://example.com/file1.pdf, https://example.com/file2.pdf"
+            />
+            <p className="text-xs text-gray-500 mt-1">여러 파일 URL을 쉼표(,)로 구분하여 입력하세요</p>
+          </div>
         </div>
 
         <div className="sticky bottom-0 bg-gray-50 px-6 py-4 rounded-b-2xl border-t border-gray-200 flex gap-3">
@@ -1317,7 +1350,7 @@ function ProgramFormModal({ isOpen, onClose, onSave, programData, setProgramData
   );
 }
 
-// 공지사항 추가/수정 모달
+// 🔥 공지사항 추가/수정 모달 (이미지 및 파일 첨부 포함)
 function NoticeFormModal({ isOpen, onClose, onSave, noticeData, setNoticeData, isEditing }) {
   if (!isOpen) return null;
 
@@ -1387,6 +1420,40 @@ function NoticeFormModal({ isOpen, onClose, onSave, noticeData, setNoticeData, i
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               placeholder="내용을 입력하세요"
             />
+          </div>
+
+          {/* 🔥 이미지 URL */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">이미지 URL</label>
+            <input
+              type="text"
+              name="imageUrl"
+              value={noticeData.imageUrl}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              placeholder="https://example.com/image.jpg"
+            />
+            <p className="text-xs text-gray-500 mt-1">공지사항 이미지 URL을 입력하세요</p>
+          </div>
+
+          {/* 🔥 첨부 파일 URL */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">첨부 파일 URL</label>
+            <input
+              type="text"
+              name="attachedFiles"
+              value={Array.isArray(noticeData.attachedFiles) ? noticeData.attachedFiles.join(', ') : ''}
+              onChange={(e) => {
+                const urls = e.target.value.split(',').map(url => url.trim()).filter(url => url);
+                setNoticeData(prev => ({
+                  ...prev,
+                  attachedFiles: urls
+                }));
+              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              placeholder="https://example.com/file1.pdf, https://example.com/file2.pdf"
+            />
+            <p className="text-xs text-gray-500 mt-1">여러 파일 URL을 쉼표(,)로 구분하여 입력하세요</p>
           </div>
         </div>
 
