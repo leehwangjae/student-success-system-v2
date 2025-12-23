@@ -98,8 +98,31 @@ function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md">
+        {/* 로고 영역 */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">학생성공지수 관리 시스템</h1>
+          <div className="flex justify-center mb-4">
+            <img 
+              src="/images/logo.png" 
+              alt="RISE 사업단 로고" 
+              className="h-24 w-auto object-contain"
+              onError={(e) => {
+                // 로고 로드 실패 시 기본 아이콘 표시
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+            {/* 로고 로드 실패 시 대체 아이콘 */}
+            <div 
+              className="h-24 w-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl items-center justify-center hidden"
+              style={{ display: 'none' }}
+            >
+              <span className="text-4xl text-white font-bold">RISE</span>
+            </div>
+          </div>
+          
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+            학생성공지수 관리 시스템
+          </h1>
           <p className="text-gray-600">로그인하여 시작하세요</p>
         </div>
 

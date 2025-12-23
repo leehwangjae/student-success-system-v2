@@ -852,25 +852,43 @@ function AdminPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold">학생성공지수 관리 시스템</h1>
-              <p className="text-blue-100 mt-1">
-                {currentUser?.role === 'master' ? '마스터' : '관리자'} {currentUser?.name}님 환영합니다
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={handleLogout}
-                className="px-6 py-2 bg-white text-blue-600 hover:bg-blue-50 rounded-lg font-semibold transition-colors"
-              >
-                로그아웃
-              </button>
-            </div>
-          </div>
+  <div className="container mx-auto px-6 py-4">
+    <div className="flex justify-between items-center">
+      <div className="flex items-center gap-4">
+        {/* 로고 추가 */}
+        <img 
+          src="/images/logo-white.png" 
+          alt="RISE 사업단" 
+          className="h-12 w-auto object-contain"
+          onError={(e) => {
+            // 흰색 로고 없으면 일반 로고 시도
+            e.target.src = '/images/logo.png';
+            e.target.onerror = () => {
+              // 로고 로드 실패 시 숨김
+              e.target.style.display = 'none';
+            };
+          }}
+        />
+        
+        <div>
+          <h1 className="text-3xl font-bold">학생성공지수 관리 시스템</h1>
+          <p className="text-blue-100 mt-1">
+            {currentUser?.role === 'master' ? '마스터' : '관리자'} {currentUser?.name}님 환영합니다
+          </p>
         </div>
-      </header>
+      </div>
+      
+      <div className="flex gap-3">
+        <button
+          onClick={handleLogout}
+          className="px-6 py-2 bg-white text-blue-600 hover:bg-blue-50 rounded-lg font-semibold transition-colors"
+        >
+          로그아웃
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
 
       <div className="container mx-auto px-6 py-8">
         <div className="bg-white rounded-lg shadow-md mb-6">

@@ -28,6 +28,8 @@ export const AppProvider = ({ children }) => {
   // Supabase에서 학생 데이터 로드
   const loadStudentsFromSupabase = async () => {
     try {
+      console.log('📚 학생 데이터 로드 시작...');
+      
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -36,30 +38,70 @@ export const AppProvider = ({ children }) => {
 
       if (error) throw error;
 
-      const formattedStudents = data.map(user => ({
-        id: user.id,
-        studentId: user.student_id || user.username,
-        name: user.name,
-        department: user.department,
-        field: user.field || '바이오',
-        email: user.email,
-        phone: user.phone,
-        password: user.password,
-        role: 'student',
-        memo: user.memo || '',
-        nonCurricularScore: user.non_curricular_score || 0,
-        coreSubjectScore: user.core_subject_score || 0,
-        industryScore: user.industry_score || 0,
-        total: (user.non_curricular_score || 0) + (user.core_subject_score || 0) + (user.industry_score || 0),
-        nonCurricularHistory: user.non_curricular_history || [],
-        coreSubjectHistory: user.core_subject_history || [],
-        industryHistory: user.industry_history || []
-      }));
+      console.log('📊 Supabase에서 가져온 데이터:', data.length, '명');
 
-      console.log('✅ 학생 데이터 로드 완료:', formattedStudents.length);
+      const formattedStudents = data.map(user => {
+        // 디버깅용 로그
+        if (user.username === '202411003') {
+          console.log('🎯 장원영 학생 원본 데이터:', {
+            id: user.id,
+            username: user.username,
+            core_courses_score: user.core_courses_score,
+            core_subject_score: user.core_subject_score,
+            industry_score: user.industry_score,
+            non_curricular_score: user.non_curricular_score
+          });
+        }
+
+        const student = {
+          id: user.id,
+          studentId: user.student_id || user.username,
+          name: user.name,
+          department: user.department,
+          field: user.field || '바이오',
+          grade: user.grade || 4,
+          email: user.email,
+          phone: user.phone,
+          password: user.password,
+          role: 'student',
+          memo: user.memo || '',
+          
+          // 점수 처리 (두 컬럼 모두 확인!)
+          nonCurricularScore: user.non_curricular_score || 0,
+          coreSubjectScore: user.core_subject_score || user.core_courses_score || 0,  // ✅ 수정!
+          coreCoursesScore: user.core_courses_score || 0,  // ✅ 추가!
+          industryScore: user.industry_score || 0,
+          
+          // 총점 계산
+          total: (user.non_curricular_score || 0) + 
+                 (user.core_subject_score || user.core_courses_score || 0) +  // ✅ 수정!
+                 (user.industry_score || 0),
+          
+          // 이력
+          nonCurricularHistory: user.non_curricular_history || [],
+          coreSubjectHistory: user.core_subject_history || [],
+          industryHistory: user.industry_history || []
+        };
+
+        // 디버깅용 로그
+        if (user.username === '202411003') {
+          console.log('✨ 장원영 학생 포맷된 데이터:', {
+            id: student.id,
+            name: student.name,
+            coreSubjectScore: student.coreSubjectScore,
+            coreCoursesScore: student.coreCoursesScore,
+            total: student.total
+          });
+        }
+
+        return student;
+      });
+
+      console.log('✅ 학생 데이터 로드 완료:', formattedStudents.length, '명');
       setStudents(formattedStudents);
+      
     } catch (error) {
-      console.error('학생 데이터 로드 실패:', error);
+      console.error('❌ 학생 데이터 로드 실패:', error);
     }
   };
 
@@ -873,66 +915,171 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // 제출 승인
+  // 제출 승인 (완전 개선 버전)
   const approveCoreCourses = async (submissionId) => {
-    try {
-      // 제출 데이터 가져오기
-      const submission = coreCoursesSubmissions.find(s => s.id === submissionId);
-      if (!submission) throw new Error('제출 데이터를 찾을 수 없습니다.');
+    console.log('=== 핵심교과목 승인 시작 ===');
+    console.log('제출 ID:', submissionId);
 
-      // 1. 제출 상태 업데이트
-      const { error: submissionError } = await supabase
+    try {
+      // 1. 제출 데이터 가져오기
+      const submission = coreCoursesSubmissions.find(s => s.id === submissionId);
+      if (!submission) {
+        throw new Error('제출 데이터를 찾을 수 없습니다.');
+      }
+
+      console.log('📋 제출 정보:', {
+        submissionId: submission.id,
+        studentId: submission.studentId,
+        totalScore: submission.totalScore,
+        status: submission.status
+      });
+
+      // 2. 학생 정보 확인
+      const student = students.find(s => s.id === submission.studentId);
+      if (!student) {
+        throw new Error('학생 정보를 찾을 수 없습니다.');
+      }
+
+      console.log('👨‍🎓 학생 정보:', {
+        id: student.id,
+        name: student.name,
+        studentId: student.studentId,
+        currentCoreScore: student.coreSubjectScore
+      });
+
+      // 3. users 테이블 업데이트 (점수 반영)
+      console.log('📝 users 테이블 업데이트 중...');
+      const { data: updatedUser, error: userError } = await supabase
+        .from('users')
+        .update({
+          core_courses_score: submission.totalScore,
+          core_subject_score: submission.totalScore  // 둘 다 업데이트
+        })
+        .eq('id', submission.studentId)
+        .select();  // 결과 확인을 위해 select 추가
+
+      if (userError) {
+        console.error('❌ users 테이블 업데이트 실패:', userError);
+        throw new Error(`학생 점수 업데이트 실패: ${userError.message}`);
+      }
+
+      console.log('✅ users 테이블 업데이트 성공:', updatedUser);
+
+      // 4. 제출 상태 업데이트 (승인 처리)
+      console.log('📝 제출 상태 업데이트 중...');
+      const { data: updatedSubmission, error: submissionError } = await supabase
         .from('core_courses_submissions')
         .update({
           status: 'approved',
           reviewed_at: new Date().toISOString(),
-          reviewed_by: currentUser?.username || 'admin'
+          reviewed_by: currentUser?.id || null
         })
-        .eq('id', submissionId);
+        .eq('id', submissionId)
+        .select();
 
-      if (submissionError) throw submissionError;
+      if (submissionError) {
+        console.error('❌ 제출 상태 업데이트 실패:', submissionError);
+        
+        // 롤백: users 테이블 원상복구
+        console.log('⏪ users 테이블 롤백 중...');
+        await supabase
+          .from('users')
+          .update({
+            core_courses_score: student.coreSubjectScore || 0,
+            core_subject_score: student.coreSubjectScore || 0
+          })
+          .eq('id', submission.studentId);
+        
+        throw new Error(`제출 상태 업데이트 실패: ${submissionError.message}`);
+      }
 
-      // 2. 학생 점수 업데이트
-      const { error: studentError } = await supabase
-        .from('users')
-        .update({
-          core_courses_score: submission.totalScore
-        })
-        .eq('id', submission.studentId);
+      console.log('✅ 제출 상태 업데이트 성공:', updatedSubmission);
 
-      if (studentError) throw studentError;
+      // 5. 데이터 리로드
+      console.log('🔄 데이터 리로드 중...');
+      await Promise.all([
+        loadCoreCoursesSubmissionsFromSupabase(),
+        loadStudentsFromSupabase()
+      ]);
 
-      console.log('✅ 교과목 승인 완료');
-      await loadCoreCoursesSubmissionsFromSupabase();
-      await loadStudentsFromSupabase();
-      return { success: true };
+      console.log('✅ 핵심교과목 승인 완료!');
+      console.log(`   - 학생: ${student.name} (${student.studentId})`);
+      console.log(`   - 점수: ${submission.totalScore}점`);
+      console.log('=== 승인 프로세스 종료 ===');
+
+      return { 
+        success: true,
+        message: `${student.name} 학생의 핵심교과목 ${submission.totalScore}점이 승인되었습니다.`
+      };
+
     } catch (error) {
-      console.error('교과목 승인 실패:', error);
-      return { success: false, error: error.message };
+      console.error('=== 승인 실패 ===');
+      console.error('❌ 에러:', error);
+      console.error('❌ 상세:', error.message);
+      console.error('❌ Stack:', error.stack);
+      
+      return { 
+        success: false, 
+        error: error.message || '승인 처리 중 오류가 발생했습니다.'
+      };
     }
   };
 
-  // 제출 반려
+  // 제출 반려 (개선 버전)
   const rejectCoreCourses = async (submissionId, reason) => {
+    console.log('=== 핵심교과목 반려 시작 ===');
+    console.log('제출 ID:', submissionId);
+    console.log('반려 사유:', reason);
+
     try {
-      const { error } = await supabase
+      // 1. 제출 데이터 확인
+      const submission = coreCoursesSubmissions.find(s => s.id === submissionId);
+      if (!submission) {
+        throw new Error('제출 데이터를 찾을 수 없습니다.');
+      }
+
+      // 2. 학생 정보 확인
+      const student = students.find(s => s.id === submission.studentId);
+      console.log('👨‍🎓 학생:', student?.name, student?.studentId);
+
+      // 3. 제출 상태 업데이트
+      console.log('📝 반려 처리 중...');
+      const { data, error } = await supabase
         .from('core_courses_submissions')
         .update({
           status: 'rejected',
           rejection_reason: reason,
           reviewed_at: new Date().toISOString(),
-          reviewed_by: currentUser?.username || 'admin'
+          reviewed_by: currentUser?.id || null
         })
-        .eq('id', submissionId);
+        .eq('id', submissionId)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ 반려 처리 실패:', error);
+        throw new Error(`반려 처리 실패: ${error.message}`);
+      }
 
-      console.log('✅ 교과목 반려 완료');
+      console.log('✅ 반려 처리 성공:', data);
+
+      // 4. 데이터 리로드
       await loadCoreCoursesSubmissionsFromSupabase();
-      return { success: true };
+
+      console.log('✅ 핵심교과목 반려 완료!');
+      console.log('=== 반려 프로세스 종료 ===');
+
+      return { 
+        success: true,
+        message: `${student?.name} 학생의 제출이 반려되었습니다.`
+      };
+
     } catch (error) {
-      console.error('교과목 반려 실패:', error);
-      return { success: false, error: error.message };
+      console.error('=== 반려 실패 ===');
+      console.error('❌ 에러:', error);
+      return { 
+        success: false, 
+        error: error.message || '반려 처리 중 오류가 발생했습니다.'
+      };
     }
   };
 

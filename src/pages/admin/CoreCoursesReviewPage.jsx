@@ -1,16 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { FIELD_DEPARTMENTS, SUBMISSION_STATUS_LABEL } from '../../components/coreCourses/constants';
-import { calculateStatistics } from '../../utils/coreCoursesHelpers';
+import { calculateStatistics, formatDate } from '../../utils/coreCoursesHelpers';
 import SubmissionReviewModal from '../../components/coreCourses/SubmissionReviewModal';
 import { useModalStore } from '../../hooks/useModal';
-import * as XLSX from 'xlsx';
 
 function CoreCoursesReviewPage() {
   const {
     students,
     coreCoursesSubmissions,
-    coreCourses,
     approveCoreCourses,
     rejectCoreCourses
   } = useAppContext();
@@ -18,29 +16,63 @@ function CoreCoursesReviewPage() {
   const { showAlert } = useModalStore();
 
   const [selectedField, setSelectedField] = useState('바이오');
-  const [selectedDepartment, setSelectedDepartment] = useState('생명과학전공');
-  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedDepartment, setSelectedDepartment] = useState('전체');
+  const [selectedStatus, setSelectedStatus] = useState('all'); // all/pending/approved/rejected
   const [searchTerm, setSearchTerm] = useState('');
   const [reviewingSubmission, setReviewingSubmission] = useState(null);
 
+  // 필터링된 학생 목록 (4학년 + 선택한 학과)
   const filteredStudents = useMemo(() => {
-    return students.filter(
+    console.log('=== 학생 필터링 ===');
+    console.log('전체 students:', students.length);
+    console.log('students 배열 전체:', students);
+    console.log('selectedField:', selectedField);
+    console.log('selectedDepartment:', selectedDepartment);
+    
+    // 각 학생별로 필터 조건 확인
+    students.forEach(s => {
+      console.log(`학생 ${s.name || s.studentId}:`, {
+        id: s.id,
+        grade: s.grade,
+        field: s.field,
+        department: s.department,
+        grade조건: s.grade === 4,
+        field조건: s.field === selectedField,
+        department조건: selectedDepartment === '전체' || s.department === selectedDepartment,
+        전체조건통과: s.grade === 4 && s.field === selectedField && (selectedDepartment === '전체' || s.department === selectedDepartment)
+      });
+    });
+    
+    const filtered = students.filter(
       s => s.grade === 4 && 
       s.field === selectedField && 
-      s.department === selectedDepartment
+      (selectedDepartment === '전체' || s.department === selectedDepartment)
     );
+    
+    console.log('필터링된 학생:', filtered.length, filtered);
+    return filtered;
   }, [students, selectedField, selectedDepartment]);
 
+  // 학생별 제출 데이터와 조합
   const studentSubmissions = useMemo(() => {
-    return filteredStudents.map(student => {
+    console.log('=== 제출 데이터 매칭 ===');
+    console.log('filteredStudents:', filteredStudents.length);
+    console.log('coreCoursesSubmissions:', coreCoursesSubmissions.length, coreCoursesSubmissions);
+    
+    const result = filteredStudents.map(student => {
       const submission = coreCoursesSubmissions.find(sub => sub.studentId === student.id);
+      console.log(`학생 ${student.name} (id: ${student.id}):`, submission ? '제출 있음' : '제출 없음');
       return {
         student,
         submission: submission || null
       };
     });
+    
+    console.log('매칭 결과:', result);
+    return result;
   }, [filteredStudents, coreCoursesSubmissions]);
 
+  // 상태 필터링
   const statusFilteredData = useMemo(() => {
     if (selectedStatus === 'all') return studentSubmissions;
     if (selectedStatus === 'pending') {
@@ -55,6 +87,7 @@ function CoreCoursesReviewPage() {
     return studentSubmissions;
   }, [studentSubmissions, selectedStatus]);
 
+  // 검색 필터링
   const searchFilteredData = useMemo(() => {
     if (!searchTerm.trim()) return statusFilteredData;
     const term = searchTerm.toLowerCase();
@@ -64,6 +97,7 @@ function CoreCoursesReviewPage() {
     );
   }, [statusFilteredData, searchTerm]);
 
+  // 통계 계산
   const stats = useMemo(() => {
     const submissions = studentSubmissions
       .filter(item => item.submission)
@@ -75,7 +109,7 @@ function CoreCoursesReviewPage() {
   const handleFieldChange = (e) => {
     const newField = e.target.value;
     setSelectedField(newField);
-    setSelectedDepartment(FIELD_DEPARTMENTS[newField][0]);
+    setSelectedDepartment('전체');
   };
 
   const handleReview = (submission, student) => {
@@ -118,162 +152,8 @@ function CoreCoursesReviewPage() {
     );
   };
 
-  // 엑셀 다운로드 기능 (개선 버전)
-  const handleDownloadExcel = () => {
-    console.log('📊 엑셀 다운로드 시작');
-    console.log('데이터 수:', searchFilteredData.length);
-
-    if (searchFilteredData.length === 0) {
-      showAlert('⚠️ 다운로드할 데이터가 없습니다.\n필터 조건을 확인해주세요.');
-      return;
-    }
-
-    try {
-      // 1. 데이터 준비
-      const excelData = searchFilteredData.map((item, index) => ({
-        '번호': index + 1,
-        '학번': item.student.studentId || '',
-        '이름': item.student.name || '',
-        '전공': item.student.department || '',
-        '이수 과목 수': item.submission?.totalCompletedCount || 0,
-        '점수': item.submission?.totalScore || 0,
-        '증빙 파일': item.submission?.transcriptFileName || '미제출',
-        '제출 상태': item.submission ? SUBMISSION_STATUS_LABEL[item.submission.status] : '미제출',
-        '제출일': item.submission?.submittedAt 
-          ? new Date(item.submission.submittedAt).toLocaleDateString('ko-KR') 
-          : '-',
-        '승인일': item.submission?.approvedAt 
-          ? new Date(item.submission.approvedAt).toLocaleDateString('ko-KR') 
-          : '-',
-        '반려 사유': item.submission?.rejectionReason || '-'
-      }));
-
-      console.log('엑셀 데이터:', excelData);
-
-      // 2. 워크시트 생성
-      const worksheet = XLSX.utils.json_to_sheet(excelData);
-      
-      // 3. 컬럼 너비 설정
-      worksheet['!cols'] = [
-        { wch: 6 },   // 번호
-        { wch: 12 },  // 학번
-        { wch: 10 },  // 이름
-        { wch: 20 },  // 전공
-        { wch: 14 },  // 이수 과목 수
-        { wch: 8 },   // 점수
-        { wch: 35 },  // 증빙 파일
-        { wch: 12 },  // 제출 상태
-        { wch: 12 },  // 제출일
-        { wch: 12 },  // 승인일
-        { wch: 35 }   // 반려 사유
-      ];
-
-      // 4. 워크북 생성 및 메인 시트 추가
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, '핵심 교과목 현황');
-      
-      // 5. 요약 정보 시트 추가
-      const summaryData = [
-        { '항목': '📊 통계 요약', '내용': '' },
-        { '항목': '', '내용': '' },
-        { '항목': '전체 학생', '내용': `${stats.totalStudents}명` },
-        { '항목': '제출 완료', '내용': `${stats.submittedCount}명` },
-        { '항목': '검토 대기', '내용': `${stats.pendingCount}건` },
-        { '항목': '평균 점수', '내용': `${stats.avgScore}점` },
-        { '항목': '평균 이수율', '내용': `${stats.avgCompletionRate}%` },
-        { '항목': '', '내용': '' },
-        { '항목': '📁 다운로드 정보', '내용': '' },
-        { '항목': '', '내용': '' },
-        { '항목': '다운로드 일시', '내용': new Date().toLocaleString('ko-KR') },
-        { '항목': '분야', '내용': selectedField },
-        { '항목': '전공', '내용': selectedDepartment },
-        { '항목': '필터 상태', '내용': selectedStatus === 'all' ? '전체' : SUBMISSION_STATUS_LABEL[selectedStatus] },
-        { '항목': '검색어', '내용': searchTerm || '없음' },
-        { '항목': '다운로드 건수', '내용': `${searchFilteredData.length}건` }
-      ];
-      
-      const summarySheet = XLSX.utils.json_to_sheet(summaryData);
-      summarySheet['!cols'] = [{ wch: 20 }, { wch: 30 }];
-      XLSX.utils.book_append_sheet(workbook, summarySheet, '📊 요약');
-      
-      // 6. 파일 다운로드
-      const fileName = `핵심교과목_${selectedDepartment}_${new Date().toISOString().split('T')[0]}.xlsx`;
-      XLSX.writeFile(workbook, fileName);
-      
-      console.log('✅ 파일 다운로드 완료:', fileName);
-      showAlert(`✅ 엑셀 파일이 다운로드되었습니다.\n\n파일명: ${fileName}\n데이터: ${searchFilteredData.length}건`);
-    } catch (error) {
-      console.error('❌ 엑셀 다운로드 실패:', error);
-      showAlert(`엑셀 다운로드 중 오류가 발생했습니다.\n${error.message}`);
-    }
-  };
-
-  // 과목별 통계 표시
-  const handleShowCourseStats = () => {
-    const departmentCourses = coreCourses.filter(
-      c => c.field === selectedField && c.department === selectedDepartment
-    );
-
-    if (departmentCourses.length === 0) {
-      showAlert('등록된 교과목이 없습니다.');
-      return;
-    }
-
-    // 과목별 이수 현황 집계
-    const courseStats = departmentCourses.map(course => {
-      let completedCount = 0;
-      
-      studentSubmissions.forEach(item => {
-        if (item.submission && item.submission.status === 'approved') {
-          const completed = item.submission.completedCourses.find(
-            cc => cc.courseId === course.id && cc.isCompleted
-          );
-          if (completed) completedCount++;
-        }
-      });
-
-      return {
-        courseName: course.courseName,
-        courseCode: course.courseCode,
-        courseType: course.courseType,
-        completedCount,
-        percentage: filteredStudents.length > 0 
-          ? Math.round((completedCount / filteredStudents.length) * 100) 
-          : 0
-      };
-    });
-
-    // 통계를 표 형식으로 표시
-    const statsTable = courseStats
-      .sort((a, b) => b.completedCount - a.completedCount)
-      .map((stat, idx) => 
-        `${idx + 1}. ${stat.courseName} (${stat.courseCode})\n   ${stat.courseType} | 이수: ${stat.completedCount}명 (${stat.percentage}%)`
-      )
-      .join('\n\n');
-
-    showAlert(`📊 과목별 이수 현황\n\n전체 학생: ${filteredStudents.length}명\n등록 과목: ${departmentCourses.length}개\n\n${statsTable}`);
-  };
-
-  // 미제출자 독촉
-  const handleRemindNonSubmitters = () => {
-    const nonSubmitters = studentSubmissions.filter(item => !item.submission);
-    
-    if (nonSubmitters.length === 0) {
-      showAlert('✅ 모든 학생이 제출을 완료했습니다!');
-      return;
-    }
-
-    const nonSubmitterList = nonSubmitters
-      .map((item, idx) => `${idx + 1}. ${item.student.name} (${item.student.studentId})`)
-      .join('\n');
-
-    showAlert(
-      `📧 미제출자 ${nonSubmitters.length}명에게 알림을 발송합니다.\n\n${nonSubmitterList}\n\n※ 실제 이메일 발송 기능은 추후 구현 예정입니다.`
-    );
-  };
-
   return (
-    <div className="bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* 헤더 */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
@@ -300,6 +180,7 @@ function CoreCoursesReviewPage() {
                 onChange={(e) => setSelectedDepartment(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
+                <option value="전체">전체</option>
                 {FIELD_DEPARTMENTS[selectedField].map(dept => (
                   <option key={dept} value={dept}>{dept}</option>
                 ))}
@@ -361,28 +242,19 @@ function CoreCoursesReviewPage() {
         {/* 액션 버튼 */}
         <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
           <div className="flex gap-3">
-            <button 
-              onClick={handleDownloadExcel}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
-            >
+            <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
               </svg>
               엑셀 다운로드
             </button>
-            <button 
-              onClick={handleShowCourseStats}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
-            >
+            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
               과목별 통계
             </button>
-            <button 
-              onClick={handleRemindNonSubmitters}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700"
-            >
+            <button className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
