@@ -177,7 +177,7 @@ function SignupPage() {
         <div className="text-center mb-6">
           <div className="flex justify-center mb-4">
             <img 
-              src="/images/logo.png" 
+              src="/image/INU_RISE_logo.png" 
               alt="RISE 사업단 로고" 
               className="h-20 w-auto object-contain"
               onError={(e) => {

@@ -102,11 +102,12 @@ function LoginPage() {
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <img 
-              src="/images/logo.png" 
-              alt="RISE 사업단 로고" 
+              src="/image/INU_RISE_logo.png"
+              alt="인천대학교 RISE 사업단 로고" 
               className="h-24 w-auto object-contain"
               onError={(e) => {
                 // 로고 로드 실패 시 기본 아이콘 표시
+                console.log('로고 로드 실패, 기본 아이콘 표시');
                 e.target.style.display = 'none';
                 e.target.nextSibling.style.display = 'flex';
               }}

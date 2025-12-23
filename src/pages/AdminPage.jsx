@@ -856,20 +856,13 @@ function AdminPage() {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
               {/* 로고 추가 */}
-              <img 
-                src="/images/logo-white.png" 
-                alt="RISE 사업단" 
-                className="h-12 w-auto object-contain"
-                onError={(e) => {
-                  // 흰색 로고 없으면 일반 로고 시도
-                  e.target.src = '/images/logo.png';
-                  e.target.onerror = () => {
-                    // 로고 로드 실패 시 숨김
-                    e.target.style.display = 'none';
-                  };
-                }}
-              />
-              
+              <div className="bg-white p-2 rounded-lg">
+                <img 
+                  src="/image/INU_RISE_logo.png" 
+                  alt="RISE 사업단" 
+                  className="h-10 w-auto object-contain"
+                />
+              </div>
               <div>
                 <h1 className="text-3xl font-bold">학생성공지수 관리 시스템</h1>
                 <p className="text-blue-100 mt-1">
