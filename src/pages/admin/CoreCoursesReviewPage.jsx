@@ -4,10 +4,12 @@ import { FIELD_DEPARTMENTS, SUBMISSION_STATUS_LABEL } from '../../components/cor
 import { calculateStatistics, formatDate } from '../../utils/coreCoursesHelpers';
 import SubmissionReviewModal from '../../components/coreCourses/SubmissionReviewModal';
 import { useModalStore } from '../../hooks/useModal';
+import * as XLSX from 'xlsx';
 
 function CoreCoursesReviewPage() {
   const {
     students,
+    coreCourses,
     coreCoursesSubmissions,
     approveCoreCourses,
     rejectCoreCourses
@@ -17,58 +19,32 @@ function CoreCoursesReviewPage() {
 
   const [selectedField, setSelectedField] = useState('바이오');
   const [selectedDepartment, setSelectedDepartment] = useState('전체');
-  const [selectedStatus, setSelectedStatus] = useState('all'); // all/pending/approved/rejected
+  const [selectedStatus, setSelectedStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [reviewingSubmission, setReviewingSubmission] = useState(null);
+  const [showCourseStats, setShowCourseStats] = useState(false);
 
   // 필터링된 학생 목록 (4학년 + 선택한 학과)
   const filteredStudents = useMemo(() => {
-    console.log('=== 학생 필터링 ===');
-    console.log('전체 students:', students.length);
-    console.log('students 배열 전체:', students);
-    console.log('selectedField:', selectedField);
-    console.log('selectedDepartment:', selectedDepartment);
-    
-    // 각 학생별로 필터 조건 확인
-    students.forEach(s => {
-      console.log(`학생 ${s.name || s.studentId}:`, {
-        id: s.id,
-        grade: s.grade,
-        field: s.field,
-        department: s.department,
-        grade조건: s.grade === 4,
-        field조건: s.field === selectedField,
-        department조건: selectedDepartment === '전체' || s.department === selectedDepartment,
-        전체조건통과: s.grade === 4 && s.field === selectedField && (selectedDepartment === '전체' || s.department === selectedDepartment)
-      });
-    });
-    
     const filtered = students.filter(
       s => s.grade === 4 && 
       s.field === selectedField && 
       (selectedDepartment === '전체' || s.department === selectedDepartment)
     );
     
-    console.log('필터링된 학생:', filtered.length, filtered);
     return filtered;
   }, [students, selectedField, selectedDepartment]);
 
   // 학생별 제출 데이터와 조합
   const studentSubmissions = useMemo(() => {
-    console.log('=== 제출 데이터 매칭 ===');
-    console.log('filteredStudents:', filteredStudents.length);
-    console.log('coreCoursesSubmissions:', coreCoursesSubmissions.length, coreCoursesSubmissions);
-    
     const result = filteredStudents.map(student => {
       const submission = coreCoursesSubmissions.find(sub => sub.studentId === student.id);
-      console.log(`학생 ${student.name} (id: ${student.id}):`, submission ? '제출 있음' : '제출 없음');
       return {
         student,
         submission: submission || null
       };
     });
     
-    console.log('매칭 결과:', result);
     return result;
   }, [filteredStudents, coreCoursesSubmissions]);
 
@@ -106,6 +82,38 @@ function CoreCoursesReviewPage() {
     return calculateStatistics(submissions);
   }, [studentSubmissions]);
 
+  // 과목별 통계 계산
+  const courseStats = useMemo(() => {
+    if (!coreCourses || coreCourses.length === 0) return [];
+
+    const fieldCourses = coreCourses.filter(
+      c => c.field === selectedField && 
+      (selectedDepartment === '전체' || c.department === selectedDepartment)
+    );
+
+    return fieldCourses.map(course => {
+      const completedCount = studentSubmissions.filter(({ submission }) => {
+        if (!submission || !submission.completedCourses) return false;
+        return submission.completedCourses.some(
+          c => c.courseId === course.id && c.isCompleted
+        );
+      }).length;
+
+      const completionRate = filteredStudents.length > 0
+        ? Math.round((completedCount / filteredStudents.length) * 100)
+        : 0;
+
+      return {
+        id: course.id,
+        courseName: course.courseName,
+        courseType: course.courseType,
+        credits: course.credits,
+        completedCount,
+        completionRate
+      };
+    }).sort((a, b) => b.completedCount - a.completedCount);
+  }, [coreCourses, selectedField, selectedDepartment, studentSubmissions, filteredStudents]);
+
   const handleFieldChange = (e) => {
     const newField = e.target.value;
     setSelectedField(newField);
@@ -131,6 +139,81 @@ function CoreCoursesReviewPage() {
       showAlert('❌ 반려 처리되었습니다.\n학생에게 알림이 전송됩니다.');
     } else {
       showAlert(`반려 실패: ${result.error}`);
+    }
+  };
+
+  // 엑셀 다운로드 함수
+  const handleExcelDownload = () => {
+    try {
+      const excelData = searchFilteredData.map(({ student, submission }) => ({
+        '학번': student.studentId,
+        '이름': student.name,
+        '학과': student.department,
+        '이수과목수': submission?.totalCompletedCount || 0,
+        '점수': submission?.totalScore || 0,
+        '제출상태': submission ? SUBMISSION_STATUS_LABEL[submission.status] : '미제출',
+        '제출일시': submission ? formatDate(submission.submittedAt) : '-'
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, '핵심교과목 이수현황');
+
+      // 컬럼 너비 설정
+      const columnWidths = [
+        { wch: 12 }, // 학번
+        { wch: 10 }, // 이름
+        { wch: 20 }, // 학과
+        { wch: 12 }, // 이수과목수
+        { wch: 8 },  // 점수
+        { wch: 12 }, // 제출상태
+        { wch: 20 }  // 제출일시
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      const fileName = `핵심교과목_이수현황_${selectedField}_${selectedDepartment}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+
+      showAlert(`✅ ${searchFilteredData.length}건의 데이터를 다운로드했습니다.`);
+    } catch (error) {
+      console.error('엑셀 다운로드 실패:', error);
+      showAlert('❌ 엑셀 다운로드 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 과목별 통계 다운로드
+  const handleCourseStatsDownload = () => {
+    try {
+      const excelData = courseStats.map(stat => ({
+        '과목명': stat.courseName,
+        '과목구분': stat.courseType,
+        '학점': stat.credits,
+        '이수학생수': stat.completedCount,
+        '이수율': `${stat.completionRate}%`,
+        '미이수학생수': filteredStudents.length - stat.completedCount
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, '과목별통계');
+
+      const columnWidths = [
+        { wch: 30 }, // 과목명
+        { wch: 12 }, // 과목구분
+        { wch: 8 },  // 학점
+        { wch: 12 }, // 이수학생수
+        { wch: 10 }, // 이수율
+        { wch: 12 }  // 미이수학생수
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      const fileName = `과목별통계_${selectedField}_${selectedDepartment}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+
+      showAlert(`✅ ${courseStats.length}개 과목의 통계를 다운로드했습니다.`);
+    } catch (error) {
+      console.error('통계 다운로드 실패:', error);
+      showAlert('❌ 통계 다운로드 중 오류가 발생했습니다.');
     }
   };
 
@@ -216,13 +299,13 @@ function CoreCoursesReviewPage() {
         <div className="grid grid-cols-5 gap-4 mb-6">
           <div className="bg-white rounded-lg shadow-sm p-4">
             <div className="text-sm text-gray-600 mb-1">전체 학생</div>
-            <div className="text-2xl font-bold text-gray-900">{stats.totalStudents}명</div>
+            <div className="text-2xl font-bold text-gray-900">{filteredStudents.length}명</div>
           </div>
           <div className="bg-white rounded-lg shadow-sm p-4">
             <div className="text-sm text-gray-600 mb-1">제출 완료</div>
             <div className="text-2xl font-bold text-blue-600">{stats.submittedCount}명</div>
             <div className="text-xs text-gray-500">
-              {stats.totalStudents > 0 ? Math.round((stats.submittedCount / stats.totalStudents) * 100) : 0}%
+              {filteredStudents.length > 0 ? Math.round((stats.submittedCount / filteredStudents.length) * 100) : 0}%
             </div>
           </div>
           <div className="bg-white rounded-lg shadow-sm p-4">
@@ -242,26 +325,93 @@ function CoreCoursesReviewPage() {
         {/* 액션 버튼 */}
         <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
           <div className="flex gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700">
+            <button 
+              onClick={handleExcelDownload}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
               </svg>
               엑셀 다운로드
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
+            <button 
+              onClick={() => setShowCourseStats(!showCourseStats)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
-              과목별 통계
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              미제출자 독촉
+              {showCourseStats ? '과목별 통계 닫기' : '과목별 통계'}
             </button>
           </div>
         </div>
+
+        {/* 과목별 통계 섹션 */}
+        {showCourseStats && (
+          <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900">📈 과목별 이수 통계</h2>
+              <button
+                onClick={handleCourseStatsDownload}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors text-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                </svg>
+                통계 다운로드
+              </button>
+            </div>
+
+            {courseStats.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                과목 데이터가 없습니다.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">과목명</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">구분</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">학점</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">이수학생</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">이수율</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">진행도</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {courseStats.map((stat) => (
+                      <tr key={stat.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900">{stat.courseName}</td>
+                        <td className="px-4 py-3 text-center text-sm text-gray-600">{stat.courseType}</td>
+                        <td className="px-4 py-3 text-center text-sm text-gray-600">{stat.credits}</td>
+                        <td className="px-4 py-3 text-center text-sm font-semibold text-blue-600">
+                          {stat.completedCount}명
+                        </td>
+                        <td className="px-4 py-3 text-center text-sm font-semibold text-green-600">
+                          {stat.completionRate}%
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 bg-gray-200 rounded-full h-2">
+                              <div 
+                                className="bg-blue-600 h-2 rounded-full transition-all"
+                                style={{ width: `${stat.completionRate}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-gray-600 w-12 text-right">
+                              {stat.completedCount}/{filteredStudents.length}
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 제출 현황 테이블 */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
