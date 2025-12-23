@@ -173,8 +173,29 @@ function SignupPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">회원가입</h1>
-        <p className="text-center text-gray-600 mb-6">학생성공지수 관리 시스템</p>
+        {/* 로고 영역 */}
+        <div className="text-center mb-6">
+          <div className="flex justify-center mb-4">
+            <img 
+              src="/images/logo.png" 
+              alt="RISE 사업단 로고" 
+              className="h-20 w-auto object-contain"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+            <div 
+              className="h-20 w-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl items-center justify-center hidden"
+              style={{ display: 'none' }}
+            >
+              <span className="text-3xl text-white font-bold">RISE</span>
+            </div>
+          </div>
+          
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">회원가입</h1>
+          <p className="text-gray-600">학생성공지수 관리 시스템</p>
+        </div>
 
         {/* 탭 선택 */}
         <div className="flex gap-2 mb-6">

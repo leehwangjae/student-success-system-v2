@@ -3,7 +3,6 @@ import { useAppContext } from '../context/AppContext';
 import ProgramDetailModal from '../components/modals/ProgramDetailModal';
 import NoticeDetailModal from '../components/modals/NoticeDetailModal';
 import { supabase } from '../lib/supabase';
-import CoreCoursesCheckPage from './student/CoreCoursesCheckPage';
 
 function StudentPage() {
   const {
@@ -167,56 +166,15 @@ function StudentPage() {
     </div>
   );
 
+  const renderProgramsTab = () => (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-gray-800">프로그램</h2>
 
-  const renderProgramsTab = () => {
-    console.log('=== 프로그램 필터링 디버깅 ===');
-    console.log('📊 전체 프로그램 수:', programs.length);
-    console.log('👤 학생 정보:', currentUser);
-    console.log('🎯 학생 분야:', currentUser?.field);
-    
-    if (programs.length > 0) {
-      console.log('📋 전체 프로그램 목록:', programs);
-      programs.forEach((p, idx) => {
-        console.log(`  ${idx + 1}. ${p.title} | 분야: ${p.field} | 상태: ${p.status}`);
-      });
-    }
-    
-    const filteredByField = programs.filter(p => {
-      const match = p.field === currentUser?.field || p.field === '전체';
-      if (!match) {
-        console.log(`❌ 분야 불일치: "${p.title}" (${p.field} !== ${currentUser?.field})`);
-      }
-      return match;
-    });
-    console.log('✅ 분야 필터링 후:', filteredByField.length, '개');
-    
-    const filteredByStatus = filteredByField.filter(p => {
-      const match = p.status === '모집중';
-      if (!match) {
-        console.log(`❌ 상태 불일치: "${p.title}" (${p.status} !== 모집중)`);
-      }
-      return match;
-    });
-    console.log('✅ 최종 표시 프로그램:', filteredByStatus.length, '개');
-    
-    return (
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-gray-800">프로그램</h2>
-
-        {filteredByStatus.length === 0 && (
-          <div className="text-center py-12 bg-white rounded-lg shadow-md">
-            <div className="text-6xl mb-4">📚</div>
-            <p className="text-gray-500 text-lg font-semibold">현재 모집중인 프로그램이 없습니다.</p>
-            <div className="mt-4 text-sm text-gray-400">
-              <p>분야: <span className="font-semibold">{currentUser?.field || '미설정'}</span></p>
-              <p>전체 등록된 프로그램: {programs.length}개</p>
-              <p className="mt-2 text-xs">F12 → Console에서 상세 정보를 확인하세요.</p>
-            </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredByStatus.map(program => {
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {programs
+          .filter(p => p.field === currentUser?.field || p.field === '전체')
+          .filter(p => p.status === '모집중')
+          .map(program => {
             const hasApplied = myApplications.some(app => app.programId === program.id);
             
             return (
@@ -240,7 +198,6 @@ function StudentPage() {
                         {program.category}
                       </span>
                     </div>
-                    <p><span className="font-semibold">분야:</span> {program.field}</p>
                     <p><span className="font-semibold">기간:</span> {program.startDate} ~ {program.endDate}</p>
                     <p className="text-blue-600 font-bold">
                       <span className="font-semibold text-gray-600">점수:</span> {program.score}점
@@ -275,10 +232,9 @@ function StudentPage() {
               </div>
             );
           })}
-        </div>
       </div>
-    );
-  };
+    </div>
+  );
 
   const renderApplicationHistoryTab = () => (
     <div className="space-y-6">
@@ -384,12 +340,30 @@ function StudentPage() {
       <header className="bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg">
         <div className="container mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold">학생성공지수 관리 시스템</h1>
-              <p className="text-blue-100 mt-1">
-                {currentUser?.name}({currentUser?.studentId || currentUser?.username})님 환영합니다
-              </p>
+            <div className="flex items-center gap-4">
+              {/* 로고 추가 */}
+              <img 
+                src="/images/logo-white.png" 
+                alt="RISE 사업단" 
+                className="h-12 w-auto object-contain"
+                onError={(e) => {
+                  // 흰색 로고 없으면 일반 로고 시도
+                  e.target.src = '/images/logo.png';
+                  e.target.onerror = () => {
+                    // 로고 로드 실패 시 숨김
+                    e.target.style.display = 'none';
+                  };
+                }}
+              />
+              
+              <div>
+                <h1 className="text-3xl font-bold">학생성공지수 관리 시스템</h1>
+                <p className="text-blue-100 mt-1">
+                  {currentUser?.name}({currentUser?.studentId || currentUser?.username})님 환영합니다
+                </p>
+              </div>
             </div>
+            
             <button
               onClick={handleLogout}
               className="px-6 py-2 bg-white text-blue-600 hover:bg-blue-50 rounded-lg font-semibold transition-colors"
@@ -443,16 +417,6 @@ function StudentPage() {
             >
               📢 공지사항
             </button>
-            <button
-              onClick={() => setActiveTab('coreCourses')}
-              className={`flex-1 px-6 py-4 font-semibold ${
-                activeTab === 'coreCourses'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-blue-600'
-              }`}
-            >
-              ✅ 핵심교과목
-            </button>
           </div>
         </div>
 
@@ -461,7 +425,6 @@ function StudentPage() {
           {activeTab === 'programs' && renderProgramsTab()}
           {activeTab === 'history' && renderApplicationHistoryTab()}
           {activeTab === 'notices' && renderNoticesTab()}
-          {activeTab === 'coreCourses' && <CoreCoursesCheckPage />}
         </div>
       </div>
 
