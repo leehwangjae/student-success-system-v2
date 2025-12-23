@@ -5,6 +5,11 @@ import StudentDetailModal from '../components/modals/StudentDetailModal';
 import ProgramDetailModal from '../components/modals/ProgramDetailModal';
 import NoticeDetailModal from '../components/modals/NoticeDetailModal';
 import * as XLSX from 'xlsx';
+import ProgramModal from '../components/modals/ProgramModal';
+import NoticeModal from '../components/modals/NoticeModal';
+import ApplicantsModal from '../components/modals/ApplicantsModal';
+import CoreCoursesSettingPage from './admin/CoreCoursesSettingPage';
+import CoreCoursesReviewPage from './admin/CoreCoursesReviewPage';
 
 function AdminPage() {
   const {
@@ -42,6 +47,10 @@ function AdminPage() {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [selectedProgram, setSelectedProgram] = useState(null);
   const [selectedNotice, setSelectedNotice] = useState(null);
+
+  // 신청자 모달
+  const [showApplicantsModal, setShowApplicantsModal] = useState(false);
+  const [selectedProgramForApplicants, setSelectedProgramForApplicants] = useState(null);
 
   const [showProgramModal, setShowProgramModal] = useState(false);
   const [editingProgram, setEditingProgram] = useState(null);
@@ -223,21 +232,8 @@ function AdminPage() {
   };
 
   const handleEditProgram = (program) => {
+    console.log('📝 프로그램 수정 모드:', program);
     setEditingProgram(program);
-    setProgramModalData({
-      title: program.title,
-      category: program.category,
-      field: program.field,
-      startDate: program.startDate,
-      endDate: program.endDate,
-      status: program.status,
-      maxParticipants: program.maxParticipants,
-      requiresFile: program.requiresFile,
-      score: program.score,
-      description: program.description,
-      imageUrl: program.imageUrl || '',
-      attachedFiles: program.attachedFiles || []
-    });
     setShowProgramModal(true);
   };
 
@@ -485,7 +481,17 @@ function AdminPage() {
               {filteredStudents.map(student => (
                 <tr key={student.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm">{student.studentId}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{student.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button
+                      onClick={() => {
+                        setSelectedStudent(student);
+                        setShowStudentDetailModal(true);
+                      }}
+                      className="text-gray-900 hover:text-blue-600 hover:underline text-left"
+                    >
+                      {student.name}
+                    </button>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">{student.department}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs rounded-full ${
@@ -498,15 +504,6 @@ function AdminPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-600">{student.total}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-                    <button
-                      onClick={() => {
-                        setSelectedStudent(student);
-                        setShowStudentDetailModal(true);
-                      }}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      상세
-                    </button>
                     <button
                       onClick={() => handleEditStudent(student)}
                       className="text-green-600 hover:text-green-800"
@@ -602,16 +599,32 @@ function AdminPage() {
                     
                     <div className="flex items-center gap-2">
                       <span className="font-semibold">신청:</span>
-                      <span className={`px-3 py-1 rounded-lg text-sm font-bold ${
-                        isFull 
-                          ? 'bg-red-100 text-red-800' 
-                          : applicantCount >= program.maxParticipants * 0.8
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {applicantCount}/{program.maxParticipants}명
-                        {isFull && ' (마감)'}
-                      </span>
+                      <div className="relative inline-block">
+                        <button
+                          onClick={() => {
+                            setSelectedProgramForApplicants(program);
+                            setShowApplicantsModal(true);
+                          }}
+                          className={`px-3 py-1 rounded-lg text-sm font-bold cursor-pointer hover:opacity-80 transition-opacity ${
+                            isFull 
+                              ? 'bg-red-100 text-red-800 hover:bg-red-200' 
+                              : applicantCount >= program.maxParticipants * 0.8
+                              ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                              : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                          }`}
+                          title="클릭하여 신청자 목록 보기"
+                        >
+                          {applicantCount}/{program.maxParticipants}명
+                          {isFull && ' (마감)'}
+                        </button>
+                        {programApplications.filter(app => 
+                          app.programId === program.id && app.status === 'pending'
+                        ).length > 0 && (
+                          <span className="absolute -top-2 -right-8 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap">
+                            New
+                          </span>
+                        )}
+                      </div>
                     </div>
                     
                     <p className="text-blue-600 font-bold">
@@ -678,7 +691,17 @@ function AdminPage() {
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredNotices.map(notice => (
               <tr key={notice.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">{notice.title}</td>
+                <td className="px-6 py-4 text-sm font-medium">
+                  <button
+                    onClick={() => {
+                      setSelectedNotice(notice);
+                      setShowNoticeDetailModal(true);
+                    }}
+                    className="text-gray-900 hover:text-blue-600 hover:underline text-left w-full"
+                  >
+                    {notice.title}
+                  </button>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`px-2 py-1 text-xs rounded-full ${
                     notice.field === '바이오' ? 'bg-green-100 text-green-800' :
@@ -693,15 +716,6 @@ function AdminPage() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm">{notice.date}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">{notice.views}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-                  <button
-                    onClick={() => {
-                      setSelectedNotice(notice);
-                      setShowNoticeDetailModal(true);
-                    }}
-                    className="text-blue-600 hover:text-blue-800"
-                  >
-                    상세
-                  </button>
                   <button
                     onClick={() => handleEditNotice(notice)}
                     className="text-green-600 hover:text-green-800"
@@ -723,116 +737,7 @@ function AdminPage() {
     </div>
   );
 
-  const renderApplicationsTab = () => {
-    const filteredApplications = applicationsWithDetails.filter(
-      app => showCompleted || app.status !== 'completed'
-    );
 
-    const completedCount = applicationsWithDetails.filter(app => app.status === 'completed').length;
-    const activeCount = applicationsWithDetails.filter(app => app.status !== 'completed').length;
-
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-800">신청 관리</h2>
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-600">
-              {showCompleted 
-                ? `전체 ${applicationsWithDetails.length}건 (이수완료 ${completedCount}건 포함)`
-                : `처리 대기 ${activeCount}건 (이수완료 ${completedCount}건 숨김)`
-              }
-            </div>
-            <button
-              onClick={() => setShowCompleted(!showCompleted)}
-              className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-                showCompleted
-                  ? 'bg-gray-600 text-white hover:bg-gray-700'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
-            >
-              {showCompleted ? '✓ 이수완료 보기' : '이수완료 보기'}
-            </button>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          {filteredApplications.map(app => (
-            <div key={app.id} className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-lg font-bold text-gray-800">{app.program.title}</h3>
-                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                      app.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                      app.status === 'approved' ? 'bg-green-100 text-green-800' :
-                      app.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {app.status === 'pending' ? '심사중' :
-                       app.status === 'approved' ? '승인됨' :
-                       app.status === 'completed' ? '이수완료' : '거부됨'}
-                    </span>
-                  </div>
-
-                  <div className="text-sm text-gray-600 space-y-1">
-                    <p><span className="font-semibold">신청자:</span> {app.student.name} ({app.student.studentId})</p>
-                    <p><span className="font-semibold">학과:</span> {app.student.department}</p>
-                    <p><span className="font-semibold">분야:</span> {app.program.field}</p>
-                    <p><span className="font-semibold">신청일:</span> {app.appliedDate}</p>
-                    {app.completedDate && (
-                      <p><span className="font-semibold">완료일:</span> {app.completedDate}</p>
-                    )}
-                  </div>
-                </div>
-
-                {app.status === 'pending' && (
-                  <div className="flex gap-2 ml-4">
-                    <button
-                      onClick={() => approveApplication(app.id)}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700"
-                    >
-                      승인
-                    </button>
-                    <button
-                      onClick={() => rejectApplication(app.id)}
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700"
-                    >
-                      거부
-                    </button>
-                  </div>
-                )}
-
-                {app.status === 'approved' && (
-                  <button
-                    onClick={() => completeProgram(app.id)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 ml-4"
-                  >
-                    완료 처리
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-
-          {filteredApplications.length === 0 && (
-            <div className="bg-white rounded-lg shadow p-12 text-center">
-              <p className="text-gray-500">
-                {showCompleted 
-                  ? '신청 내역이 없습니다.'
-                  : '처리할 신청 내역이 없습니다.'
-                }
-              </p>
-              {!showCompleted && completedCount > 0 && (
-                <p className="text-sm text-gray-400 mt-2">
-                  이수완료된 {completedCount}건의 신청이 숨겨져 있습니다.
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
 
   const renderApprovalTab = () => {
     return (
@@ -956,14 +861,6 @@ function AdminPage() {
               </p>
             </div>
             <div className="flex gap-3">
-              {currentUser?.role === 'master' && (
-                <button
-                  onClick={() => setActiveTab('approval')}
-                  className="px-6 py-2 bg-yellow-500 text-white hover:bg-yellow-600 rounded-lg font-semibold transition-colors"
-                >
-                  승인 관리
-                </button>
-              )}
               <button
                 onClick={handleLogout}
                 className="px-6 py-2 bg-white text-blue-600 hover:bg-blue-50 rounded-lg font-semibold transition-colors"
@@ -1009,14 +906,24 @@ function AdminPage() {
               공지사항 관리
             </button>
             <button
-              onClick={() => setActiveTab('applications')}
+              onClick={() => setActiveTab('coreCoursesSettings')}
               className={`flex-1 px-6 py-4 font-semibold ${
-                activeTab === 'applications'
+                activeTab === 'coreCoursesSettings'
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-600 hover:text-blue-600'
               }`}
             >
-              신청 관리
+              ⚙️ 교과목 설정
+            </button>
+            <button
+              onClick={() => setActiveTab('coreCoursesReview')}
+              className={`flex-1 px-6 py-4 font-semibold ${
+                activeTab === 'coreCoursesReview'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-600 hover:text-blue-600'
+              }`}
+            >
+              📊 교과목 검토
             </button>
             {currentUser?.role === 'master' && (
               <button
@@ -1027,7 +934,14 @@ function AdminPage() {
                     : 'text-gray-600 hover:text-blue-600'
                 }`}
               >
-                승인 관리
+                <span className="relative inline-block">
+                  승인 관리
+                  {pendingUsers.length > 0 && (
+                    <span className="absolute -top-1 -right-10 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                      New
+                    </span>
+                  )}
+                </span>
               </button>
             )}
           </div>
@@ -1061,8 +975,9 @@ function AdminPage() {
           {activeTab === 'students' && renderStudentsTab()}
           {activeTab === 'programs' && renderProgramsTab()}
           {activeTab === 'notices' && renderNoticesTab()}
-          {activeTab === 'applications' && renderApplicationsTab()}
           {activeTab === 'approval' && renderApprovalTab()}
+          {activeTab === 'coreCoursesSettings' && <CoreCoursesSettingPage />}
+          {activeTab === 'coreCoursesReview' && <CoreCoursesReviewPage />}
         </div>
       </div>
 
@@ -1100,30 +1015,24 @@ function AdminPage() {
       )}
 
       {showProgramModal && (
-        <ProgramFormModal
+        <ProgramModal
           isOpen={showProgramModal}
           onClose={() => {
             setShowProgramModal(false);
             setEditingProgram(null);
           }}
-          onSave={handleSaveProgramModal}
-          programData={programModalData}
-          setProgramData={setProgramModalData}
-          isEditing={!!editingProgram}
+          program={editingProgram}
         />
       )}
 
       {showNoticeModal && (
-        <NoticeFormModal
+        <NoticeModal
           isOpen={showNoticeModal}
           onClose={() => {
             setShowNoticeModal(false);
             setEditingNotice(null);
           }}
-          onSave={handleSaveNoticeModal}
-          noticeData={noticeModalData}
-          setNoticeData={setNoticeModalData}
-          isEditing={!!editingNotice}
+          notice={editingNotice}
         />
       )}
 
@@ -1140,343 +1049,22 @@ function AdminPage() {
           isEditing={!!editingStudent}
         />
       )}
+
+      {/* 신청자 모달 */}
+      {showApplicantsModal && selectedProgramForApplicants && (
+        <ApplicantsModal
+          program={selectedProgramForApplicants}
+          onClose={() => {
+            setShowApplicantsModal(false);
+            setSelectedProgramForApplicants(null);
+          }}
+        />
+      )}
     </div>
   );
 }
 
 // 🔥 프로그램 추가/수정 모달 (이미지 및 파일 첨부 포함)
-function ProgramFormModal({ isOpen, onClose, onSave, programData, setProgramData, isEditing }) {
-  if (!isOpen) return null;
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setProgramData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-t-2xl">
-          <h2 className="text-2xl font-bold">{isEditing ? '프로그램 수정' : '프로그램 추가'}</h2>
-        </div>
-
-        <div className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">프로그램명 *</label>
-            <input
-              type="text"
-              name="title"
-              value={programData.title}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder="프로그램명을 입력하세요"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">분류 *</label>
-              <select
-                name="category"
-                value={programData.category}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="비교과">비교과</option>
-                <option value="산학협력">산학협력</option>
-                <option value="교과">교과</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">분야 *</label>
-              <select
-                name="field"
-                value={programData.field}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="바이오">바이오</option>
-                <option value="반도체">반도체</option>
-                <option value="물류">물류</option>
-                <option value="전체">전체</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">시작일</label>
-              <input
-                type="date"
-                name="startDate"
-                value={programData.startDate}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">종료일</label>
-              <input
-                type="date"
-                name="endDate"
-                value={programData.endDate}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">상태</label>
-              <select
-                name="status"
-                value={programData.status}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="모집중">모집중</option>
-                <option value="진행중">진행중</option>
-                <option value="종료">종료</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">정원</label>
-              <input
-                type="number"
-                name="maxParticipants"
-                value={programData.maxParticipants}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                min="1"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">점수</label>
-              <input
-                type="number"
-                name="score"
-                value={programData.score}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                min="0"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="requiresFile"
-                checked={programData.requiresFile}
-                onChange={handleChange}
-                className="rounded"
-              />
-              <span className="text-sm font-medium text-gray-700">파일 첨부 필수</span>
-            </label>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">설명</label>
-            <textarea
-              name="description"
-              value={programData.description}
-              onChange={handleChange}
-              rows="4"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder="프로그램 설명을 입력하세요"
-            />
-          </div>
-
-          {/* 🔥 이미지 URL */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">이미지 URL</label>
-            <input
-              type="text"
-              name="imageUrl"
-              value={programData.imageUrl}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder="https://example.com/image.jpg"
-            />
-            <p className="text-xs text-gray-500 mt-1">프로그램 대표 이미지 URL을 입력하세요</p>
-          </div>
-
-          {/* 🔥 첨부 파일 URL */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">첨부 파일 URL</label>
-            <input
-              type="text"
-              name="attachedFiles"
-              value={Array.isArray(programData.attachedFiles) ? programData.attachedFiles.join(', ') : ''}
-              onChange={(e) => {
-                const urls = e.target.value.split(',').map(url => url.trim()).filter(url => url);
-                setProgramData(prev => ({
-                  ...prev,
-                  attachedFiles: urls
-                }));
-              }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder="https://example.com/file1.pdf, https://example.com/file2.pdf"
-            />
-            <p className="text-xs text-gray-500 mt-1">여러 파일 URL을 쉼표(,)로 구분하여 입력하세요</p>
-          </div>
-        </div>
-
-        <div className="sticky bottom-0 bg-gray-50 px-6 py-4 rounded-b-2xl border-t border-gray-200 flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300"
-          >
-            취소
-          </button>
-          <button
-            onClick={onSave}
-            className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
-          >
-            {isEditing ? '수정' : '추가'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// 🔥 공지사항 추가/수정 모달 (이미지 및 파일 첨부 포함)
-function NoticeFormModal({ isOpen, onClose, onSave, noticeData, setNoticeData, isEditing }) {
-  if (!isOpen) return null;
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setNoticeData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-t-2xl">
-          <h2 className="text-2xl font-bold">{isEditing ? '공지사항 수정' : '공지사항 추가'}</h2>
-        </div>
-
-        <div className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">제목 *</label>
-            <input
-              type="text"
-              name="title"
-              value={noticeData.title}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder="제목을 입력하세요"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">분야</label>
-              <select
-                name="field"
-                value={noticeData.field}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="전체">전체</option>
-                <option value="바이오">바이오</option>
-                <option value="반도체">반도체</option>
-                <option value="물류">물류</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">작성자</label>
-              <input
-                type="text"
-                name="author"
-                value={noticeData.author}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">내용 *</label>
-            <textarea
-              name="content"
-              value={noticeData.content}
-              onChange={handleChange}
-              rows="10"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder="내용을 입력하세요"
-            />
-          </div>
-
-          {/* 🔥 이미지 URL */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">이미지 URL</label>
-            <input
-              type="text"
-              name="imageUrl"
-              value={noticeData.imageUrl}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder="https://example.com/image.jpg"
-            />
-            <p className="text-xs text-gray-500 mt-1">공지사항 이미지 URL을 입력하세요</p>
-          </div>
-
-          {/* 🔥 첨부 파일 URL */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">첨부 파일 URL</label>
-            <input
-              type="text"
-              name="attachedFiles"
-              value={Array.isArray(noticeData.attachedFiles) ? noticeData.attachedFiles.join(', ') : ''}
-              onChange={(e) => {
-                const urls = e.target.value.split(',').map(url => url.trim()).filter(url => url);
-                setNoticeData(prev => ({
-                  ...prev,
-                  attachedFiles: urls
-                }));
-              }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder="https://example.com/file1.pdf, https://example.com/file2.pdf"
-            />
-            <p className="text-xs text-gray-500 mt-1">여러 파일 URL을 쉼표(,)로 구분하여 입력하세요</p>
-          </div>
-        </div>
-
-        <div className="sticky bottom-0 bg-gray-50 px-6 py-4 rounded-b-2xl border-t border-gray-200 flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300"
-          >
-            취소
-          </button>
-          <button
-            onClick={onSave}
-            className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
-          >
-            {isEditing ? '수정' : '추가'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// 학생 추가/수정 모달
 function StudentFormModal({ isOpen, onClose, onSave, studentData, setStudentData, isEditing }) {
   if (!isOpen) return null;
 

@@ -22,6 +22,8 @@ export const AppProvider = ({ children }) => {
   const [notices, setNotices] = useState([]);
   const [programApplications, setProgramApplications] = useState([]);
   const [pendingUsers, setPendingUsers] = useState([]);
+  const [coreCourses, setCoreCourses] = useState([]);
+  const [coreCoursesSubmissions, setCoreCoursesSubmissions] = useState([]);
 
   // Supabase에서 학생 데이터 로드
   const loadStudentsFromSupabase = async () => {
@@ -128,7 +130,7 @@ export const AppProvider = ({ children }) => {
     try {
       const { data, error } = await supabase
         .from('program_applications')
-        .select('*')
+        .select('id, program_id, student_id, status, created_at, attached_files')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -138,8 +140,9 @@ export const AppProvider = ({ children }) => {
         programId: app.program_id,
         studentId: app.student_id,
         status: app.status,
-        appliedDate: app.applied_date,
-        completedDate: app.completed_date
+        appliedDate: app.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+        completedDate: null, // 완료일은 나중에 추가
+        attachedFiles: app.attached_files || []
       }));
 
       console.log('✅ 프로그램 신청 데이터 로드 완료:', formattedApplications.length);
@@ -354,6 +357,8 @@ export const AppProvider = ({ children }) => {
   // 프로그램 추가/수정
   const addOrUpdateProgram = async (programData, existingProgram = null) => {
     try {
+      console.log('프로그램 저장 - attachedFiles:', programData.attachedFiles);
+      
       const dbData = {
         title: programData.title,
         category: programData.category,
@@ -366,8 +371,10 @@ export const AppProvider = ({ children }) => {
         score: programData.score,
         description: programData.description || null,
         image_url: programData.imageUrl || null,
-        attached_files: programData.attachedFiles || []
+        attached_files: JSON.parse(JSON.stringify(programData.attachedFiles || []))
       };
+      
+      console.log('Supabase 저장 데이터:', dbData);
 
       if (existingProgram) {
         const { error } = await supabase
@@ -462,7 +469,7 @@ export const AppProvider = ({ children }) => {
   };
 
   // 프로그램 신청
-  const applyForProgram = async (programId) => {
+  const applyForProgram = async (programId, attachedFiles = []) => {
     try {
       if (!currentUser) {
         throw new Error('로그인이 필요합니다.');
@@ -479,13 +486,15 @@ export const AppProvider = ({ children }) => {
         throw new Error('이미 신청한 프로그램입니다.');
       }
 
+      console.log('신청 시 첨부파일:', attachedFiles);
+
       const { error } = await supabase
         .from('program_applications')
         .insert([{
           program_id: programId,
           student_id: currentUser.id,
           status: 'pending',
-          applied_date: new Date().toISOString().split('T')[0]
+          attached_files: JSON.parse(JSON.stringify(attachedFiles))
         }]);
 
       if (error) throw error;
@@ -552,8 +561,7 @@ export const AppProvider = ({ children }) => {
       const { error: appError } = await supabase
         .from('program_applications')
         .update({
-          status: 'completed',
-          completed_date: new Date().toISOString().split('T')[0]
+          status: 'completed'
         })
         .eq('id', applicationId);
 
@@ -641,6 +649,309 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  // ==========================================
+  // 핵심 교과목 관련 함수들
+  // ==========================================
+
+  // Supabase에서 핵심 교과목 로드
+  const loadCoreCoursesFromSupabase = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('core_courses')
+        .select('*')
+        .eq('is_active', true)
+        .order('order_index', { ascending: true });
+
+      if (error) throw error;
+
+      const formattedCourses = data.map(course => ({
+        id: course.id,
+        field: course.field,
+        department: course.department,
+        courseName: course.course_name,
+        courseCode: course.course_code,
+        credits: course.credits,
+        courseType: course.course_type,
+        orderIndex: course.order_index,
+        isActive: course.is_active,
+        createdAt: course.created_at,
+        updatedBy: course.updated_by
+      }));
+
+      setCoreCourses(formattedCourses);
+    } catch (error) {
+      console.error('핵심 교과목 로드 실패:', error);
+    }
+  };
+
+  // Supabase에서 학생 제출 데이터 로드
+  const loadCoreCoursesSubmissionsFromSupabase = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('core_courses_submissions')
+        .select('*');
+
+      if (error) throw error;
+
+      const formattedSubmissions = data.map(sub => ({
+        id: sub.id,
+        studentId: sub.student_id,
+        field: sub.field,
+        department: sub.department,
+        completedCourses: sub.completed_courses || [],
+        totalCompletedCount: sub.total_completed_count,
+        totalScore: sub.total_score,
+        transcriptFile: sub.transcript_file,
+        transcriptFileName: sub.transcript_file_name,
+        transcriptFileSize: sub.transcript_file_size,
+        status: sub.status,
+        rejectionReason: sub.rejection_reason,
+        submittedAt: sub.submitted_at,
+        reviewedAt: sub.reviewed_at,
+        reviewedBy: sub.reviewed_by,
+        createdAt: sub.created_at,
+        updatedAt: sub.updated_at
+      }));
+
+      setCoreCoursesSubmissions(formattedSubmissions);
+    } catch (error) {
+      console.error('교과목 제출 데이터 로드 실패:', error);
+    }
+  };
+
+  // 교과목 추가
+  const addCoreCourse = async (courseData) => {
+    try {
+      const { data, error } = await supabase
+        .from('core_courses')
+        .insert([{
+          field: courseData.field,
+          department: courseData.department,
+          course_name: courseData.courseName,
+          course_code: courseData.courseCode,
+          credits: courseData.credits,
+          course_type: courseData.courseType,
+          order_index: courseData.orderIndex || 0,
+          updated_by: currentUser?.username || 'admin'
+        }])
+        .select();
+
+      if (error) throw error;
+
+      console.log('✅ 교과목 추가 완료');
+      await loadCoreCoursesFromSupabase();
+      return { success: true };
+    } catch (error) {
+      console.error('교과목 추가 실패:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // 교과목 수정
+  const updateCoreCourse = async (courseId, courseData) => {
+    try {
+      const { error } = await supabase
+        .from('core_courses')
+        .update({
+          course_name: courseData.courseName,
+          course_code: courseData.courseCode,
+          credits: courseData.credits,
+          course_type: courseData.courseType,
+          order_index: courseData.orderIndex,
+          updated_by: currentUser?.username || 'admin'
+        })
+        .eq('id', courseId);
+
+      if (error) throw error;
+
+      console.log('✅ 교과목 수정 완료');
+      await loadCoreCoursesFromSupabase();
+      return { success: true };
+    } catch (error) {
+      console.error('교과목 수정 실패:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // 교과목 삭제
+  const deleteCoreCourse = async (courseId) => {
+    try {
+      const { error } = await supabase
+        .from('core_courses')
+        .delete()
+        .eq('id', courseId);
+
+      if (error) throw error;
+
+      console.log('✅ 교과목 삭제 완료');
+      await loadCoreCoursesFromSupabase();
+      return { success: true };
+    } catch (error) {
+      console.error('교과목 삭제 실패:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // 학생 교과목 제출
+  const submitCoreCourses = async (submissionData) => {
+    try {
+      console.log('=== 핵심교과목 제출 시작 ===');
+      console.log('제출 데이터:', submissionData);
+      console.log('학생 ID:', submissionData.studentId);
+      
+      const student = students.find(s => s.id === submissionData.studentId);
+      console.log('학생 정보:', student);
+      
+      if (!student) {
+        throw new Error('학생 정보를 찾을 수 없습니다.');
+      }
+      
+      // 기존 제출이 있는지 확인
+      console.log('기존 제출 확인 중...');
+      const { data: existing, error: checkError } = await supabase
+        .from('core_courses_submissions')
+        .select('id, status')
+        .eq('student_id', submissionData.studentId)
+        .maybeSingle();
+
+      console.log('기존 제출:', existing);
+      console.log('조회 에러:', checkError);
+
+      let result;
+      if (existing) {
+        // 업데이트
+        console.log('기존 제출 업데이트 중...');
+        result = await supabase
+          .from('core_courses_submissions')
+          .update({
+            field: student.field,
+            department: student.department,
+            completed_courses: submissionData.completedCourses,
+            total_completed_count: submissionData.totalCompletedCount,
+            total_score: submissionData.totalScore,
+            transcript_file: submissionData.transcriptFile,
+            transcript_file_name: submissionData.transcriptFileName,
+            transcript_file_size: submissionData.transcriptFileSize,
+            status: 'pending',
+            submitted_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('student_id', submissionData.studentId);
+      } else {
+        // 신규 삽입
+        console.log('신규 제출 생성 중...');
+        result = await supabase
+          .from('core_courses_submissions')
+          .insert([{
+            student_id: submissionData.studentId,
+            field: student.field,
+            department: student.department,
+            completed_courses: submissionData.completedCourses,
+            total_completed_count: submissionData.totalCompletedCount,
+            total_score: submissionData.totalScore,
+            transcript_file: submissionData.transcriptFile,
+            transcript_file_name: submissionData.transcriptFileName,
+            transcript_file_size: submissionData.transcriptFileSize,
+            status: 'pending',
+            submitted_at: new Date().toISOString()
+          }]);
+      }
+
+      console.log('Supabase 결과:', result);
+
+      if (result.error) {
+        console.error('❌ Supabase 에러:', result.error);
+        throw result.error;
+      }
+
+      console.log('✅ 교과목 제출 완료');
+      await loadCoreCoursesSubmissionsFromSupabase();
+      return { success: true };
+    } catch (error) {
+      console.error('❌ 교과목 제출 실패:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // 제출 승인
+  const approveCoreCourses = async (submissionId) => {
+    try {
+      // 제출 데이터 가져오기
+      const submission = coreCoursesSubmissions.find(s => s.id === submissionId);
+      if (!submission) throw new Error('제출 데이터를 찾을 수 없습니다.');
+
+      // 1. 제출 상태 업데이트
+      const { error: submissionError } = await supabase
+        .from('core_courses_submissions')
+        .update({
+          status: 'approved',
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: currentUser?.username || 'admin'
+        })
+        .eq('id', submissionId);
+
+      if (submissionError) throw submissionError;
+
+      // 2. 학생 점수 업데이트
+      const { error: studentError } = await supabase
+        .from('users')
+        .update({
+          core_courses_score: submission.totalScore
+        })
+        .eq('id', submission.studentId);
+
+      if (studentError) throw studentError;
+
+      console.log('✅ 교과목 승인 완료');
+      await loadCoreCoursesSubmissionsFromSupabase();
+      await loadStudentsFromSupabase();
+      return { success: true };
+    } catch (error) {
+      console.error('교과목 승인 실패:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // 제출 반려
+  const rejectCoreCourses = async (submissionId, reason) => {
+    try {
+      const { error } = await supabase
+        .from('core_courses_submissions')
+        .update({
+          status: 'rejected',
+          rejection_reason: reason,
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: currentUser?.username || 'admin'
+        })
+        .eq('id', submissionId);
+
+      if (error) throw error;
+
+      console.log('✅ 교과목 반려 완료');
+      await loadCoreCoursesSubmissionsFromSupabase();
+      return { success: true };
+    } catch (error) {
+      console.error('교과목 반려 실패:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // 학과별 교과목 조회
+  const getCoreCoursesByDepartment = (field, department) => {
+    return coreCourses.filter(
+      c => c.field === field && c.department === department
+    );
+  };
+
+  // 학생의 제출 데이터 조회
+  const getStudentSubmission = (studentId) => {
+    return coreCoursesSubmissions.find(s => s.studentId === studentId);
+  };
+
+  // ==========================================
+  // 끝: 핵심 교과목 관련 함수들
+  // ==========================================
+
   // 초기 데이터 로드
   useEffect(() => {
     if (currentUser) {
@@ -648,6 +959,8 @@ export const AppProvider = ({ children }) => {
       loadProgramsFromSupabase();
       loadNoticesFromSupabase();
       loadProgramApplicationsFromSupabase();
+      loadCoreCoursesFromSupabase();
+      loadCoreCoursesSubmissionsFromSupabase();
 
       // 🔥 마스터 권한일 때만 pending 사용자 로드
       if (currentUser.role === 'master') {
@@ -665,6 +978,8 @@ export const AppProvider = ({ children }) => {
       notices,
       programApplications,
       pendingUsers,
+      coreCourses,
+      coreCoursesSubmissions,
       login,
       addOrUpdateStudent,
       deleteStudent,
@@ -679,7 +994,15 @@ export const AppProvider = ({ children }) => {
       rejectApplication,
       completeProgram,
       approveUser,
-      rejectUser
+      rejectUser,
+      addCoreCourse,
+      updateCoreCourse,
+      deleteCoreCourse,
+      submitCoreCourses,
+      approveCoreCourses,
+      rejectCoreCourses,
+      getCoreCoursesByDepartment,
+      getStudentSubmission
     }}>
       {children}
     </AppContext.Provider>

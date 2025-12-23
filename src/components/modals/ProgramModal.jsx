@@ -27,6 +27,7 @@ function ProgramModal({ isOpen, onClose, program }) {
 
   useEffect(() => {
     if (isEditMode && program) {
+      console.log('🔧 수정 모드 - 프로그램 데이터 로드:', program);
       setFormData({
         title: program.title || '',
         category: program.category || '비교과',
@@ -47,7 +48,8 @@ function ProgramModal({ isOpen, onClose, program }) {
       if (program.attachedFiles) {
         setUploadedFiles(program.attachedFiles);
       }
-    } else {
+    } else if (!program) {
+      console.log('➕ 추가 모드 - 초기화');
       setFormData({
         title: '',
         category: '비교과',
@@ -65,7 +67,7 @@ function ProgramModal({ isOpen, onClose, program }) {
       setImagePreview(null);
       setUploadedFiles([]);
     }
-  }, [isEditMode, program, isOpen]);
+  }, [program]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -95,15 +97,27 @@ function ProgramModal({ isOpen, onClose, program }) {
     }
   };
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
-    const newFiles = files.map(file => ({
-      id: Date.now() + Math.random(),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      data: file
-    }));
+    
+    // 파일을 Base64로 변환
+    const filePromises = files.map(file => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          resolve({
+            id: Date.now() + Math.random(),
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            data: reader.result // Base64 데이터
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    const newFiles = await Promise.all(filePromises);
 
     setUploadedFiles(prev => [...prev, ...newFiles]);
     setFormData(prev => ({

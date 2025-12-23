@@ -3,6 +3,7 @@ import { useAppContext } from '../context/AppContext';
 import ProgramDetailModal from '../components/modals/ProgramDetailModal';
 import NoticeDetailModal from '../components/modals/NoticeDetailModal';
 import { supabase } from '../lib/supabase';
+import CoreCoursesCheckPage from './student/CoreCoursesCheckPage';
 
 function StudentPage() {
   const {
@@ -166,15 +167,56 @@ function StudentPage() {
     </div>
   );
 
-  const renderProgramsTab = () => (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-800">프로그램</h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {programs
-          .filter(p => p.field === currentUser?.field || p.field === '전체')
-          .filter(p => p.status === '모집중')
-          .map(program => {
+  const renderProgramsTab = () => {
+    console.log('=== 프로그램 필터링 디버깅 ===');
+    console.log('📊 전체 프로그램 수:', programs.length);
+    console.log('👤 학생 정보:', currentUser);
+    console.log('🎯 학생 분야:', currentUser?.field);
+    
+    if (programs.length > 0) {
+      console.log('📋 전체 프로그램 목록:', programs);
+      programs.forEach((p, idx) => {
+        console.log(`  ${idx + 1}. ${p.title} | 분야: ${p.field} | 상태: ${p.status}`);
+      });
+    }
+    
+    const filteredByField = programs.filter(p => {
+      const match = p.field === currentUser?.field || p.field === '전체';
+      if (!match) {
+        console.log(`❌ 분야 불일치: "${p.title}" (${p.field} !== ${currentUser?.field})`);
+      }
+      return match;
+    });
+    console.log('✅ 분야 필터링 후:', filteredByField.length, '개');
+    
+    const filteredByStatus = filteredByField.filter(p => {
+      const match = p.status === '모집중';
+      if (!match) {
+        console.log(`❌ 상태 불일치: "${p.title}" (${p.status} !== 모집중)`);
+      }
+      return match;
+    });
+    console.log('✅ 최종 표시 프로그램:', filteredByStatus.length, '개');
+    
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-gray-800">프로그램</h2>
+
+        {filteredByStatus.length === 0 && (
+          <div className="text-center py-12 bg-white rounded-lg shadow-md">
+            <div className="text-6xl mb-4">📚</div>
+            <p className="text-gray-500 text-lg font-semibold">현재 모집중인 프로그램이 없습니다.</p>
+            <div className="mt-4 text-sm text-gray-400">
+              <p>분야: <span className="font-semibold">{currentUser?.field || '미설정'}</span></p>
+              <p>전체 등록된 프로그램: {programs.length}개</p>
+              <p className="mt-2 text-xs">F12 → Console에서 상세 정보를 확인하세요.</p>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredByStatus.map(program => {
             const hasApplied = myApplications.some(app => app.programId === program.id);
             
             return (
@@ -198,6 +240,7 @@ function StudentPage() {
                         {program.category}
                       </span>
                     </div>
+                    <p><span className="font-semibold">분야:</span> {program.field}</p>
                     <p><span className="font-semibold">기간:</span> {program.startDate} ~ {program.endDate}</p>
                     <p className="text-blue-600 font-bold">
                       <span className="font-semibold text-gray-600">점수:</span> {program.score}점
@@ -232,9 +275,10 @@ function StudentPage() {
               </div>
             );
           })}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderApplicationHistoryTab = () => (
     <div className="space-y-6">
@@ -399,6 +443,16 @@ function StudentPage() {
             >
               📢 공지사항
             </button>
+            <button
+              onClick={() => setActiveTab('coreCourses')}
+              className={`flex-1 px-6 py-4 font-semibold ${
+                activeTab === 'coreCourses'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-600 hover:text-blue-600'
+              }`}
+            >
+              ✅ 핵심교과목
+            </button>
           </div>
         </div>
 
@@ -407,6 +461,7 @@ function StudentPage() {
           {activeTab === 'programs' && renderProgramsTab()}
           {activeTab === 'history' && renderApplicationHistoryTab()}
           {activeTab === 'notices' && renderNoticesTab()}
+          {activeTab === 'coreCourses' && <CoreCoursesCheckPage />}
         </div>
       </div>
 

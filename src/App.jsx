@@ -6,6 +6,9 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import AdminPage from './pages/AdminPage';
 import StudentPage from './pages/StudentPage';
+import CoreCoursesSettingPage from './pages/admin/CoreCoursesSettingPage';
+import CoreCoursesReviewPage from './pages/admin/CoreCoursesReviewPage';
+import CoreCoursesCheckPage from './pages/student/CoreCoursesCheckPage';
 import ConfirmModal from './components/modals/ConfirmModal';
 import AlertModal from './components/modals/AlertModal';
 
@@ -49,10 +52,34 @@ function App() {
             }
           />
           <Route
+            path="/admin/core-courses/setting"
+            element={
+              <PrivateRoute allowedRoles={['admin', 'master']}>
+                <CoreCoursesSettingPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/core-courses/review"
+            element={
+              <PrivateRoute allowedRoles={['admin', 'master']}>
+                <CoreCoursesReviewPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
             path="/student"
             element={
               <PrivateRoute allowedRoles={['student']}>
                 <StudentPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/student/core-courses"
+            element={
+              <PrivateRoute allowedRoles={['student']}>
+                <CoreCoursesCheckPage />
               </PrivateRoute>
             }
           />
