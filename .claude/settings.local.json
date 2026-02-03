@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(where node npm)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
