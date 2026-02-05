@@ -628,7 +628,7 @@ export const AppProvider = ({ children }) => {
         .from('core_courses_2025_11_27_07_17')
         .select('*')
         .eq('is_active', true)
-        .order('order_index', { ascending: true });
+        .order('id', { ascending: true });
 
       if (error) throw error;
 
