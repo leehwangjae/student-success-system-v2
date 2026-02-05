@@ -99,7 +99,16 @@ function ProgramModal({ isOpen, onClose, program }) {
 
   const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
-    
+
+    // 파일 크기 제한 확인 (10MB)
+    const maxSize = 10 * 1024 * 1024;
+    for (const file of files) {
+      if (file.size > maxSize) {
+        showAlert(`${file.name} 파일이 너무 큽니다. (최대 10MB)`);
+        return;
+      }
+    }
+
     // 파일을 Base64로 변환
     const filePromises = files.map(file => {
       return new Promise((resolve) => {
@@ -109,20 +118,30 @@ function ProgramModal({ isOpen, onClose, program }) {
             id: Date.now() + Math.random(),
             name: file.name,
             size: file.size,
-            type: file.type,
-            data: reader.result // Base64 데이터
+            type: file.type || 'application/octet-stream',
+            data: reader.result // Base64 데이터 (data:mime/type;base64,... 형식)
           });
         };
+        reader.onerror = () => {
+          showAlert(`${file.name} 파일 읽기에 실패했습니다.`);
+          resolve(null);
+        };
+        // Base64로 인코딩
         reader.readAsDataURL(file);
       });
     });
 
     const newFiles = await Promise.all(filePromises);
+    const validFiles = newFiles.filter(f => f !== null);
 
-    setUploadedFiles(prev => [...prev, ...newFiles]);
+    if (validFiles.length === 0) {
+      return;
+    }
+
+    setUploadedFiles(prev => [...prev, ...validFiles]);
     setFormData(prev => ({
       ...prev,
-      attachedFiles: [...prev.attachedFiles, ...newFiles]
+      attachedFiles: [...prev.attachedFiles, ...validFiles]
     }));
   };
 

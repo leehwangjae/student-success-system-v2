@@ -3,90 +3,69 @@ import React from 'react';
 function ProgramDetailModal({ isOpen, onClose, program }) {
   if (!isOpen || !program) return null;
 
-  // 🔥 Base64 파일 다운로드 핸들러 (수정됨)
+  // 파일 다운로드 핸들러 (인코딩 문제 해결)
   const downloadBase64File = (fileObj) => {
     try {
-      console.log('📥 Base64 파일 다운로드 시작:', fileObj.name);
-      console.log('📦 fileObj 전체 구조:', JSON.stringify(fileObj, null, 2));
-      console.log('📦 fileObj.data 타입:', typeof fileObj.data);
-      
-      let base64Data;
-      
-      // data가 객체인 경우 (이중 JSON 파싱)
-      if (typeof fileObj.data === 'object' && fileObj.data !== null) {
-        console.log('⚠️ data가 객체임, 내부 구조 확인:', JSON.stringify(fileObj.data, null, 2));
-        
-        // data 객체 안에서 base64 문자열 찾기
-        if (fileObj.data.data) {
-          console.log('✅ data.data 발견');
-          base64Data = typeof fileObj.data.data === 'string' ? fileObj.data.data : null;
-        } else if (fileObj.data.base64) {
-          console.log('✅ data.base64 발견');
-          base64Data = fileObj.data.base64;
+      console.log('📥 파일 다운로드 시작:', fileObj.name);
+
+      let base64Data = fileObj.data;
+
+      // data가 객체인 경우 처리
+      if (typeof base64Data === 'object' && base64Data !== null) {
+        if (base64Data.data) {
+          base64Data = base64Data.data;
         } else {
-          // 객체를 다시 문자열로 시도
-          console.log('⚠️ 알려진 키가 없음, 전체 객체를 문자열로 변환 시도');
-          const dataStr = JSON.stringify(fileObj.data);
-          if (dataStr.includes('base64')) {
-            console.log('✅ 객체에 base64 문자열 포함됨');
-            base64Data = dataStr;
-          }
+          console.error('❌ Base64 데이터를 찾을 수 없음');
+          alert('파일 데이터를 찾을 수 없습니다.');
+          return;
         }
       }
-      // data가 문자열인 경우 (정상)
-      else if (typeof fileObj.data === 'string') {
-        base64Data = fileObj.data;
-        console.log('✅ data가 문자열, 길이:', base64Data.length);
-      }
-      
-      if (!base64Data) {
-        console.error('❌ Base64 데이터를 찾을 수 없음');
-        alert('파일 데이터를 찾을 수 없습니다.');
+
+      if (typeof base64Data !== 'string') {
+        console.error('❌ Base64 데이터가 문자열이 아님');
+        alert('파일 데이터 형식이 올바르지 않습니다.');
         return;
       }
-      
-      // Base64 추출 (data:...;base64, 부분 제거)
-      let cleanBase64;
-      if (base64Data.includes(',')) {
-        cleanBase64 = base64Data.split(',')[1];
-        console.log('✅ Base64 추출 (쉼표 기준)');
-      } else if (base64Data.includes('base64')) {
-        cleanBase64 = base64Data.split('base64')[1];
-        console.log('✅ Base64 추출 (base64 문자열 기준)');
-      } else {
-        cleanBase64 = base64Data;
-        console.log('✅ 순수 Base64 데이터 사용');
+
+      // Base64 데이터 추출
+      const base64Match = base64Data.match(/base64,(.+)/);
+      const cleanBase64 = base64Match ? base64Match[1] : base64Data;
+
+      // Base64를 바이너리로 변환
+      const binaryString = atob(cleanBase64);
+      const bytes = new Uint8Array(binaryString.length);
+
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
       }
-      
-      console.log('🔍 정제된 Base64 데이터 길이:', cleanBase64.length);
-      console.log('🔍 첫 50자:', cleanBase64.substring(0, 50));
-      
-      // Base64를 Blob으로 변환
-      const byteCharacters = atob(cleanBase64);
-      const byteNumbers = new Array(byteCharacters.length);
-      
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: fileObj.type || 'application/octet-stream' });
-      
-      console.log('📊 Blob 생성 완료:', blob.size, 'bytes');
-      
-      // 다운로드 트리거
+
+      // Blob 생성 (charset 명시)
+      const mimeType = fileObj.type || 'application/octet-stream';
+      const blob = new Blob([bytes], { type: mimeType });
+
+      console.log('📊 Blob 생성:', blob.size, 'bytes, MIME:', mimeType);
+
+      // 다운로드 링크 생성 (UTF-8 파일명 지원)
       const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
+      link.href = url;
+
+      // 파일명 인코딩 처리
       link.download = fileObj.name;
+      link.setAttribute('download', fileObj.name);
+
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
-      
-      console.log('✅ Base64 파일 다운로드 완료');
+
+      // 정리
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 100);
+
+      console.log('✅ 파일 다운로드 완료');
     } catch (error) {
-      console.error('❌ Base64 파일 다운로드 실패:', error);
-      console.error('❌ 에러 스택:', error.stack);
+      console.error('❌ 파일 다운로드 실패:', error);
       alert('파일 다운로드에 실패했습니다: ' + error.message);
     }
   };

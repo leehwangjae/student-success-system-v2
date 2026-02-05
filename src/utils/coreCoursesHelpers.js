@@ -139,15 +139,67 @@ export function fileToBase64(file) {
 }
 
 /**
- * Base64 디코딩 및 다운로드
+ * Base64 디코딩 및 다운로드 (인코딩 문제 해결)
  */
 export function downloadBase64File(base64Data, fileName) {
-  const link = document.createElement('a');
-  link.href = base64Data;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  try {
+    console.log('📥 파일 다운로드 시작:', fileName);
+
+    if (!base64Data || typeof base64Data !== 'string') {
+      console.error('❌ Base64 데이터가 유효하지 않음');
+      alert('파일 데이터가 올바르지 않습니다.');
+      return;
+    }
+
+    // Base64 데이터 추출 (data:...;base64, 부분 제거)
+    let cleanBase64 = base64Data;
+    if (base64Data.includes(',')) {
+      cleanBase64 = base64Data.split(',')[1];
+    }
+
+    // MIME 타입 추출
+    let mimeType = 'application/octet-stream';
+    if (base64Data.startsWith('data:')) {
+      const mimeMatch = base64Data.match(/data:([^;]+)/);
+      if (mimeMatch) {
+        mimeType = mimeMatch[1];
+      }
+    }
+
+    // Base64를 바이너리로 변환
+    const binaryString = atob(cleanBase64);
+    const bytes = new Uint8Array(binaryString.length);
+
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+
+    // Blob 생성
+    const blob = new Blob([bytes], { type: mimeType });
+
+    console.log('📊 Blob 생성:', blob.size, 'bytes, MIME:', mimeType);
+
+    // 다운로드 링크 생성
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.download = fileName;
+    link.setAttribute('download', fileName);
+
+    document.body.appendChild(link);
+    link.click();
+
+    // 정리
+    setTimeout(() => {
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 100);
+
+    console.log('✅ 파일 다운로드 완료');
+  } catch (error) {
+    console.error('❌ 파일 다운로드 실패:', error);
+    alert('파일 다운로드에 실패했습니다: ' + error.message);
+  }
 }
 
 /**
