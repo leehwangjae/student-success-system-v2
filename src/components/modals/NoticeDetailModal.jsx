@@ -3,10 +3,10 @@ import React from 'react';
 function NoticeDetailModal({ isOpen, onClose, notice }) {
   if (!isOpen || !notice) return null;
 
-  // 파일 다운로드 핸들러 (인코딩 문제 해결)
+  // 파일 다운로드 핸들러 (바이너리 무결성 보장)
   const downloadBase64File = (fileObj) => {
     try {
-      console.log('📥 파일 다운로드 시작:', fileObj.name);
+      console.log('📥 파일 다운로드 시작:', fileObj.name, 'Type:', fileObj.type);
 
       let base64Data = fileObj.data;
 
@@ -27,11 +27,32 @@ function NoticeDetailModal({ isOpen, onClose, notice }) {
         return;
       }
 
-      // Base64 데이터 추출
+      // Data URL을 직접 사용 (가장 안전한 방법)
+      // FileReader.readAsDataURL()로 생성된 데이터를 그대로 사용
+      if (base64Data.startsWith('data:')) {
+        console.log('✅ Data URL 직접 사용 (무손실)');
+        const link = document.createElement('a');
+        link.href = base64Data;
+        link.download = fileObj.name;
+        link.style.display = 'none';
+
+        document.body.appendChild(link);
+        link.click();
+
+        setTimeout(() => {
+          document.body.removeChild(link);
+        }, 100);
+
+        console.log('✅ 파일 다운로드 완료');
+        return;
+      }
+
+      // Data URL이 아닌 경우 (레거시 처리)
+      console.warn('⚠️ 레거시 Base64 데이터 감지, 변환 시도');
       const base64Match = base64Data.match(/base64,(.+)/);
       const cleanBase64 = base64Match ? base64Match[1] : base64Data;
 
-      // Base64를 바이너리로 변환
+      // Base64를 바이너리로 안전하게 변환
       const binaryString = atob(cleanBase64);
       const bytes = new Uint8Array(binaryString.length);
 
@@ -39,25 +60,22 @@ function NoticeDetailModal({ isOpen, onClose, notice }) {
         bytes[i] = binaryString.charCodeAt(i);
       }
 
-      // Blob 생성 (charset 명시)
+      // Blob 생성
       const mimeType = fileObj.type || 'application/octet-stream';
       const blob = new Blob([bytes], { type: mimeType });
 
       console.log('📊 Blob 생성:', blob.size, 'bytes, MIME:', mimeType);
 
-      // 다운로드 링크 생성 (UTF-8 파일명 지원)
+      // 다운로드
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
       link.href = url;
-
-      // 파일명 인코딩 처리
       link.download = fileObj.name;
-      link.setAttribute('download', fileObj.name);
+      link.style.display = 'none';
 
       document.body.appendChild(link);
       link.click();
 
-      // 정리
       setTimeout(() => {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);

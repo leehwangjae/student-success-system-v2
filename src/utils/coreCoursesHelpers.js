@@ -139,7 +139,7 @@ export function fileToBase64(file) {
 }
 
 /**
- * Base64 디코딩 및 다운로드 (인코딩 문제 해결)
+ * Base64 디코딩 및 다운로드 (바이너리 무결성 보장)
  */
 export function downloadBase64File(base64Data, fileName) {
   try {
@@ -151,7 +151,30 @@ export function downloadBase64File(base64Data, fileName) {
       return;
     }
 
-    // Base64 데이터 추출 (data:...;base64, 부분 제거)
+    // Data URL을 직접 사용 (가장 안전한 방법)
+    // FileReader.readAsDataURL()로 생성된 데이터를 그대로 사용
+    if (base64Data.startsWith('data:')) {
+      console.log('✅ Data URL 직접 사용 (무손실)');
+      const link = document.createElement('a');
+      link.href = base64Data;
+      link.download = fileName;
+      link.style.display = 'none';
+
+      document.body.appendChild(link);
+      link.click();
+
+      setTimeout(() => {
+        document.body.removeChild(link);
+      }, 100);
+
+      console.log('✅ 파일 다운로드 완료');
+      return;
+    }
+
+    // Data URL이 아닌 경우 (레거시 처리)
+    console.warn('⚠️ 레거시 Base64 데이터 감지, 변환 시도');
+
+    // Base64 데이터 추출
     let cleanBase64 = base64Data;
     if (base64Data.includes(',')) {
       cleanBase64 = base64Data.split(',')[1];
@@ -159,7 +182,7 @@ export function downloadBase64File(base64Data, fileName) {
 
     // MIME 타입 추출
     let mimeType = 'application/octet-stream';
-    if (base64Data.startsWith('data:')) {
+    if (base64Data.includes('data:')) {
       const mimeMatch = base64Data.match(/data:([^;]+)/);
       if (mimeMatch) {
         mimeType = mimeMatch[1];
@@ -179,17 +202,16 @@ export function downloadBase64File(base64Data, fileName) {
 
     console.log('📊 Blob 생성:', blob.size, 'bytes, MIME:', mimeType);
 
-    // 다운로드 링크 생성
+    // 다운로드
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.href = url;
     link.download = fileName;
-    link.setAttribute('download', fileName);
+    link.style.display = 'none';
 
     document.body.appendChild(link);
     link.click();
 
-    // 정리
     setTimeout(() => {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
