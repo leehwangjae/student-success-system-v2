@@ -631,14 +631,15 @@ export const AppProvider = ({ children }) => {
         .order('id', { ascending: true });
 
       if (error) {
-        console.error('핵심 교과목 Supabase 조회 오류:', error);
-        // 테이블이 없거나 권한이 없는 경우 빈 배열 설정
+        // 테이블이 없거나 권한이 없는 경우 조용히 빈 배열 설정
+        // console.error('핵심 교과목 Supabase 조회 오류:', error);
         setCoreCourses([]);
         return;
       }
 
       if (!data || data.length === 0) {
-        console.warn('핵심 교과목 데이터가 없습니다.');
+        // 데이터가 없는 경우 조용히 빈 배열 설정
+        // console.warn('핵심 교과목 데이터가 없습니다.');
         setCoreCourses([]);
         return;
       }
@@ -659,7 +660,8 @@ export const AppProvider = ({ children }) => {
 
       setCoreCourses(formattedCourses);
     } catch (error) {
-      console.error('핵심 교과목 로드 실패:', error);
+      // 예외 발생 시 조용히 처리
+      // console.error('핵심 교과목 로드 실패:', error);
       setCoreCourses([]);
     }
   };
@@ -671,13 +673,15 @@ export const AppProvider = ({ children }) => {
         .select('*');
 
       if (error) {
-        console.error('교과목 제출 Supabase 조회 오류:', error);
+        // 테이블이 없거나 권한이 없는 경우 조용히 빈 배열 설정
+        // console.error('교과목 제출 Supabase 조회 오류:', error);
         setCoreCoursesSubmissions([]);
         return;
       }
 
       if (!data || data.length === 0) {
-        console.warn('교과목 제출 데이터가 없습니다.');
+        // 데이터가 없는 경우 조용히 빈 배열 설정
+        // console.warn('교과목 제출 데이터가 없습니다.');
         setCoreCoursesSubmissions([]);
         return;
       }
@@ -704,7 +708,8 @@ export const AppProvider = ({ children }) => {
 
       setCoreCoursesSubmissions(formattedSubmissions);
     } catch (error) {
-      console.error('교과목 제출 데이터 로드 실패:', error);
+      // 예외 발생 시 조용히 처리
+      // console.error('교과목 제출 데이터 로드 실패:', error);
       setCoreCoursesSubmissions([]);
     }
   };
