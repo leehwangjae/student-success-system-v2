@@ -103,10 +103,20 @@ function MasterApprovalPage() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            🔑 마스터 승인 관리
-          </h1>
-          <p className="text-gray-600">교수 및 직원 계정 승인 요청 관리</p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">
+                🔑 마스터 승인 관리
+              </h1>
+              <p className="text-gray-600">교수 및 직원 계정 승인 요청 관리</p>
+            </div>
+            <button
+              onClick={() => window.location.href = '/admin'}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+            >
+              ← 관리자 페이지로
+            </button>
+          </div>
         </div>
 
         {pendingUsers.length === 0 ? (

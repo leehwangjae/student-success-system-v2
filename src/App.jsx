@@ -9,6 +9,7 @@ import StudentPage from './pages/StudentPage';
 import CoreCoursesSettingPage from './pages/admin/CoreCoursesSettingPage';
 import CoreCoursesReviewPage from './pages/admin/CoreCoursesReviewPage';
 import CoreCoursesCheckPage from './pages/student/CoreCoursesCheckPage';
+import MasterApprovalPage from './pages/MasterApprovalPage';
 import ConfirmModal from './components/modals/ConfirmModal';
 import AlertModal from './components/modals/AlertModal';
 
@@ -80,6 +81,14 @@ function App() {
             element={
               <PrivateRoute allowedRoles={['student']}>
                 <CoreCoursesCheckPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/master/approval"
+            element={
+              <PrivateRoute allowedRoles={['master']}>
+                <MasterApprovalPage />
               </PrivateRoute>
             }
           />
