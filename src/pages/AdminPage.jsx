@@ -943,7 +943,7 @@ function AdminPage() {
             >
               📊 교과목 검토
             </button>
-            {currentUser?.role === 'master' && (
+            {(currentUser?.role === 'master' || currentUser?.role === 'admin') && (
               <button
                 onClick={() => setActiveTab('approval')}
                 className={`flex-1 px-6 py-4 font-semibold ${
