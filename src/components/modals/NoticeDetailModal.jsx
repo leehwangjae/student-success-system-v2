@@ -129,11 +129,11 @@ function NoticeDetailModal({ isOpen, onClose, notice }) {
 
           {/* 이미지 */}
           {notice.imageUrl && (
-            <div className="rounded-lg overflow-hidden">
-              <img 
-                src={notice.imageUrl} 
+            <div className="rounded-lg overflow-hidden bg-gray-100">
+              <img
+                src={notice.imageUrl}
                 alt={notice.title}
-                className="w-full max-h-96 object-contain bg-gray-100"
+                className="w-full h-auto object-contain max-h-[600px]"
               />
             </div>
           )}

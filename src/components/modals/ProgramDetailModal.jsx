@@ -134,11 +134,11 @@ function ProgramDetailModal({ isOpen, onClose, program }) {
         <div className="p-6 space-y-6">
           {/* 이미지 */}
           {program.imageUrl && (
-            <div className="rounded-lg overflow-hidden">
-              <img 
-                src={program.imageUrl} 
+            <div className="rounded-lg overflow-hidden bg-gray-100">
+              <img
+                src={program.imageUrl}
                 alt={program.title}
-                className="w-full h-64 object-cover"
+                className="w-full h-auto object-contain max-h-[600px]"
               />
             </div>
           )}
