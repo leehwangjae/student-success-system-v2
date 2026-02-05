@@ -133,7 +133,8 @@ function NoticeDetailModal({ isOpen, onClose, notice }) {
               <img
                 src={notice.imageUrl}
                 alt={notice.title}
-                className="w-full h-auto object-contain max-h-[600px]"
+                className="w-full h-auto"
+                style={{ maxWidth: '100%', height: 'auto' }}
               />
             </div>
           )}

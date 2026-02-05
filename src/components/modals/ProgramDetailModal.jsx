@@ -138,7 +138,8 @@ function ProgramDetailModal({ isOpen, onClose, program }) {
               <img
                 src={program.imageUrl}
                 alt={program.title}
-                className="w-full h-auto object-contain max-h-[600px]"
+                className="w-full h-auto"
+                style={{ maxWidth: '100%', height: 'auto' }}
               />
             </div>
           )}
