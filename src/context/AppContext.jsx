@@ -630,7 +630,18 @@ export const AppProvider = ({ children }) => {
         .eq('is_active', true)
         .order('id', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('핵심 교과목 Supabase 조회 오류:', error);
+        // 테이블이 없거나 권한이 없는 경우 빈 배열 설정
+        setCoreCourses([]);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        console.warn('핵심 교과목 데이터가 없습니다.');
+        setCoreCourses([]);
+        return;
+      }
 
       const formattedCourses = data.map(course => ({
         id: course.id,
@@ -649,6 +660,7 @@ export const AppProvider = ({ children }) => {
       setCoreCourses(formattedCourses);
     } catch (error) {
       console.error('핵심 교과목 로드 실패:', error);
+      setCoreCourses([]);
     }
   };
 
@@ -658,7 +670,17 @@ export const AppProvider = ({ children }) => {
         .from('core_courses_submissions_2025_11_27_07_17')
         .select('*');
 
-      if (error) throw error;
+      if (error) {
+        console.error('교과목 제출 Supabase 조회 오류:', error);
+        setCoreCoursesSubmissions([]);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        console.warn('교과목 제출 데이터가 없습니다.');
+        setCoreCoursesSubmissions([]);
+        return;
+      }
 
       const formattedSubmissions = data.map(sub => ({
         id: sub.id,
@@ -683,6 +705,7 @@ export const AppProvider = ({ children }) => {
       setCoreCoursesSubmissions(formattedSubmissions);
     } catch (error) {
       console.error('교과목 제출 데이터 로드 실패:', error);
+      setCoreCoursesSubmissions([]);
     }
   };
 
