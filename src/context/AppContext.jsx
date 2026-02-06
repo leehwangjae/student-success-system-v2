@@ -921,7 +921,9 @@ export const AppProvider = ({ children }) => {
       loadCoreCoursesFromSupabase();
       loadCoreCoursesSubmissionsFromSupabase();
 
-      if (currentUser.role === 'master' || currentUser.accountType === 'master') {
+      // admin과 master 모두 승인 관리 가능
+      if (currentUser.role === 'admin' || currentUser.role === 'master' ||
+          currentUser.accountType === 'admin' || currentUser.accountType === 'master') {
         loadPendingUsersFromSupabase();
       }
     }

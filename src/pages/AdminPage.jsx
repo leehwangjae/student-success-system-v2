@@ -885,19 +885,17 @@ function AdminPage() {
             </div>
 
             <div className="flex gap-3">
-              {(currentUser?.role === 'master' || currentUser?.accountType === 'master') && (
-                <button
-                  onClick={() => window.location.href = '/master/approval'}
-                  className="px-6 py-2 bg-yellow-500 text-white hover:bg-yellow-600 rounded-lg font-semibold transition-colors flex items-center gap-2"
-                >
-                  🔑 승인 관리
-                  {pendingUsers.length > 0 && (
-                    <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                      {pendingUsers.length}
-                    </span>
-                  )}
-                </button>
-              )}
+              <button
+                onClick={() => window.location.href = '/master/approval'}
+                className="px-6 py-2 bg-yellow-500 text-white hover:bg-yellow-600 rounded-lg font-semibold transition-colors flex items-center gap-2"
+              >
+                🔑 승인 관리
+                {pendingUsers.length > 0 && (
+                  <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                    {pendingUsers.length}
+                  </span>
+                )}
+              </button>
               <button
                 onClick={handleLogout}
                 className="px-6 py-2 bg-white text-blue-600 hover:bg-blue-50 rounded-lg font-semibold transition-colors"
@@ -962,25 +960,23 @@ function AdminPage() {
             >
               📊 교과목 검토
             </button>
-            {(currentUser?.role === 'master' || currentUser?.accountType === 'master') && (
-              <button
-                onClick={() => setActiveTab('approval')}
-                className={`flex-1 px-6 py-4 font-semibold ${
-                  activeTab === 'approval'
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-600 hover:text-blue-600'
-                }`}
-              >
-                <span className="relative inline-block">
-                  승인 관리
-                  {pendingUsers.length > 0 && (
-                    <span className="absolute -top-1 -right-10 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                      New
-                    </span>
-                  )}
-                </span>
-              </button>
-            )}
+            <button
+              onClick={() => setActiveTab('approval')}
+              className={`flex-1 px-6 py-4 font-semibold ${
+                activeTab === 'approval'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-600 hover:text-blue-600'
+              }`}
+            >
+              <span className="relative inline-block">
+                승인 관리
+                {pendingUsers.length > 0 && (
+                  <span className="absolute -top-1 -right-10 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                    New
+                  </span>
+                )}
+              </span>
+            </button>
           </div>
         </div>
 
