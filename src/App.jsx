@@ -30,7 +30,7 @@ function PrivateRoute({ children, allowedRoles }) {
     return <Navigate to="/" />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(currentUser.role)) {
+  if (allowedRoles && !allowedRoles.includes(currentUser.role) && !allowedRoles.includes(currentUser.accountType)) {
     return <Navigate to="/" />;
   }
 

@@ -36,6 +36,12 @@ function AdminPage() {
 
   const { showAlert, showConfirm } = useModalStore();
 
+  // 디버깅: 현재 사용자 정보 확인
+  console.log('🔍 AdminPage - currentUser:', currentUser);
+  console.log('🔍 currentUser.role:', currentUser?.role);
+  console.log('🔍 currentUser.accountType:', currentUser?.accountType);
+  console.log('🔍 pendingUsers:', pendingUsers);
+
   const [activeTab, setActiveTab] = useState('students');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedField, setSelectedField] = useState('전체');
@@ -879,7 +885,7 @@ function AdminPage() {
             </div>
 
             <div className="flex gap-3">
-              {currentUser?.role === 'master' && (
+              {(currentUser?.role === 'master' || currentUser?.accountType === 'master') && (
                 <button
                   onClick={() => window.location.href = '/master/approval'}
                   className="px-6 py-2 bg-yellow-500 text-white hover:bg-yellow-600 rounded-lg font-semibold transition-colors flex items-center gap-2"
@@ -956,7 +962,7 @@ function AdminPage() {
             >
               📊 교과목 검토
             </button>
-            {currentUser?.role === 'master' && (
+            {(currentUser?.role === 'master' || currentUser?.accountType === 'master') && (
               <button
                 onClick={() => setActiveTab('approval')}
                 className={`flex-1 px-6 py-4 font-semibold ${

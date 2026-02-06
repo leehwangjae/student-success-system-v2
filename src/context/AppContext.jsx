@@ -221,9 +221,15 @@ export const AppProvider = ({ children }) => {
         phone: data.phone
       };
 
+      console.log('🔍 DB에서 가져온 데이터:', {
+        role: data.role,
+        account_type: data.account_type,
+        status: data.status
+      });
+      console.log('✅ 로그인 성공 - 생성된 user 객체:', user);
+
       setCurrentUser(user);
       localStorage.setItem('currentUser', JSON.stringify(user));
-      console.log('✅ 로그인 성공:', user);
       return user;
     } catch (error) {
       console.error('로그인 실패:', error);
@@ -915,7 +921,7 @@ export const AppProvider = ({ children }) => {
       loadCoreCoursesFromSupabase();
       loadCoreCoursesSubmissionsFromSupabase();
 
-      if (currentUser.role === 'master') {
+      if (currentUser.role === 'master' || currentUser.accountType === 'master') {
         loadPendingUsersFromSupabase();
       }
     }
