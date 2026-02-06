@@ -564,9 +564,16 @@ function AdminPage() {
           {filteredPrograms.map(program => {
             const applicantCount = getProgramApplicantCount(program.id);
             const isFull = applicantCount >= program.maxParticipants;
-            
+
+            // 분야별 테두리 색상
+            const borderColorClass =
+              program.field === '바이오' ? 'border-l-4 border-green-500' :
+              program.field === '반도체' ? 'border-l-4 border-blue-500' :
+              program.field === '물류' ? 'border-l-4 border-purple-500' :
+              'border-l-4 border-gray-500';
+
             return (
-              <div key={program.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+              <div key={program.id} className={`bg-white rounded-lg shadow-md overflow-hidden ${borderColorClass}`}>
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-3">
                     <h3 className="text-lg font-bold text-gray-800 flex-1">{program.title}</h3>
