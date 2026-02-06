@@ -410,6 +410,12 @@ function StudentPage() {
             >
               📢 공지사항
             </button>
+            <button
+              onClick={() => window.location.href = '/student/core-courses'}
+              className="flex-1 px-6 py-4 font-semibold text-gray-600 hover:text-blue-600"
+            >
+              🎓 핵심교과목 신청
+            </button>
           </div>
         </div>
 
