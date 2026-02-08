@@ -23,10 +23,15 @@ function CoreCoursesSettingPage() {
 
   // 선택된 학과의 교과목 필터링
   const departmentCourses = useMemo(() => {
-    return coreCourses.filter(
-      c => c.field === selectedField && c.department === selectedDepartment
-    );
-  }, [coreCourses, selectedField, selectedDepartment]);
+    // 테이블에 field와 department 컬럼이 없으므로 전체 교과목 표시
+    // target_departments 배열로 필터링
+    return coreCourses.filter(c => {
+      if (!c.targetDepartments || c.targetDepartments.length === 0) {
+        return true; // 대상 학과가 없으면 모두 표시
+      }
+      return c.targetDepartments.includes(selectedDepartment);
+    });
+  }, [coreCourses, selectedDepartment]);
 
   // 과목 구분별 통계
   const courseStats = useMemo(() => {
