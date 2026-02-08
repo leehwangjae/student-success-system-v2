@@ -45,11 +45,8 @@ function CourseModal({ isOpen, onClose, onSave, course, department, field }) {
       alert('과목명을 입력해주세요.');
       return;
     }
-    if (!formData.courseCode.trim()) {
-      alert('학수번호를 입력해주세요.');
-      return;
-    }
-    
+    // 학수번호는 선택 사항으로 변경 (course_code 컬럼이 없을 수 있음)
+
     onSave({
       ...formData,
       field,
@@ -88,17 +85,17 @@ function CourseModal({ isOpen, onClose, onSave, course, department, field }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              학수번호 <span className="text-red-500">*</span>
+              학수번호 (선택)
             </label>
             <input
               type="text"
               name="courseCode"
               value={formData.courseCode}
               onChange={handleChange}
-              placeholder="예: BIO201"
+              placeholder="예: BIO201 (선택사항)"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
-            <p className="text-xs text-gray-500 mt-1">⚠️ 중복 체크에 사용됩니다</p>
+            <p className="text-xs text-gray-500 mt-1">ℹ️ 과목 코드가 있으면 입력해주세요</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
