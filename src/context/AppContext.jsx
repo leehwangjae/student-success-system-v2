@@ -730,7 +730,8 @@ export const AppProvider = ({ children }) => {
           credits: courseData.credits,
           category: courseData.courseType,
           target_departments: courseData.department ? [courseData.department] : [],
-          semester: courseData.semester || null
+          target_grades: [],
+          semester: '1학기' // NOT NULL 제약 때문에 기본값 필요
         }]);
 
       if (error) throw error;
@@ -752,7 +753,8 @@ export const AppProvider = ({ children }) => {
           credits: courseData.credits,
           category: courseData.courseType,
           target_departments: courseData.department ? [courseData.department] : [],
-          semester: courseData.semester || null
+          target_grades: [],
+          semester: '1학기'
         })
         .eq('id', courseId);
 
