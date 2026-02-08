@@ -725,14 +725,12 @@ export const AppProvider = ({ children }) => {
       const { error } = await supabase
         .from('core_courses_2025_11_27_07_17')
         .insert([{
-          field: courseData.field,
-          department: courseData.department,
           name: courseData.courseName,
           course_code: courseData.courseCode,
           credits: courseData.credits,
           category: courseData.courseType,
-          order_index: courseData.orderIndex || 0,
-          updated_by: currentUser?.username || 'admin'
+          target_departments: courseData.department ? [courseData.department] : [],
+          semester: courseData.semester || null
         }]);
 
       if (error) throw error;
@@ -753,8 +751,8 @@ export const AppProvider = ({ children }) => {
           course_code: courseData.courseCode,
           credits: courseData.credits,
           category: courseData.courseType,
-          order_index: courseData.orderIndex,
-          updated_by: currentUser?.username || 'admin'
+          target_departments: courseData.department ? [courseData.department] : [],
+          semester: courseData.semester || null
         })
         .eq('id', courseId);
 
