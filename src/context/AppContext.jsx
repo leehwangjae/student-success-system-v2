@@ -633,41 +633,40 @@ export const AppProvider = ({ children }) => {
       const { data, error } = await supabase
         .from('core_courses_2025_11_27_07_17')
         .select('*')
-        .eq('is_active', true)
         .order('id', { ascending: true });
 
       if (error) {
-        // 테이블이 없거나 권한이 없는 경우 조용히 빈 배열 설정
-        // console.error('핵심 교과목 Supabase 조회 오류:', error);
+        console.error('핵심 교과목 Supabase 조회 오류:', error);
         setCoreCourses([]);
         return;
       }
 
       if (!data || data.length === 0) {
-        // 데이터가 없는 경우 조용히 빈 배열 설정
-        // console.warn('핵심 교과목 데이터가 없습니다.');
+        console.warn('핵심 교과목 데이터가 없습니다.');
         setCoreCourses([]);
         return;
       }
 
+      console.log('📚 로드된 교과목 데이터:', data);
+
       const formattedCourses = data.map(course => ({
         id: course.id,
-        field: course.field,
-        department: course.department,
+        field: course.field || '미지정',
+        department: course.target_departments?.[0] || '미지정',
         courseName: course.name,
         courseCode: course.course_code,
         credits: course.credits,
         courseType: course.category,
-        orderIndex: course.order_index,
-        isActive: course.is_active,
-        createdAt: course.created_at,
-        updatedBy: course.updated_by
+        semester: course.semester,
+        targetDepartments: course.target_departments,
+        targetGrades: course.target_grades,
+        createdAt: course.created_at
       }));
 
+      console.log('✅ 포맷팅된 교과목:', formattedCourses);
       setCoreCourses(formattedCourses);
     } catch (error) {
-      // 예외 발생 시 조용히 처리
-      // console.error('핵심 교과목 로드 실패:', error);
+      console.error('핵심 교과목 로드 실패:', error);
       setCoreCourses([]);
     }
   };
