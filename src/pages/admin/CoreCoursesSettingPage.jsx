@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { FIELD_DEPARTMENTS, COURSE_TYPES } from '../../components/coreCourses/constants';
 import { groupCoursesByType } from '../../utils/coreCoursesHelpers';
 import CourseModal from '../../components/coreCourses/CourseModal';
 import { useModalStore } from '../../hooks/useModal';
+import * as XLSX from 'xlsx';
 
 function CoreCoursesSettingPage() {
   const {
@@ -20,6 +21,7 @@ function CoreCoursesSettingPage() {
   const [selectedDepartment, setSelectedDepartment] = useState('생명과학전공');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
+  const fileInputRef = useRef(null);
 
   // 선택된 학과의 교과목 필터링
   const departmentCourses = useMemo(() => {
@@ -96,6 +98,99 @@ function CoreCoursesSettingPage() {
     );
   };
 
+  // 엑셀 템플릿 다운로드
+  const handleDownloadTemplate = () => {
+    const templateData = [
+      {
+        '과목명': '나노기초실험(1)',
+        '학수번호': '0003794001',
+        '학점': 1,
+        '과목구분': '전공핵심',
+        '대상학과': '나노바이오공학전공',
+        '학기': '1학기'
+      },
+      {
+        '과목명': '세포생물학',
+        '학수번호': '0003794002',
+        '학점': 3,
+        '과목구분': '전공기초',
+        '대상학과': '나노바이오공학전공',
+        '학기': '1학기'
+      }
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, '교과목');
+
+    // 컬럼 너비 설정
+    worksheet['!cols'] = [
+      { wch: 30 }, // 과목명
+      { wch: 15 }, // 학수번호
+      { wch: 10 }, // 학점
+      { wch: 15 }, // 과목구분
+      { wch: 25 }, // 대상학과
+      { wch: 12 }  // 학기
+    ];
+
+    XLSX.writeFile(workbook, `핵심교과목_템플릿_${selectedField}_${selectedDepartment}.xlsx`);
+    showAlert('템플릿이 다운로드되었습니다.');
+  };
+
+  // 엑셀 업로드
+  const handleExcelUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const row of jsonData) {
+          const courseData = {
+            courseName: row['과목명'],
+            courseCode: row['학수번호'],
+            credits: parseInt(row['학점']) || 3,
+            courseType: row['과목구분'] || '전공핵심',
+            department: row['대상학과'] || selectedDepartment,
+            semester: row['학기'] || '1학기'
+          };
+
+          if (!courseData.courseName || !courseData.courseCode) {
+            failCount++;
+            continue;
+          }
+
+          const result = await addCoreCourse(courseData);
+          if (result.success) {
+            successCount++;
+          } else {
+            failCount++;
+          }
+        }
+
+        showAlert(`업로드 완료\n성공: ${successCount}개, 실패: ${failCount}개`);
+
+        // 파일 입력 초기화
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      } catch (error) {
+        showAlert('엑셀 파일 읽기 실패: ' + error.message);
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">
@@ -157,13 +252,26 @@ function CoreCoursesSettingPage() {
               </svg>
               과목 추가
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
               엑셀 업로드
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleExcelUpload}
+              className="hidden"
+            />
+            <button
+              onClick={handleDownloadTemplate}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
