@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { FIELD_DEPARTMENTS } from '../components/coreCourses/constants';
 
 function SignupPage() {
   const navigate = useNavigate();
@@ -12,7 +13,7 @@ function SignupPage() {
     confirmPassword: '',
     name: '',
     studentId: '',
-    department: '',
+    department: FIELD_DEPARTMENTS['바이오'][0], // 기본값: 생명과학전공
     field: '바이오',
     email: '',
     phone: ''
@@ -284,33 +285,48 @@ function SignupPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  학과 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="department"
-                  value={formData.department}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="학과를 입력하세요"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
                   분야 <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="field"
                   value={formData.field}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    handleChange(e);
+                    // 분야가 변경되면 학과를 해당 분야의 첫 번째 학과로 자동 설정
+                    const newField = e.target.value;
+                    const departments = FIELD_DEPARTMENTS[newField] || [];
+                    if (departments.length > 0) {
+                      setFormData(prev => ({
+                        ...prev,
+                        field: newField,
+                        department: departments[0]
+                      }));
+                    }
+                  }}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 >
                   <option value="바이오">바이오</option>
                   <option value="반도체">반도체</option>
                   <option value="물류">물류</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  전공 <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="department"
+                  value={formData.department}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                >
+                  {!formData.department && <option value="">전공을 선택하세요</option>}
+                  {(FIELD_DEPARTMENTS[formData.field] || []).map(dept => (
+                    <option key={dept} value={dept}>{dept}</option>
+                  ))}
                 </select>
               </div>
             </>
