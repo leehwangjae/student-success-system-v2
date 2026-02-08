@@ -903,7 +903,13 @@ export const AppProvider = ({ children }) => {
   };
 
   const getCoreCoursesByDepartment = (field, department) => {
-    return coreCourses.filter(c => c.field === field && c.department === department);
+    // target_departments 배열로 필터링
+    return coreCourses.filter(c => {
+      if (!c.targetDepartments || c.targetDepartments.length === 0) {
+        return true; // 대상 학과가 없으면 모두 표시
+      }
+      return c.targetDepartments.includes(department);
+    });
   };
 
   const getStudentSubmission = (studentId) => {
