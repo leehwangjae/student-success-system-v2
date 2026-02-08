@@ -722,24 +722,18 @@ export const AppProvider = ({ children }) => {
 
   const addCoreCourse = async (courseData) => {
     try {
-      const insertData = {
-        field: courseData.field,
-        department: courseData.department,
-        course_name: courseData.courseName,
-        credits: courseData.credits,
-        course_type: courseData.courseType,
-        order_index: courseData.orderIndex || 0,
-        updated_by: currentUser?.username || 'admin'
-      };
-
-      // course_code가 제공되면 추가
-      if (courseData.courseCode) {
-        insertData.course_code = courseData.courseCode;
-      }
-
       const { error } = await supabase
         .from('core_courses_2025_11_27_07_17')
-        .insert([insertData]);
+        .insert([{
+          field: courseData.field,
+          department: courseData.department,
+          course_name: courseData.courseName,
+          course_code: courseData.courseCode,
+          credits: courseData.credits,
+          course_type: courseData.courseType,
+          order_index: courseData.orderIndex || 0,
+          updated_by: currentUser?.username || 'admin'
+        }]);
 
       if (error) throw error;
 
@@ -752,22 +746,16 @@ export const AppProvider = ({ children }) => {
 
   const updateCoreCourse = async (courseId, courseData) => {
     try {
-      const updateData = {
-        course_name: courseData.courseName,
-        credits: courseData.credits,
-        course_type: courseData.courseType,
-        order_index: courseData.orderIndex,
-        updated_by: currentUser?.username || 'admin'
-      };
-
-      // course_code가 제공되면 추가
-      if (courseData.courseCode) {
-        updateData.course_code = courseData.courseCode;
-      }
-
       const { error } = await supabase
         .from('core_courses_2025_11_27_07_17')
-        .update(updateData)
+        .update({
+          course_name: courseData.courseName,
+          course_code: courseData.courseCode,
+          credits: courseData.credits,
+          course_type: courseData.courseType,
+          order_index: courseData.orderIndex,
+          updated_by: currentUser?.username || 'admin'
+        })
         .eq('id', courseId);
 
       if (error) throw error;
