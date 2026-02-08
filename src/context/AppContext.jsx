@@ -654,10 +654,10 @@ export const AppProvider = ({ children }) => {
         id: course.id,
         field: course.field,
         department: course.department,
-        courseName: course.course_name,
+        courseName: course.name,
         courseCode: course.course_code,
         credits: course.credits,
-        courseType: course.course_type,
+        courseType: course.category,
         orderIndex: course.order_index,
         isActive: course.is_active,
         createdAt: course.created_at,
@@ -727,10 +727,10 @@ export const AppProvider = ({ children }) => {
         .insert([{
           field: courseData.field,
           department: courseData.department,
-          course_name: courseData.courseName,
+          name: courseData.courseName,
           course_code: courseData.courseCode,
           credits: courseData.credits,
-          course_type: courseData.courseType,
+          category: courseData.courseType,
           order_index: courseData.orderIndex || 0,
           updated_by: currentUser?.username || 'admin'
         }]);
@@ -749,10 +749,10 @@ export const AppProvider = ({ children }) => {
       const { error } = await supabase
         .from('core_courses_2025_11_27_07_17')
         .update({
-          course_name: courseData.courseName,
+          name: courseData.courseName,
           course_code: courseData.courseCode,
           credits: courseData.credits,
-          course_type: courseData.courseType,
+          category: courseData.courseType,
           order_index: courseData.orderIndex,
           updated_by: currentUser?.username || 'admin'
         })
