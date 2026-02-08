@@ -1,8 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
 import ProgramDetailModal from '../components/modals/ProgramDetailModal';
 import NoticeDetailModal from '../components/modals/NoticeDetailModal';
 import { supabase } from '../lib/supabase';
+import { useModalStore } from '../hooks/useModal';
+import {
+  POINTS_PER_COURSE,
+  MAX_COURSES,
+  FILE_UPLOAD_CONFIG,
+  SUBMISSION_STATUS_LABEL
+} from '../components/coreCourses/constants';
+import {
+  calculateCoreCoursesScore,
+  isDuplicateCourse,
+  canAddMoreCourses,
+  groupCoursesByType,
+  validateFile,
+  fileToBase64,
+  formatFileSize
+} from '../utils/coreCoursesHelpers';
 
 function StudentPage() {
   const {
@@ -11,14 +27,27 @@ function StudentPage() {
     programs,
     notices,
     programApplications,
-    applyForProgram
+    applyForProgram,
+    coreCourses,
+    getCoreCoursesByDepartment,
+    getStudentSubmission,
+    submitCoreCourses
   } = useAppContext();
+
+  const { showAlert, showConfirm } = useModalStore();
 
   const [activeTab, setActiveTab] = useState('info');
   const [selectedProgram, setSelectedProgram] = useState(null);
   const [selectedNotice, setSelectedNotice] = useState(null);
   const [showProgramModal, setShowProgramModal] = useState(false);
   const [showNoticeModal, setShowNoticeModal] = useState(false);
+
+  // 핵심교과목 관련 상태
+  const [completedCourses, setCompletedCourses] = useState([]);
+  const [transcriptFile, setTranscriptFile] = useState(null);
+  const [transcriptFileName, setTranscriptFileName] = useState('');
+  const [transcriptFileSize, setTranscriptFileSize] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 🔥 학생 점수 데이터 상태
   const [studentScores, setStudentScores] = useState({
@@ -335,6 +364,392 @@ function StudentPage() {
     </div>
   );
 
+  // 핵심교과목 관련 로직
+  const departmentCourses = useMemo(() => {
+    if (!currentUser) return [];
+    return getCoreCoursesByDepartment(currentUser.field, currentUser.department);
+  }, [currentUser, coreCourses]);
+
+  const groupedCourses = useMemo(() => {
+    return groupCoursesByType(departmentCourses);
+  }, [departmentCourses]);
+
+  const scoreInfo = useMemo(() => {
+    return calculateCoreCoursesScore(completedCourses);
+  }, [completedCourses]);
+
+  // 기존 제출 데이터 로드
+  useEffect(() => {
+    if (!currentUser || activeTab !== 'coreCourses') return;
+
+    const submission = getStudentSubmission(currentUser.id);
+    if (submission) {
+      setCompletedCourses(submission.completedCourses || []);
+      setTranscriptFileName(submission.transcriptFileName || '');
+      setTranscriptFileSize(submission.transcriptFileSize || 0);
+    }
+  }, [currentUser, activeTab]);
+
+  // 과목 체크 토글
+  const handleCourseToggle = (course) => {
+    const existing = completedCourses.find(c => c.courseId === course.id);
+
+    if (existing && existing.isCompleted) {
+      setCompletedCourses(prev =>
+        prev.map(c =>
+          c.courseId === course.id ? { ...c, isCompleted: false } : c
+        )
+      );
+    } else {
+      if (isDuplicateCourse(course.courseCode, completedCourses, course.id)) {
+        showAlert('⚠️ 이미 동일 과목을 선택하셨습니다. (학수번호 중복)');
+        return;
+      }
+
+      if (!canAddMoreCourses(completedCourses)) {
+        showAlert(`⚠️ 최대 ${MAX_COURSES}과목까지만 선택 가능합니다.`);
+        return;
+      }
+
+      if (existing) {
+        setCompletedCourses(prev =>
+          prev.map(c =>
+            c.courseId === course.id ? { ...c, isCompleted: true } : c
+          )
+        );
+      } else {
+        setCompletedCourses(prev => [
+          ...prev,
+          {
+            courseId: course.id,
+            courseCode: course.courseCode,
+            courseName: course.courseName,
+            courseType: course.courseType,
+            isCompleted: true
+          }
+        ]);
+      }
+    }
+  };
+
+  // 파일 선택
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const validation = validateFile(
+      file,
+      FILE_UPLOAD_CONFIG.maxSize,
+      FILE_UPLOAD_CONFIG.acceptedFormats
+    );
+
+    if (!validation.valid) {
+      showAlert(validation.error);
+      e.target.value = '';
+      return;
+    }
+
+    try {
+      const base64 = await fileToBase64(file);
+      setTranscriptFile(base64);
+      setTranscriptFileName(file.name);
+      setTranscriptFileSize(file.size);
+    } catch (error) {
+      showAlert('파일 업로드 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 파일 삭제
+  const handleFileRemove = () => {
+    setTranscriptFile(null);
+    setTranscriptFileName('');
+    setTranscriptFileSize(0);
+  };
+
+  // 제출
+  const handleCoreCoursesSubmit = () => {
+    const completedCount = completedCourses.filter(c => c.isCompleted).length;
+
+    if (completedCount === 0) {
+      showAlert('이수한 과목을 최소 1개 이상 선택해주세요.');
+      return;
+    }
+
+    if (!transcriptFile && !transcriptFileName) {
+      showAlert('교과과정 이수표를 업로드해주세요.');
+      return;
+    }
+
+    showConfirm(
+      `${scoreInfo.completedCount}개 과목 (${scoreInfo.score}점)을 제출하시겠습니까?\n\n제출 후에는 관리자 승인 전까지 수정할 수 없습니다.`,
+      async () => {
+        setIsSubmitting(true);
+
+        try {
+          const submissionData = {
+            studentId: currentUser.id,
+            completedCourses: completedCourses.filter(c => c.isCompleted),
+            totalCompletedCount: scoreInfo.completedCount,
+            totalScore: scoreInfo.score,
+            transcriptFile,
+            transcriptFileName,
+            transcriptFileSize
+          };
+
+          const result = await submitCoreCourses(submissionData);
+
+          if (result.success) {
+            showAlert('✅ 제출이 완료되었습니다!\n관리자 검토 후 점수가 반영됩니다.');
+          } else {
+            showAlert(`제출 실패: ${result.error}`);
+          }
+        } catch (error) {
+          showAlert('제출 중 오류가 발생했습니다.');
+        } finally {
+          setIsSubmitting(false);
+        }
+      }
+    );
+  };
+
+  const submission = getStudentSubmission(currentUser?.id);
+  const isApproved = submission?.status === 'approved';
+  const isPending = submission?.status === 'pending';
+  const isRejected = submission?.status === 'rejected';
+  const canEdit = !isApproved && !isPending;
+
+  const renderCoreCoursesTab = () => {
+    if (departmentCourses.length === 0) {
+      return (
+        <div className="bg-white rounded-lg shadow-md p-12 text-center">
+          <div className="text-6xl mb-4">📚</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            등록된 핵심 교과목이 없습니다
+          </h2>
+          <p className="text-gray-600">
+            {currentUser.department}의 핵심 교과목이 아직 설정되지 않았습니다.<br />
+            관리자에게 문의해주세요.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* 점수 카드 - Sticky */}
+        <div className="sticky top-4 z-10 bg-white rounded-xl shadow-lg p-6 border-2 border-blue-100">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center">
+              <div className="text-sm text-gray-600 mb-1">현재 점수</div>
+              <div className="text-3xl font-bold text-blue-600">
+                {scoreInfo.score}점
+              </div>
+              <div className="text-xs text-gray-500 mt-1">/ {scoreInfo.maxScore}점</div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm text-gray-600 mb-1">이수 과목</div>
+              <div className="text-3xl font-bold text-green-600">
+                {scoreInfo.completedCount}개
+              </div>
+              <div className="text-xs text-gray-500 mt-1">/ {departmentCourses.length}개</div>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <div className="flex justify-between text-sm text-gray-600 mb-1">
+              <span>진행률</span>
+              <span>{scoreInfo.percentage}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3">
+              <div
+                className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all"
+                style={{ width: `${Math.min(scoreInfo.percentage, 100)}%` }}
+              />
+            </div>
+          </div>
+
+          {scoreInfo.completedCount >= MAX_COURSES && (
+            <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <p className="text-sm text-yellow-800">
+                ⚠️ 최대 {MAX_COURSES}과목({MAX_COURSES * POINTS_PER_COURSE}점)까지 인정됩니다.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* 제출 상태 */}
+        {submission && (
+          <div className={`rounded-xl shadow-sm p-4 ${
+            isApproved ? 'bg-green-50 border border-green-200' :
+            isPending ? 'bg-yellow-50 border border-yellow-200' :
+            isRejected ? 'bg-red-50 border border-red-200' :
+            'bg-gray-50 border border-gray-200'
+          }`}>
+            <div className="flex items-center gap-3">
+              <div className="text-2xl">
+                {isApproved ? '✅' : isPending ? '🔄' : isRejected ? '❌' : '📝'}
+              </div>
+              <div className="flex-1">
+                <div className="font-semibold text-gray-900">
+                  제출 상태: {SUBMISSION_STATUS_LABEL[submission.status]}
+                </div>
+                {isPending && (
+                  <div className="text-sm text-gray-600 mt-1">
+                    관리자 검토 대기 중입니다...
+                  </div>
+                )}
+                {isApproved && (
+                  <div className="text-sm text-green-700 mt-1">
+                    {submission.totalScore}점이 반영되었습니다.
+                  </div>
+                )}
+                {isRejected && (
+                  <div className="text-sm text-red-700 mt-1">
+                    반려 사유: {submission.rejectionReason}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 교과목 체크리스트 */}
+        <div className="space-y-4">
+          {Object.entries(groupedCourses).map(([type, courses]) => {
+            if (courses.length === 0) return null;
+
+            return (
+              <div key={type} className="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div className="bg-gray-50 px-6 py-3 border-b">
+                  <h3 className="font-bold text-gray-900">{type} ({courses.length}과목)</h3>
+                </div>
+                <div className="p-4 space-y-2">
+                  {courses.map(course => {
+                    const completed = completedCourses.find(
+                      c => c.courseId === course.id && c.isCompleted
+                    );
+
+                    return (
+                      <label
+                        key={course.id}
+                        className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                          completed
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                        } ${!canEdit ? 'cursor-not-allowed opacity-60' : ''}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={!!completed}
+                          onChange={() => canEdit && handleCourseToggle(course)}
+                          disabled={!canEdit}
+                          className="mt-1 w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900">{course.courseName}</div>
+                          <div className="text-sm text-gray-600">
+                            {course.courseCode} · {course.credits}학점
+                          </div>
+                        </div>
+                        {completed && (
+                          <div className="text-blue-600 font-bold">{POINTS_PER_COURSE}점</div>
+                        )}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* 이수표 업로드 */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h3 className="font-bold text-gray-900 mb-4">
+            📎 교과과정 이수표 업로드 <span className="text-red-500">*</span>
+          </h3>
+
+          {transcriptFileName ? (
+            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-300">
+              <div className="text-3xl">📄</div>
+              <div className="flex-1">
+                <div className="font-medium text-gray-900">{transcriptFileName}</div>
+                <div className="text-sm text-gray-600">{formatFileSize(transcriptFileSize)}</div>
+              </div>
+              {canEdit && (
+                <button
+                  onClick={handleFileRemove}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          ) : (
+            <div>
+              <input
+                type="file"
+                id="transcript"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={handleFileChange}
+                disabled={!canEdit}
+                className="hidden"
+              />
+              <label
+                htmlFor="transcript"
+                className={`flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg ${
+                  canEdit
+                    ? 'border-gray-300 hover:border-blue-500 cursor-pointer'
+                    : 'border-gray-200 cursor-not-allowed opacity-60'
+                }`}
+              >
+                <svg className="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <div className="text-sm text-gray-600 text-center">
+                  <span className="text-blue-600 font-medium">파일 선택</span> 또는 드래그 앤 드롭
+                  <br />
+                  PDF, JPG, PNG (최대 10MB)
+                </div>
+              </label>
+            </div>
+          )}
+        </div>
+
+        {/* 제출 버튼 */}
+        {canEdit && (
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <button
+              onClick={handleCoreCoursesSubmit}
+              disabled={isSubmitting}
+              className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? '제출 중...' : '💾 제출하기'}
+            </button>
+
+            <div className="mt-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+              ℹ️ 제출 후에는 관리자 승인 전까지 수정할 수 없습니다.
+            </div>
+          </div>
+        )}
+
+        {isRejected && (
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <button
+              onClick={handleCoreCoursesSubmit}
+              disabled={isSubmitting}
+              className="w-full px-6 py-3 bg-orange-600 text-white rounded-lg font-bold hover:bg-orange-700"
+            >
+              🔄 재제출하기
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg">
@@ -411,8 +826,12 @@ function StudentPage() {
               📢 공지사항
             </button>
             <button
-              onClick={() => window.location.href = '/student/core-courses'}
-              className="flex-1 px-6 py-4 font-semibold text-gray-600 hover:text-blue-600"
+              onClick={() => setActiveTab('coreCourses')}
+              className={`flex-1 px-6 py-4 font-semibold ${
+                activeTab === 'coreCourses'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-600 hover:text-blue-600'
+              }`}
             >
               🎓 핵심교과목 신청
             </button>
@@ -424,6 +843,7 @@ function StudentPage() {
           {activeTab === 'programs' && renderProgramsTab()}
           {activeTab === 'history' && renderApplicationHistoryTab()}
           {activeTab === 'notices' && renderNoticesTab()}
+          {activeTab === 'coreCourses' && renderCoreCoursesTab()}
         </div>
       </div>
 
