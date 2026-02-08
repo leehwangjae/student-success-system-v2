@@ -263,24 +263,8 @@ function CoreCoursesCheckPage() {
           <p className="text-blue-100">{currentUser.department} · {currentUser.grade}학년</p>
         </div>
 
-        {/* 🔍 디버그 패널 */}
-        <div className="bg-yellow-50 border-2 border-yellow-400 rounded-xl p-4 mb-6">
-          <div className="font-bold text-yellow-800 mb-2">🔍 디버그 정보</div>
-          <div className="text-sm space-y-1">
-            <div>• submission: {submission ? `ID ${submission.id} (${submission.status})` : '없음'}</div>
-            <div>• isApproved: {String(isApproved)}</div>
-            <div>• isPending: {String(isPending)}</div>
-            <div>• isRejected: {String(isRejected)}</div>
-            <div className="font-bold text-lg">• canEdit: {String(canEdit)} {canEdit ? '✅' : '❌'}</div>
-            <div>• completedCourses: {completedCourses.length}개</div>
-            <div>• 체크된 과목: {completedCourses.filter(c => c.isCompleted).length}개</div>
-            <div>• transcriptFile: {transcriptFile ? '있음' : '없음'}</div>
-            <div>• transcriptFileName: {transcriptFileName || '없음'}</div>
-          </div>
-        </div>
-
-        {/* 점수 카드 */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+        {/* 점수 카드 - Sticky */}
+        <div className="sticky top-4 z-10 bg-white rounded-xl shadow-lg p-6 mb-6 border-2 border-blue-100">
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
               <div className="text-sm text-gray-600 mb-1">현재 점수</div>
