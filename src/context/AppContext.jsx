@@ -131,7 +131,8 @@ export const AppProvider = ({ children }) => {
         date: notice.date,
         views: notice.views || 0,
         imageUrl: notice.image_url,
-        attachedFiles: notice.attached_files || []
+        attachedFiles: notice.attached_files || [],
+        isPopup: notice.is_popup || false
       }));
 
       console.log('✅ 공지사항 데이터 로드 완료:', formattedNotices.length);
@@ -422,7 +423,8 @@ export const AppProvider = ({ children }) => {
         date: noticeData.date,
         views: noticeData.views || 0,
         image_url: noticeData.imageUrl || null,
-        attached_files: noticeData.attachedFiles || []
+        attached_files: noticeData.attachedFiles || [],
+        is_popup: noticeData.isPopup || false
       };
 
       if (existingNotice) {
