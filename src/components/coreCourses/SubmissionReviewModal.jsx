@@ -319,7 +319,7 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
                       }
                     </div>
                     <div className="text-xs text-gray-500 mt-2">
-                      처리일: {formatDate(submission.reviewedAt)} · 처리자: {submission.reviewedBy}
+                      처리일: {formatDate(submission.reviewedAt)}
                     </div>
                   </div>
                 )}
@@ -513,7 +513,7 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
                     }
                   </div>
                   <div className="text-xs text-gray-500 mt-2">
-                    처리일: {formatDate(submission.reviewedAt)} · 처리자: {submission.reviewedBy}
+                    처리일: {formatDate(submission.reviewedAt)}
                   </div>
                 </div>
               )}

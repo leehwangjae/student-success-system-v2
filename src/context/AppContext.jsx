@@ -859,8 +859,7 @@ export const AppProvider = ({ children }) => {
         .from('core_courses_submissions_2025_11_27_07_17')
         .update({
           status: 'approved',
-          reviewed_at: new Date().toISOString(),
-          reviewed_by: currentUser?.name || '관리자'
+          reviewed_at: new Date().toISOString()
         })
         .eq('id', submissionId);
 
@@ -887,8 +886,7 @@ export const AppProvider = ({ children }) => {
         .update({
           status: 'rejected',
           rejection_reason: reason,
-          reviewed_at: new Date().toISOString(),
-          reviewed_by: currentUser?.name || '관리자'
+          reviewed_at: new Date().toISOString()
         })
         .eq('id', submissionId);
 
