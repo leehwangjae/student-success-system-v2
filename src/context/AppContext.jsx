@@ -738,9 +738,11 @@ export const AppProvider = ({ children }) => {
 
       const formattedPrograms = (data || []).map(program => ({
         id: program.id,
+        program_name: program.program_name,
         programName: program.program_name,
         category: program.category,
         field: program.field,
+        department: program.department,
         score: program.score,
         description: program.description,
         createdAt: program.created_at,
