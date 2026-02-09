@@ -27,10 +27,12 @@ function NonCurricularProgramsApplicationPage() {
   const [certificateFiles, setCertificateFiles] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 학생의 분야에 맞는 프로그램 가져오기
+  // 학생의 분야와 전공에 맞는 프로그램 가져오기
   const fieldPrograms = useMemo(() => {
     if (!currentUser) return [];
-    return nonCurricularPrograms.filter(p => p.field === currentUser.field);
+    return nonCurricularPrograms.filter(p =>
+      p.field === currentUser.field && p.department === currentUser.department
+    );
   }, [currentUser, nonCurricularPrograms]);
 
   // 카테고리별 그룹핑

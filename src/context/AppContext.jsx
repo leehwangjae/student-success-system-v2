@@ -989,6 +989,7 @@ export const AppProvider = ({ children }) => {
           program_name: programData.programName,
           category: programData.category,
           field: programData.field,
+          department: programData.department,
           score: programData.score,
           description: programData.description
         }]);
@@ -1004,12 +1005,13 @@ export const AppProvider = ({ children }) => {
   // 비교과 프로그램 수정
   const updateNonCurricularProgram = async (programId, programData) => {
     try {
-      const { error } = await supabase
+      const { error} = await supabase
         .from('non_curricular_programs_2025_11_27_07_17')
         .update({
           program_name: programData.programName,
           category: programData.category,
           field: programData.field,
+          department: programData.department,
           score: programData.score,
           description: programData.description,
           updated_at: new Date().toISOString()

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { PROGRAM_CATEGORIES } from '../../components/nonCurricularPrograms/constants';
+import { PROGRAM_CATEGORIES, FIELD_DEPARTMENTS } from '../../components/nonCurricularPrograms/constants';
 import { useModalStore } from '../../hooks/useModal';
 import * as XLSX from 'xlsx';
 
@@ -9,6 +9,7 @@ function NonCurricularProgramsSettingPage() {
   const { showAlert, showConfirm } = useModalStore();
 
   const [selectedField, setSelectedField] = useState('바이오');
+  const [selectedDepartment, setSelectedDepartment] = useState('전체');
   const [selectedCategory, setSelectedCategory] = useState('전체');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
@@ -19,6 +20,7 @@ function NonCurricularProgramsSettingPage() {
     programName: '',
     category: '취업역량',
     field: '바이오',
+    department: FIELD_DEPARTMENTS['바이오'][0],
     score: 10,
     description: ''
   });
@@ -27,11 +29,12 @@ function NonCurricularProgramsSettingPage() {
   const filteredPrograms = useMemo(() => {
     return (nonCurricularPrograms || []).filter(program => {
       const matchesField = program.field === selectedField;
+      const matchesDepartment = selectedDepartment === '전체' || program.department === selectedDepartment;
       const matchesCategory = selectedCategory === '전체' || program.category === selectedCategory;
-      const matchesSearch = program.programName.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesField && matchesCategory && matchesSearch;
+      const matchesSearch = program.program_name.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesField && matchesDepartment && matchesCategory && matchesSearch;
     });
-  }, [nonCurricularPrograms, selectedField, selectedCategory, searchTerm]);
+  }, [nonCurricularPrograms, selectedField, selectedDepartment, selectedCategory, searchTerm]);
 
   // 정렬된 프로그램
   const sortedPrograms = useMemo(() => {
@@ -78,6 +81,7 @@ function NonCurricularProgramsSettingPage() {
       programName: '',
       category: '취업역량',
       field: selectedField,
+      department: selectedDepartment !== '전체' ? selectedDepartment : FIELD_DEPARTMENTS[selectedField][0],
       score: 10,
       description: ''
     });
@@ -87,13 +91,19 @@ function NonCurricularProgramsSettingPage() {
   const handleEditProgram = (program) => {
     setEditingProgram(program);
     setModalData({
-      programName: program.programName,
+      programName: program.program_name,
       category: program.category,
       field: program.field,
+      department: program.department,
       score: program.score,
       description: program.description || ''
     });
     setIsModalOpen(true);
+  };
+
+  const handleFieldChange = (newField) => {
+    setSelectedField(newField);
+    setSelectedDepartment('전체');
   };
 
   const handleSaveProgram = async () => {
@@ -132,9 +142,10 @@ function NonCurricularProgramsSettingPage() {
 
   const handleExcelDownload = () => {
     const excelData = sortedPrograms.map(program => ({
-      '프로그램명': program.programName,
-      '카테고리': program.category,
+      '프로그램명': program.program_name,
       '분야': program.field,
+      '전공': program.department,
+      '카테고리': program.category,
       '점수': program.score,
       '설명': program.description || ''
     }));
@@ -145,13 +156,14 @@ function NonCurricularProgramsSettingPage() {
 
     worksheet['!cols'] = [
       { wch: 40 }, // 프로그램명
-      { wch: 12 }, // 카테고리
       { wch: 10 }, // 분야
+      { wch: 20 }, // 전공
+      { wch: 12 }, // 카테고리
       { wch: 8 },  // 점수
       { wch: 50 }  // 설명
     ];
 
-    XLSX.writeFile(workbook, `비교과프로그램_${selectedField}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    XLSX.writeFile(workbook, `비교과프로그램_${selectedField}_${selectedDepartment}_${new Date().toISOString().split('T')[0]}.xlsx`);
     showAlert('엑셀 다운로드가 완료되었습니다.');
   };
 
@@ -163,17 +175,30 @@ function NonCurricularProgramsSettingPage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-4">⚙️ 비교과 프로그램 설정</h1>
 
           {/* 필터 */}
-          <div className="grid grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-4 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">분야</label>
               <select
                 value={selectedField}
-                onChange={(e) => setSelectedField(e.target.value)}
+                onChange={(e) => handleFieldChange(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
                 <option value="바이오">바이오</option>
                 <option value="반도체">반도체</option>
                 <option value="물류">물류</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">전공</label>
+              <select
+                value={selectedDepartment}
+                onChange={(e) => setSelectedDepartment(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="전체">전체</option>
+                {FIELD_DEPARTMENTS[selectedField].map(dept => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
               </select>
             </div>
             <div>
@@ -268,6 +293,12 @@ function NonCurricularProgramsSettingPage() {
                     </th>
                     <th
                       className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:text-gray-700"
+                      onClick={() => handleSort('department')}
+                    >
+                      <span className="inline-flex items-center justify-center">전공 <SortIcon columnKey="department" /></span>
+                    </th>
+                    <th
+                      className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:text-gray-700"
                       onClick={() => handleSort('category')}
                     >
                       <span className="inline-flex items-center justify-center">카테고리 <SortIcon columnKey="category" /></span>
@@ -290,10 +321,13 @@ function NonCurricularProgramsSettingPage() {
                         {index + 1}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900">{program.programName}</div>
+                        <div className="text-sm font-medium text-gray-900">{program.program_name}</div>
                         {program.description && (
                           <div className="text-xs text-gray-500 mt-1">{program.description}</div>
                         )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">
+                        {program.department}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -374,12 +408,31 @@ function NonCurricularProgramsSettingPage() {
                   </label>
                   <select
                     value={modalData.field}
-                    onChange={(e) => setModalData(prev => ({ ...prev, field: e.target.value }))}
+                    onChange={(e) => setModalData(prev => ({
+                      ...prev,
+                      field: e.target.value,
+                      department: FIELD_DEPARTMENTS[e.target.value][0]
+                    }))}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="바이오">바이오</option>
                     <option value="반도체">반도체</option>
                     <option value="물류">물류</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    전공 *
+                  </label>
+                  <select
+                    value={modalData.department}
+                    onChange={(e) => setModalData(prev => ({ ...prev, department: e.target.value }))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    {FIELD_DEPARTMENTS[modalData.field].map(dept => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
                   </select>
                 </div>
               </div>
