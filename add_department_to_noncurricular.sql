@@ -6,7 +6,7 @@ ADD COLUMN IF NOT EXISTS department TEXT NOT NULL DEFAULT '생명공학과';
 UPDATE non_curricular_programs_2025_11_27_07_17
 SET department = CASE
   WHEN field = '바이오' THEN '생명공학과'
-  WHEN field = '반도체' THEN '전자공학과'
+  WHEN field = '반도체' THEN '전자공학전공'
   WHEN field = '물류' THEN '동북아국제통상학부'
   ELSE '생명공학과'
 END
