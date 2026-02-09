@@ -11,9 +11,12 @@ function NonCurricularSubmissionReviewModal({ isOpen, onClose, submission, stude
 
   if (!isOpen || !submission || !student) return null;
 
-  const completedPrograms = submission.completed_programs || [];
-  const certificateFiles = submission.certificate_files || [];
+  const completedPrograms = submission.completedPrograms || [];
+  const certificateFiles = submission.certificateFiles || [];
   const groupedPrograms = groupProgramsByCategory(completedPrograms);
+
+  console.log('Review Modal - submission:', submission);
+  console.log('Review Modal - certificateFiles:', certificateFiles);
 
   // 선택된 파일의 미리보기 URL 생성
   const previewUrl = useMemo(() => {

@@ -68,11 +68,7 @@ function NonCurricularProgramsReviewPage() {
   const stats = useMemo(() => {
     const submissions = studentSubmissions
       .filter(item => item.submission)
-      .map(item => ({
-        ...item.submission,
-        totalScore: item.submission.total_score,
-        totalProgramCount: item.submission.total_program_count
-      }));
+      .map(item => item.submission);
 
     return calculateStatistics(submissions);
   }, [studentSubmissions]);
@@ -85,8 +81,8 @@ function NonCurricularProgramsReviewPage() {
 
     return fieldPrograms.map(program => {
       const completedCount = studentSubmissions.filter(({ submission }) => {
-        if (!submission || !submission.completed_programs) return false;
-        return submission.completed_programs.some(p => p.programId === program.id);
+        if (!submission || !submission.completedPrograms) return false;
+        return submission.completedPrograms.some(p => p.programId === program.id);
       }).length;
 
       const completionRate = filteredStudents.length > 0
@@ -133,8 +129,8 @@ function NonCurricularProgramsReviewPage() {
         '학번': student.studentId,
         '이름': student.name,
         '학과': student.department,
-        '이수프로그램수': submission?.total_program_count || 0,
-        '점수': submission?.total_score || 0,
+        '이수프로그램수': submission?.totalProgramCount || 0,
+        '점수': submission?.totalScore || 0,
         '제출상태': submission ? SUBMISSION_STATUS_LABEL[submission.status] : '미제출',
         '제출일시': submission ? formatDate(submission.submitted_at) : '-'
       }));
@@ -429,14 +425,14 @@ function NonCurricularProgramsReviewPage() {
                         {student.name}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">
-                        {submission ? `${submission.total_program_count}개` : '-'}
+                        {submission ? `${submission.totalProgramCount}개` : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-semibold text-blue-600">
-                        {submission ? `${submission.total_score}점` : '-'}
+                        {submission ? `${submission.totalScore}점` : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
-                        {submission?.certificate_files && submission.certificate_files.length > 0 ? (
-                          <span className="text-green-600">📄 {submission.certificate_files.length}개</span>
+                        {submission?.certificateFiles && submission.certificateFiles.length > 0 ? (
+                          <span className="text-green-600">📄 {submission.certificateFiles.length}개</span>
                         ) : (
                           <span className="text-red-600">❌</span>
                         )}
