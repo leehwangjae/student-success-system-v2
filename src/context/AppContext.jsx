@@ -1047,19 +1047,47 @@ export const AppProvider = ({ children }) => {
   // 비교과 프로그램 제출
   const submitNonCurricularPrograms = async (submissionData) => {
     try {
-      const { error } = await supabase
+      // 기존 제출 확인
+      const { data: existing } = await supabase
         .from('non_curricular_submissions_2025_11_27_07_17')
-        .upsert([{
-          student_id: submissionData.studentId,
-          completed_programs: submissionData.completedPrograms,
-          certificate_files: submissionData.certificateFiles,
-          total_program_count: submissionData.totalProgramCount,
-          total_score: submissionData.totalScore,
-          status: 'pending',
-          submitted_at: new Date().toISOString()
-        }], {
-          onConflict: 'student_id'
-        });
+        .select('id')
+        .eq('student_id', submissionData.studentId)
+        .single();
+
+      let error;
+
+      if (existing) {
+        // 기존 제출이 있으면 업데이트
+        const result = await supabase
+          .from('non_curricular_submissions_2025_11_27_07_17')
+          .update({
+            completed_programs: submissionData.completedPrograms,
+            certificate_files: submissionData.certificateFiles,
+            total_program_count: submissionData.totalProgramCount,
+            total_score: submissionData.totalScore,
+            status: 'pending',
+            submitted_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('student_id', submissionData.studentId);
+
+        error = result.error;
+      } else {
+        // 새로운 제출
+        const result = await supabase
+          .from('non_curricular_submissions_2025_11_27_07_17')
+          .insert([{
+            student_id: submissionData.studentId,
+            completed_programs: submissionData.completedPrograms,
+            certificate_files: submissionData.certificateFiles,
+            total_program_count: submissionData.totalProgramCount,
+            total_score: submissionData.totalScore,
+            status: 'pending',
+            submitted_at: new Date().toISOString()
+          }]);
+
+        error = result.error;
+      }
 
       if (error) throw error;
       await loadNonCurricularSubmissionsFromSupabase();
