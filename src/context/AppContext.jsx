@@ -24,6 +24,8 @@ export const AppProvider = ({ children }) => {
   const [pendingUsers, setPendingUsers] = useState([]);
   const [coreCourses, setCoreCourses] = useState([]);
   const [coreCoursesSubmissions, setCoreCoursesSubmissions] = useState([]);
+  const [nonCurricularPrograms, setNonCurricularPrograms] = useState([]);
+  const [nonCurricularSubmissions, setNonCurricularSubmissions] = useState([]);
 
   // Supabase에서 학생 데이터 로드
   const loadStudentsFromSupabase = async () => {
@@ -721,6 +723,69 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  // 비교과 프로그램 로드
+  const loadNonCurricularProgramsFromSupabase = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('non_curricular_programs_2025_11_27_07_17')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        setNonCurricularPrograms([]);
+        return;
+      }
+
+      const formattedPrograms = (data || []).map(program => ({
+        id: program.id,
+        programName: program.program_name,
+        category: program.category,
+        field: program.field,
+        score: program.score,
+        description: program.description,
+        createdAt: program.created_at,
+        updatedAt: program.updated_at
+      }));
+
+      setNonCurricularPrograms(formattedPrograms);
+    } catch (error) {
+      setNonCurricularPrograms([]);
+    }
+  };
+
+  // 비교과 프로그램 제출 내역 로드
+  const loadNonCurricularSubmissionsFromSupabase = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('non_curricular_submissions_2025_11_27_07_17')
+        .select('*');
+
+      if (error) {
+        setNonCurricularSubmissions([]);
+        return;
+      }
+
+      const formattedSubmissions = (data || []).map(sub => ({
+        id: sub.id,
+        studentId: sub.student_id,
+        completedPrograms: sub.completed_programs || [],
+        certificateFiles: sub.certificate_files || [],
+        totalProgramCount: sub.total_program_count || 0,
+        totalScore: sub.total_score || 0,
+        status: sub.status,
+        rejectionReason: sub.rejection_reason,
+        submittedAt: sub.submitted_at,
+        reviewedAt: sub.reviewed_at,
+        createdAt: sub.created_at,
+        updatedAt: sub.updated_at
+      }));
+
+      setNonCurricularSubmissions(formattedSubmissions);
+    } catch (error) {
+      setNonCurricularSubmissions([]);
+    }
+  };
+
   const addCoreCourse = async (courseData) => {
     try {
       const { error } = await supabase
@@ -915,6 +980,154 @@ export const AppProvider = ({ children }) => {
     return coreCoursesSubmissions.find(s => s.studentId === studentId);
   };
 
+  // 비교과 프로그램 추가
+  const addNonCurricularProgram = async (programData) => {
+    try {
+      const { error } = await supabase
+        .from('non_curricular_programs_2025_11_27_07_17')
+        .insert([{
+          program_name: programData.programName,
+          category: programData.category,
+          field: programData.field,
+          score: programData.score,
+          description: programData.description
+        }]);
+
+      if (error) throw error;
+      await loadNonCurricularProgramsFromSupabase();
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  // 비교과 프로그램 수정
+  const updateNonCurricularProgram = async (programId, programData) => {
+    try {
+      const { error } = await supabase
+        .from('non_curricular_programs_2025_11_27_07_17')
+        .update({
+          program_name: programData.programName,
+          category: programData.category,
+          field: programData.field,
+          score: programData.score,
+          description: programData.description,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', programId);
+
+      if (error) throw error;
+      await loadNonCurricularProgramsFromSupabase();
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  // 비교과 프로그램 삭제
+  const deleteNonCurricularProgram = async (programId) => {
+    try {
+      const { error } = await supabase
+        .from('non_curricular_programs_2025_11_27_07_17')
+        .delete()
+        .eq('id', programId);
+
+      if (error) throw error;
+      await loadNonCurricularProgramsFromSupabase();
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  // 비교과 프로그램 제출
+  const submitNonCurricularPrograms = async (submissionData) => {
+    try {
+      const { error } = await supabase
+        .from('non_curricular_submissions_2025_11_27_07_17')
+        .upsert([{
+          student_id: submissionData.studentId,
+          completed_programs: submissionData.completedPrograms,
+          certificate_files: submissionData.certificateFiles,
+          total_program_count: submissionData.totalProgramCount,
+          total_score: submissionData.totalScore,
+          status: 'pending',
+          submitted_at: new Date().toISOString()
+        }], {
+          onConflict: 'student_id'
+        });
+
+      if (error) throw error;
+      await loadNonCurricularSubmissionsFromSupabase();
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  // 비교과 프로그램 승인
+  const approveNonCurricularPrograms = async (submissionId) => {
+    try {
+      const submission = nonCurricularSubmissions.find(s => s.id === submissionId);
+      if (!submission) throw new Error('제출 데이터를 찾을 수 없습니다.');
+
+      // 학생 점수 업데이트
+      const { error: userError } = await supabase
+        .from('users_2025_11_27_07_17')
+        .update({
+          non_curricular_score: submission.totalScore
+        })
+        .eq('id', submission.studentId);
+
+      if (userError) throw userError;
+
+      // 제출 상태 업데이트
+      const { error: submissionError } = await supabase
+        .from('non_curricular_submissions_2025_11_27_07_17')
+        .update({
+          status: 'approved',
+          reviewed_at: new Date().toISOString()
+        })
+        .eq('id', submissionId);
+
+      if (submissionError) throw submissionError;
+
+      await Promise.all([
+        loadNonCurricularSubmissionsFromSupabase(),
+        loadStudentsFromSupabase()
+      ]);
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  // 비교과 프로그램 반려
+  const rejectNonCurricularPrograms = async (submissionId, reason) => {
+    try {
+      const { error } = await supabase
+        .from('non_curricular_submissions_2025_11_27_07_17')
+        .update({
+          status: 'rejected',
+          rejection_reason: reason,
+          reviewed_at: new Date().toISOString()
+        })
+        .eq('id', submissionId);
+
+      if (error) throw error;
+      await loadNonCurricularSubmissionsFromSupabase();
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  // 학생별 비교과 프로그램 제출 내역 조회
+  const getNonCurricularSubmission = (studentId) => {
+    return nonCurricularSubmissions.find(s => s.studentId === studentId);
+  };
+
   // 초기 데이터 로드
   useEffect(() => {
     if (currentUser) {
@@ -930,6 +1143,10 @@ export const AppProvider = ({ children }) => {
           currentUser.accountType === 'admin' || currentUser.accountType === 'master') {
         loadPendingUsersFromSupabase();
       }
+
+      // 비교과 프로그램 데이터 로드
+      loadNonCurricularProgramsFromSupabase();
+      loadNonCurricularSubmissionsFromSupabase();
     }
   }, [currentUser]);
 
@@ -966,7 +1183,16 @@ export const AppProvider = ({ children }) => {
       approveCoreCourses,
       rejectCoreCourses,
       getCoreCoursesByDepartment,
-      getStudentSubmission
+      getStudentSubmission,
+      nonCurricularPrograms,
+      nonCurricularSubmissions,
+      addNonCurricularProgram,
+      updateNonCurricularProgram,
+      deleteNonCurricularProgram,
+      submitNonCurricularPrograms,
+      approveNonCurricularPrograms,
+      rejectNonCurricularPrograms,
+      getNonCurricularSubmission
     }}>
       {children}
     </AppContext.Provider>
