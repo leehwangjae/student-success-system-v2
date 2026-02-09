@@ -10,7 +10,8 @@ function NoticeModal({ isOpen, onClose, notice }) {
   const [formData, setFormData] = useState({
     title: '',
     field: '전체',
-    content: ''
+    content: '',
+    isPopup: false
   });
 
   const [imagePreview, setImagePreview] = useState(null);
@@ -22,7 +23,8 @@ function NoticeModal({ isOpen, onClose, notice }) {
       setFormData({
         title: notice.title || '',
         field: notice.field || '전체',
-        content: notice.content || ''
+        content: notice.content || '',
+        isPopup: notice.isPopup || false
       });
       
       if (notice.imageUrl) {
@@ -41,7 +43,8 @@ function NoticeModal({ isOpen, onClose, notice }) {
       setFormData({
         title: '',
         field: '전체',
-        content: ''
+        content: '',
+        isPopup: false
       });
       setImagePreview(null);
       setUploadedFiles([]);
@@ -175,6 +178,26 @@ function NoticeModal({ isOpen, onClose, notice }) {
               <option value="반도체">반도체</option>
               <option value="물류">물류</option>
             </select>
+          </div>
+
+          {/* 팝업으로 표시 */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.isPopup}
+                onChange={(e) => setFormData(prev => ({ ...prev, isPopup: e.target.checked }))}
+                className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+              />
+              <div className="flex-1">
+                <div className="font-medium text-gray-900">📢 학생 로그인 시 팝업으로 표시</div>
+                <div className="text-sm text-gray-600 mt-1">
+                  활성화하면 학생이 로그인할 때 이 공지사항이 자동으로 팝업창으로 표시됩니다.
+                  <br />
+                  학생은 "오늘 하루 보지 않기" 또는 "다시 보지 않기"를 선택할 수 있습니다.
+                </div>
+              </div>
+            </label>
           </div>
 
           {/* 이미지 업로드 */}

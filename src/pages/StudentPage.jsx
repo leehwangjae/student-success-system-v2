@@ -41,6 +41,8 @@ function StudentPage() {
   const [selectedNotice, setSelectedNotice] = useState(null);
   const [showProgramModal, setShowProgramModal] = useState(false);
   const [showNoticeModal, setShowNoticeModal] = useState(false);
+  const [showLoginPopup, setShowLoginPopup] = useState(false);
+  const [popupNotices, setPopupNotices] = useState([]);
 
   // 핵심교과목 관련 상태
   const [completedCourses, setCompletedCourses] = useState([]);
@@ -98,6 +100,65 @@ function StudentPage() {
 
     loadStudentScores();
   }, [currentUser?.id]);
+
+  // 로그인 시 팝업 공지사항 확인
+  useEffect(() => {
+    if (!currentUser?.id || !notices || notices.length === 0) return;
+
+    const checkPopupNotices = () => {
+      // 오늘 날짜
+      const today = new Date().toISOString().split('T')[0];
+      const dismissedKey = `dismissed_popups_${currentUser.id}`;
+      const dismissed = JSON.parse(localStorage.getItem(dismissedKey) || '{}');
+
+      // 팝업으로 표시할 공지사항 필터링
+      const popups = notices.filter(notice => {
+        // isPopup 속성이 true인 공지사항만
+        if (!notice.isPopup) return false;
+
+        // 내 분야 또는 전체 공지사항만
+        if (notice.field !== '전체' && notice.field !== currentUser.field) return false;
+
+        // 오늘 이미 "오늘 하루 보지 않기"를 선택한 공지는 제외
+        if (dismissed[notice.id] === today) return false;
+
+        // "다시 보지 않기"를 선택한 공지는 제외
+        if (dismissed[notice.id] === 'forever') return false;
+
+        return true;
+      });
+
+      if (popups.length > 0) {
+        setPopupNotices(popups);
+        setShowLoginPopup(true);
+      }
+    };
+
+    checkPopupNotices();
+  }, [currentUser?.id, notices, currentUser?.field]);
+
+  const handleDismissPopup = (noticeId, dismissType) => {
+    const dismissedKey = `dismissed_popups_${currentUser.id}`;
+    const dismissed = JSON.parse(localStorage.getItem(dismissedKey) || '{}');
+
+    if (dismissType === 'today') {
+      // 오늘 하루 보지 않기
+      dismissed[noticeId] = new Date().toISOString().split('T')[0];
+    } else if (dismissType === 'forever') {
+      // 다시 보지 않기
+      dismissed[noticeId] = 'forever';
+    }
+
+    localStorage.setItem(dismissedKey, JSON.stringify(dismissed));
+
+    // 남은 팝업 업데이트
+    const remaining = popupNotices.filter(n => n.id !== noticeId);
+    setPopupNotices(remaining);
+
+    if (remaining.length === 0) {
+      setShowLoginPopup(false);
+    }
+  };
 
   const handleLogout = () => {
     setCurrentUser(null);
@@ -867,6 +928,106 @@ function StudentPage() {
           }}
           notice={selectedNotice}
         />
+      )}
+
+      {/* 로그인 팝업 공지사항 */}
+      {showLoginPopup && popupNotices.length > 0 && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            {/* 헤더 */}
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4">
+              <h2 className="text-xl font-bold">📢 중요 공지사항</h2>
+              <p className="text-blue-100 text-sm mt-1">
+                {popupNotices.length}개의 새로운 공지사항이 있습니다
+              </p>
+            </div>
+
+            {/* 컨텐츠 */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {popupNotices.map((notice, index) => (
+                <div key={notice.id} className="mb-6 last:mb-0">
+                  {index > 0 && <div className="border-t my-6"></div>}
+
+                  {/* 공지사항 제목 */}
+                  <div className="mb-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        notice.field === '바이오' ? 'bg-green-100 text-green-800' :
+                        notice.field === '반도체' ? 'bg-blue-100 text-blue-800' :
+                        notice.field === '물류' ? 'bg-purple-100 text-purple-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {notice.field}
+                      </span>
+                      <span className="text-xs text-gray-500">{notice.date}</span>
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900">{notice.title}</h3>
+                  </div>
+
+                  {/* 공지사항 내용 */}
+                  <div className="prose prose-sm max-w-none">
+                    <div className="text-gray-700 whitespace-pre-wrap">{notice.content}</div>
+                  </div>
+
+                  {/* 이미지 */}
+                  {notice.imageUrl && (
+                    <div className="mt-4">
+                      <img
+                        src={notice.imageUrl}
+                        alt={notice.title}
+                        className="w-full h-auto rounded-lg shadow-md"
+                      />
+                    </div>
+                  )}
+
+                  {/* 첨부파일 */}
+                  {notice.attachedFiles && notice.attachedFiles.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      {notice.attachedFiles.map((file, idx) => (
+                        <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                          <span className="text-sm">📎</span>
+                          <a
+                            href={file.url}
+                            download={file.name}
+                            className="text-sm text-blue-600 hover:underline flex-1"
+                          >
+                            {file.name}
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 개별 공지사항 닫기 버튼 */}
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      onClick={() => handleDismissPopup(notice.id, 'today')}
+                      className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                    >
+                      오늘 하루 보지 않기
+                    </button>
+                    <button
+                      onClick={() => handleDismissPopup(notice.id, 'forever')}
+                      className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors"
+                    >
+                      다시 보지 않기
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* 하단 버튼 */}
+            <div className="border-t px-6 py-4 bg-gray-50">
+              <button
+                onClick={() => setShowLoginPopup(false)}
+                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors"
+              >
+                모두 확인했습니다
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
