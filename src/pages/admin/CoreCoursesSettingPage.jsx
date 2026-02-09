@@ -21,6 +21,7 @@ function CoreCoursesSettingPage() {
   const [selectedDepartment, setSelectedDepartment] = useState('생명과학전공');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const fileInputRef = useRef(null);
 
   // 선택된 학과의 교과목 필터링
@@ -34,6 +35,45 @@ function CoreCoursesSettingPage() {
       return c.targetDepartments.includes(selectedDepartment);
     });
   }, [coreCourses, selectedDepartment]);
+
+  // 정렬된 교과목
+  const sortedCourses = useMemo(() => {
+    if (!sortConfig.key) return departmentCourses;
+    const sorted = [...departmentCourses].sort((a, b) => {
+      let aVal = a[sortConfig.key];
+      let bVal = b[sortConfig.key];
+      if (sortConfig.key === 'credits') {
+        return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+      aVal = (aVal || '').toString();
+      bVal = (bVal || '').toString();
+      return sortConfig.direction === 'asc'
+        ? aVal.localeCompare(bVal, 'ko')
+        : bVal.localeCompare(aVal, 'ko');
+    });
+    return sorted;
+  }, [departmentCourses, sortConfig]);
+
+  const handleSort = (key) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const SortIcon = ({ columnKey }) => {
+    const isActive = sortConfig.key === columnKey;
+    return (
+      <span className="inline-flex flex-col ml-1 -space-y-1">
+        <svg className={`w-3 h-3 ${isActive && sortConfig.direction === 'asc' ? 'text-blue-600' : 'text-gray-300'}`} viewBox="0 0 10 6" fill="currentColor">
+          <path d="M5 0L10 6H0z" />
+        </svg>
+        <svg className={`w-3 h-3 ${isActive && sortConfig.direction === 'desc' ? 'text-blue-600' : 'text-gray-300'}`} viewBox="0 0 10 6" fill="currentColor">
+          <path d="M5 6L0 0h10z" />
+        </svg>
+      </span>
+    );
+  };
 
   // 과목 구분별 통계
   const courseStats = useMemo(() => {
@@ -301,17 +341,17 @@ function CoreCoursesSettingPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       #
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      과목명
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:text-gray-700" onClick={() => handleSort('courseName')}>
+                      <span className="inline-flex items-center">과목명 <SortIcon columnKey="courseName" /></span>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      학수번호
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:text-gray-700" onClick={() => handleSort('courseCode')}>
+                      <span className="inline-flex items-center">학수번호 <SortIcon columnKey="courseCode" /></span>
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      학점
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:text-gray-700" onClick={() => handleSort('credits')}>
+                      <span className="inline-flex items-center justify-center">학점 <SortIcon columnKey="credits" /></span>
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      과목 구분
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:text-gray-700" onClick={() => handleSort('courseType')}>
+                      <span className="inline-flex items-center justify-center">과목 구분 <SortIcon columnKey="courseType" /></span>
                     </th>
                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                       관리
@@ -319,7 +359,7 @@ function CoreCoursesSettingPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {departmentCourses.map((course, index) => (
+                  {sortedCourses.map((course, index) => (
                     <tr key={course.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {index + 1}
