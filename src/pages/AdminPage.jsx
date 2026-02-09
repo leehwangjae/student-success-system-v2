@@ -10,6 +10,8 @@ import NoticeModal from '../components/modals/NoticeModal';
 import ApplicantsModal from '../components/modals/ApplicantsModal';
 import CoreCoursesSettingPage from './admin/CoreCoursesSettingPage';
 import CoreCoursesReviewPage from './admin/CoreCoursesReviewPage';
+import NonCurricularProgramsSettingPage from './admin/NonCurricularProgramsSettingPage';
+import NonCurricularProgramsReviewPage from './admin/NonCurricularProgramsReviewPage';
 
 function AdminPage() {
   const {
@@ -951,6 +953,26 @@ function AdminPage() {
               📊 교과목 검토
             </button>
             <button
+              onClick={() => setActiveTab('nonCurricularSettings')}
+              className={`flex-1 px-6 py-4 font-semibold ${
+                activeTab === 'nonCurricularSettings'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-600 hover:text-blue-600'
+              }`}
+            >
+              🎯 비교과 설정
+            </button>
+            <button
+              onClick={() => setActiveTab('nonCurricularReview')}
+              className={`flex-1 px-6 py-4 font-semibold ${
+                activeTab === 'nonCurricularReview'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-600 hover:text-blue-600'
+              }`}
+            >
+              🎯 비교과 검토
+            </button>
+            <button
               onClick={() => setActiveTab('approval')}
               className={`flex-1 px-6 py-4 font-semibold ${
                 activeTab === 'approval'
@@ -1001,6 +1023,8 @@ function AdminPage() {
           {activeTab === 'approval' && renderApprovalTab()}
           {activeTab === 'coreCoursesSettings' && <CoreCoursesSettingPage />}
           {activeTab === 'coreCoursesReview' && <CoreCoursesReviewPage />}
+          {activeTab === 'nonCurricularSettings' && <NonCurricularProgramsSettingPage />}
+          {activeTab === 'nonCurricularReview' && <NonCurricularProgramsReviewPage />}
         </div>
       </div>
 

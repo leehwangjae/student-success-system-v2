@@ -19,6 +19,7 @@ import {
   fileToBase64,
   formatFileSize
 } from '../utils/coreCoursesHelpers';
+import NonCurricularProgramsApplicationPage from './student/NonCurricularProgramsApplicationPage';
 
 function StudentPage() {
   const {
@@ -896,6 +897,16 @@ function StudentPage() {
             >
               🎓 핵심교과목 신청
             </button>
+            <button
+              onClick={() => setActiveTab('nonCurricular')}
+              className={`flex-1 px-6 py-4 font-semibold ${
+                activeTab === 'nonCurricular'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-600 hover:text-blue-600'
+              }`}
+            >
+              🎯 비교과 프로그램 신청
+            </button>
           </div>
         </div>
 
@@ -905,6 +916,7 @@ function StudentPage() {
           {activeTab === 'history' && renderApplicationHistoryTab()}
           {activeTab === 'notices' && renderNoticesTab()}
           {activeTab === 'coreCourses' && renderCoreCoursesTab()}
+          {activeTab === 'nonCurricular' && <NonCurricularProgramsApplicationPage />}
         </div>
       </div>
 
