@@ -248,7 +248,7 @@ function NonCurricularProgramsApplicationPage() {
                 )}
                 {isApproved && (
                   <div className="text-sm text-green-700 mt-1">
-                    {submission.total_score}점이 반영되었습니다.
+                    {submission.totalScore}점이 반영되었습니다.
                   </div>
                 )}
                 {isRejected && (

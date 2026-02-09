@@ -309,7 +309,7 @@ function NonCurricularSubmissionReviewModal({ isOpen, onClose, submission, stude
           </div>
           <div className="text-sm text-gray-600">
             {submission.status === 'approved'
-              ? `${submission.total_score}점이 학생에게 반영되었습니다.`
+              ? `${submission.totalScore}점이 학생에게 반영되었습니다.`
               : `반려 사유: ${submission.rejection_reason}`
             }
           </div>
@@ -381,12 +381,12 @@ function NonCurricularSubmissionReviewModal({ isOpen, onClose, submission, stude
           <div className="flex items-center justify-around text-center">
             <div>
               <div className="text-xs text-gray-600 mb-1">총점</div>
-              <div className="text-2xl font-bold text-blue-600">{submission.total_score}점</div>
+              <div className="text-2xl font-bold text-blue-600">{submission.totalScore}점</div>
             </div>
             <div className="h-8 w-px bg-gray-300"></div>
             <div>
               <div className="text-xs text-gray-600 mb-1">이수 프로그램</div>
-              <div className="text-2xl font-bold text-green-600">{submission.total_program_count}개</div>
+              <div className="text-2xl font-bold text-green-600">{submission.totalProgramCount}개</div>
             </div>
             <div className="h-8 w-px bg-gray-300"></div>
             <div>
@@ -550,7 +550,7 @@ function NonCurricularSubmissionReviewModal({ isOpen, onClose, submission, stude
                   </div>
                   <div className="text-sm text-gray-600">
                     {submission.status === 'approved'
-                      ? `${submission.total_score}점이 학생에게 반영되었습니다.`
+                      ? `${submission.totalScore}점이 학생에게 반영되었습니다.`
                       : `반려 사유: ${submission.rejection_reason}`
                     }
                   </div>
