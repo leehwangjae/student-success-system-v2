@@ -849,7 +849,6 @@ export const AppProvider = ({ children }) => {
       const { error: userError } = await supabase
         .from('users_2025_11_27_07_17')
         .update({
-          core_courses_score: submission.totalScore,
           core_subject_score: submission.totalScore
         })
         .eq('id', submission.studentId);
