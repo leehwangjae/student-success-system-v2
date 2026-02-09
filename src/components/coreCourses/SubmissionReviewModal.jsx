@@ -72,8 +72,8 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2">
+      <div className="bg-white rounded-xl shadow-2xl w-[98vw] h-[98vh] overflow-hidden flex flex-col">
         {/* 헤더 */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -153,10 +153,10 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
 
         {/* 메인 컨텐츠 영역 */}
         <div className="flex-1 overflow-hidden flex">{viewMode === 'split' ? (
-            // 나란히 보기 모드
+            // 나란히 보기 모드 (2:1 비율)
             <div className="flex w-full h-full">
-              {/* 왼쪽: 증빙서류 뷰어 */}
-              <div className="w-1/2 border-r flex flex-col bg-gray-50">
+              {/* 왼쪽: 증빙서류 뷰어 (2/3) */}
+              <div className="w-2/3 border-r flex flex-col bg-gray-50">
                 <div className="px-4 py-3 bg-gray-100 border-b">
                   <h3 className="font-bold text-gray-900 flex items-center gap-2">
                     📄 제출 증빙
@@ -210,8 +210,8 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
                 </div>
               </div>
 
-              {/* 오른쪽: 과목 목록 및 검토 */}
-              <div className="w-1/2 flex flex-col overflow-hidden">
+              {/* 오른쪽: 과목 목록 및 검토 (1/3) */}
+              <div className="w-1/3 flex flex-col overflow-hidden">
                 <div className="flex-1 overflow-auto p-4">
                   {/* 이수 과목 목록 */}
                   <div className="mb-6">
