@@ -901,10 +901,11 @@ function AdminPage() {
 
       <div className="container mx-auto px-6 py-8">
         <div className="bg-white rounded-lg shadow-md mb-6">
+          {/* 첫 번째 줄 탭 */}
           <div className="flex border-b">
             <button
               onClick={() => setActiveTab('students')}
-              className={`flex-1 px-6 py-4 font-semibold ${
+              className={`flex-1 px-4 py-3 font-semibold text-sm ${
                 activeTab === 'students'
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-600 hover:text-blue-600'
@@ -914,7 +915,7 @@ function AdminPage() {
             </button>
             <button
               onClick={() => setActiveTab('programs')}
-              className={`flex-1 px-6 py-4 font-semibold ${
+              className={`flex-1 px-4 py-3 font-semibold text-sm ${
                 activeTab === 'programs'
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-600 hover:text-blue-600'
@@ -924,7 +925,7 @@ function AdminPage() {
             </button>
             <button
               onClick={() => setActiveTab('notices')}
-              className={`flex-1 px-6 py-4 font-semibold ${
+              className={`flex-1 px-4 py-3 font-semibold text-sm ${
                 activeTab === 'notices'
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-600 hover:text-blue-600'
@@ -933,48 +934,8 @@ function AdminPage() {
               공지사항 관리
             </button>
             <button
-              onClick={() => setActiveTab('coreCoursesSettings')}
-              className={`flex-1 px-6 py-4 font-semibold ${
-                activeTab === 'coreCoursesSettings'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-blue-600'
-              }`}
-            >
-              ⚙️ 교과목 설정
-            </button>
-            <button
-              onClick={() => setActiveTab('coreCoursesReview')}
-              className={`flex-1 px-6 py-4 font-semibold ${
-                activeTab === 'coreCoursesReview'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-blue-600'
-              }`}
-            >
-              📊 교과목 검토
-            </button>
-            <button
-              onClick={() => setActiveTab('nonCurricularSettings')}
-              className={`flex-1 px-6 py-4 font-semibold ${
-                activeTab === 'nonCurricularSettings'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-blue-600'
-              }`}
-            >
-              🎯 비교과 설정
-            </button>
-            <button
-              onClick={() => setActiveTab('nonCurricularReview')}
-              className={`flex-1 px-6 py-4 font-semibold ${
-                activeTab === 'nonCurricularReview'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-blue-600'
-              }`}
-            >
-              🎯 비교과 검토
-            </button>
-            <button
               onClick={() => setActiveTab('approval')}
-              className={`flex-1 px-6 py-4 font-semibold ${
+              className={`flex-1 px-4 py-3 font-semibold text-sm ${
                 activeTab === 'approval'
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-600 hover:text-blue-600'
@@ -988,6 +949,50 @@ function AdminPage() {
                   </span>
                 )}
               </span>
+            </button>
+          </div>
+
+          {/* 두 번째 줄 탭 */}
+          <div className="flex border-b bg-gray-50">
+            <button
+              onClick={() => setActiveTab('coreCoursesSettings')}
+              className={`flex-1 px-4 py-3 font-semibold text-sm ${
+                activeTab === 'coreCoursesSettings'
+                  ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
+                  : 'text-gray-600 hover:text-blue-600'
+              }`}
+            >
+              ⚙️ 교과목 설정
+            </button>
+            <button
+              onClick={() => setActiveTab('coreCoursesReview')}
+              className={`flex-1 px-4 py-3 font-semibold text-sm ${
+                activeTab === 'coreCoursesReview'
+                  ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
+                  : 'text-gray-600 hover:text-blue-600'
+              }`}
+            >
+              📊 교과목 검토
+            </button>
+            <button
+              onClick={() => setActiveTab('nonCurricularSettings')}
+              className={`flex-1 px-4 py-3 font-semibold text-sm ${
+                activeTab === 'nonCurricularSettings'
+                  ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
+                  : 'text-gray-600 hover:text-blue-600'
+              }`}
+            >
+              🎯 비교과 설정
+            </button>
+            <button
+              onClick={() => setActiveTab('nonCurricularReview')}
+              className={`flex-1 px-4 py-3 font-semibold text-sm ${
+                activeTab === 'nonCurricularReview'
+                  ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
+                  : 'text-gray-600 hover:text-blue-600'
+              }`}
+            >
+              🎯 비교과 검토
             </button>
           </div>
         </div>
