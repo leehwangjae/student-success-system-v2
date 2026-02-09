@@ -860,7 +860,7 @@ export const AppProvider = ({ children }) => {
         .update({
           status: 'approved',
           reviewed_at: new Date().toISOString(),
-          reviewed_by: currentUser?.id || null
+          reviewed_by: currentUser?.name || '관리자'
         })
         .eq('id', submissionId);
 
@@ -888,7 +888,7 @@ export const AppProvider = ({ children }) => {
           status: 'rejected',
           rejection_reason: reason,
           reviewed_at: new Date().toISOString(),
-          reviewed_by: currentUser?.id || null
+          reviewed_by: currentUser?.name || '관리자'
         })
         .eq('id', submissionId);
 
