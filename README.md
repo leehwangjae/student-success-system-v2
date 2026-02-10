@@ -1,4 +1,6 @@
-# React + Vite
+# Student Success System - React + Vite
+
+학생성공지수 관리 시스템
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
