@@ -16,6 +16,15 @@ function MyInfo() {
   // 실시간으로 students에서 현재 사용자 정보 가져오기
   const student = students.find(s => s.id === currentUser?.id) || currentUser;
 
+  // 디버그: 콘솔에 출력
+  console.log('🔍 MyInfo Debug:', {
+    currentUser,
+    student,
+    hasSSN: !!student?.ssn,
+    hasBankName: !!student?.bankName,
+    students: students.length
+  });
+
   if (!student) return null;
 
   const handleEdit = () => {
