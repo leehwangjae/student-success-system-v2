@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { useModalStore } from '../../hooks/useModal';
+import { FIELD_DEPARTMENTS } from '../coreCourses/constants';
 
 function StudentModal({ isOpen, onClose, student }) {
   const { addOrUpdateStudent } = useAppContext();
@@ -10,7 +11,7 @@ function StudentModal({ isOpen, onClose, student }) {
   const [formData, setFormData] = useState({
     studentId: '',
     name: '',
-    department: '',
+    department: FIELD_DEPARTMENTS['바이오'][0],
     field: '바이오',
     email: '',
     phone: '',
@@ -34,7 +35,7 @@ function StudentModal({ isOpen, onClose, student }) {
       setFormData({
         studentId: '',
         name: '',
-        department: '',
+        department: FIELD_DEPARTMENTS['바이오'][0],
         field: '바이오',
         email: '',
         phone: '',
@@ -49,6 +50,16 @@ function StudentModal({ isOpen, onClose, student }) {
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  const handleFieldChange = (e) => {
+    const newField = e.target.value;
+    const departments = FIELD_DEPARTMENTS[newField] || [];
+    setFormData(prev => ({
+      ...prev,
+      field: newField,
+      department: departments.length > 0 ? departments[0] : ''
     }));
   };
 
@@ -132,33 +143,35 @@ function StudentModal({ isOpen, onClose, student }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                학과 *
-              </label>
-              <input
-                type="text"
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="컴퓨터공학과"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
                 분야 *
               </label>
               <select
                 name="field"
                 value={formData.field}
-                onChange={handleChange}
+                onChange={handleFieldChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 required
               >
                 <option value="바이오">바이오</option>
                 <option value="반도체">반도체</option>
                 <option value="물류">물류</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                전공 *
+              </label>
+              <select
+                name="department"
+                value={formData.department}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                {(FIELD_DEPARTMENTS[formData.field] || []).map(dept => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
               </select>
             </div>
 

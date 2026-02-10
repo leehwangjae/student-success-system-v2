@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { useModalStore } from '../../hooks/useModal';
+import { FIELD_DEPARTMENTS } from '../coreCourses/constants';
 
 function StudentDetailModal({ isOpen, onClose, student, readOnly = true }) {
   const {
@@ -56,6 +57,16 @@ function StudentDetailModal({ isOpen, onClose, student, readOnly = true }) {
     setEditedInfo(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  const handleFieldChange = (e) => {
+    const newField = e.target.value;
+    const departments = FIELD_DEPARTMENTS[newField] || [];
+    setEditedInfo(prev => ({
+      ...prev,
+      field: newField,
+      department: departments.length > 0 ? departments[0] : ''
     }));
   };
 
@@ -147,27 +158,12 @@ function StudentDetailModal({ isOpen, onClose, student, readOnly = true }) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">학과</label>
-          {isEditing ? (
-            <input
-              type="text"
-              name="department"
-              value={editedInfo.department}
-              onChange={handleInfoChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            />
-          ) : (
-            <p className="px-4 py-2 bg-gray-50 rounded-lg">{student.department}</p>
-          )}
-        </div>
-
-        <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">분야</label>
           {isEditing ? (
             <select
               name="field"
               value={editedInfo.field}
-              onChange={handleInfoChange}
+              onChange={handleFieldChange}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="바이오">바이오</option>
@@ -176,6 +172,24 @@ function StudentDetailModal({ isOpen, onClose, student, readOnly = true }) {
             </select>
           ) : (
             <p className="px-4 py-2 bg-gray-50 rounded-lg">{student.field}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">전공</label>
+          {isEditing ? (
+            <select
+              name="department"
+              value={editedInfo.department}
+              onChange={handleInfoChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              {(FIELD_DEPARTMENTS[editedInfo.field] || []).map(dept => (
+                <option key={dept} value={dept}>{dept}</option>
+              ))}
+            </select>
+          ) : (
+            <p className="px-4 py-2 bg-gray-50 rounded-lg">{student.department}</p>
           )}
         </div>
 
