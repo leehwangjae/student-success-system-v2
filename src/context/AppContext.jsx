@@ -763,27 +763,50 @@ export const AppProvider = ({ children }) => {
         .select('*');
 
       if (error) {
+        console.error('Supabase 로드 에러:', error);
         setNonCurricularSubmissions([]);
         return;
       }
 
-      const formattedSubmissions = (data || []).map(sub => ({
-        id: sub.id,
-        studentId: sub.student_id,
-        completedPrograms: sub.completed_programs || [],
-        certificateFiles: sub.certificate_files || [],
-        totalProgramCount: sub.total_program_count || 0,
-        totalScore: sub.total_score || 0,
-        status: sub.status,
-        rejectionReason: sub.rejection_reason,
-        submittedAt: sub.submitted_at,
-        reviewedAt: sub.reviewed_at,
-        createdAt: sub.created_at,
-        updatedAt: sub.updated_at
-      }));
+      console.log('Supabase에서 가져온 원본 데이터:', data);
 
+      const formattedSubmissions = (data || []).map(sub => {
+        console.log('변환 전:', {
+          total_program_count: sub.total_program_count,
+          total_score: sub.total_score,
+          completed_programs: sub.completed_programs,
+          certificate_files: sub.certificate_files
+        });
+
+        const formatted = {
+          id: sub.id,
+          studentId: sub.student_id,
+          completedPrograms: sub.completed_programs || [],
+          certificateFiles: sub.certificate_files || [],
+          totalProgramCount: sub.total_program_count || 0,
+          totalScore: sub.total_score || 0,
+          status: sub.status,
+          rejectionReason: sub.rejection_reason,
+          submittedAt: sub.submitted_at,
+          reviewedAt: sub.reviewed_at,
+          createdAt: sub.created_at,
+          updatedAt: sub.updated_at
+        };
+
+        console.log('변환 후:', {
+          totalProgramCount: formatted.totalProgramCount,
+          totalScore: formatted.totalScore,
+          completedPrograms: formatted.completedPrograms,
+          certificateFiles: formatted.certificateFiles
+        });
+
+        return formatted;
+      });
+
+      console.log('최종 formattedSubmissions:', formattedSubmissions);
       setNonCurricularSubmissions(formattedSubmissions);
     } catch (error) {
+      console.error('로드 중 예외 발생:', error);
       setNonCurricularSubmissions([]);
     }
   };
