@@ -55,16 +55,22 @@ export const AppProvider = ({ children }) => {
           password: user.password,
           role: 'student',
           memo: user.memo || '',
-          
+
+          // 민감정보
+          ssn: user.ssn || '',
+          bankName: user.bank_name || '',
+          accountNumber: user.account_number || '',
+          accountHolder: user.account_holder || '',
+
           nonCurricularScore: user.non_curricular_score || 0,
           coreSubjectScore: user.core_subject_score || user.core_courses_score || 0,
           coreCoursesScore: user.core_courses_score || 0,
           industryScore: user.industry_score || 0,
-          
-          total: (user.non_curricular_score || 0) + 
+
+          total: (user.non_curricular_score || 0) +
                  (user.core_subject_score || user.core_courses_score || 0) +
                  (user.industry_score || 0),
-          
+
           nonCurricularHistory: user.non_curricular_history || [],
           coreSubjectHistory: user.core_subject_history || [],
           industryHistory: user.industry_history || []
@@ -318,14 +324,25 @@ export const AppProvider = ({ children }) => {
   // 학생 정보 업데이트
   const updateStudentInfo = async (studentId, updatedData) => {
     try {
+      // camelCase를 snake_case로 변환
+      const dbData = {
+        email: updatedData.email,
+        phone: updatedData.phone,
+        ssn: updatedData.ssn,
+        bank_name: updatedData.bankName,
+        account_number: updatedData.accountNumber,
+        account_holder: updatedData.accountHolder
+      };
+
       const { error } = await supabase
         .from('users_2025_11_27_07_17')
-        .update(updatedData)
+        .update(dbData)
         .eq('id', studentId);
 
       if (error) throw error;
 
       await loadStudentsFromSupabase();
+      return true;
     } catch (error) {
       console.error('학생 정보 업데이트 실패:', error);
       throw error;
