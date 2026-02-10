@@ -227,7 +227,12 @@ export const AppProvider = ({ children }) => {
         department: data.department,
         field: data.field,
         email: data.email,
-        phone: data.phone
+        phone: data.phone,
+        // 민감정보
+        ssn: data.ssn || '',
+        bankName: data.bank_name || '',
+        accountNumber: data.account_number || '',
+        accountHolder: data.account_holder || ''
       };
 
       console.log('🔍 DB에서 가져온 데이터:', {
