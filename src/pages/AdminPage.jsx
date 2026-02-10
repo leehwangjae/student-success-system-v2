@@ -962,7 +962,7 @@ function AdminPage() {
                   : 'text-gray-600 hover:text-blue-600'
               }`}
             >
-              ⚙️ 교과목 설정
+              ⚙️ 전략산업 교과목 설정
             </button>
             <button
               onClick={() => setActiveTab('coreCoursesReview')}
@@ -972,7 +972,7 @@ function AdminPage() {
                   : 'text-gray-600 hover:text-blue-600'
               }`}
             >
-              📊 교과목 검토
+              📊 전략산업 교과목 검토
             </button>
             <button
               onClick={() => setActiveTab('nonCurricularSettings')}
@@ -982,7 +982,7 @@ function AdminPage() {
                   : 'text-gray-600 hover:text-blue-600'
               }`}
             >
-              🎯 비교과 설정
+              🎯 비교과 프로그램 설정
             </button>
             <button
               onClick={() => setActiveTab('nonCurricularReview')}
@@ -992,7 +992,7 @@ function AdminPage() {
                   : 'text-gray-600 hover:text-blue-600'
               }`}
             >
-              🎯 비교과 검토
+              🎯 비교과 프로그램 검토
             </button>
           </div>
         </div>
