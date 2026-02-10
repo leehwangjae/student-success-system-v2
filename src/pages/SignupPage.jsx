@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { FIELD_DEPARTMENTS } from '../components/coreCourses/constants';
+import PrivacyConsentModal from '../components/privacy/PrivacyConsentModal';
 
 function SignupPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('student');
   const [errorMessage, setErrorMessage] = useState('');
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [privacyConsented, setPrivacyConsented] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -77,6 +80,17 @@ function SignupPage() {
       return;
     }
 
+    // 개인정보 동의 확인 (학생만)
+    if (activeTab === 'student' && !privacyConsented) {
+      setShowPrivacyModal(true);
+      return;
+    }
+
+    // 실제 회원가입 처리
+    await processSignup();
+  };
+
+  const processSignup = async () => {
     try {
       console.log('=== 회원가입 시작 ===');
       console.log('계정 유형:', activeTab);
@@ -130,6 +144,8 @@ function SignupPage() {
         userData.non_curricular_history = [];
         userData.core_subject_history = [];
         userData.industry_history = [];
+        userData.privacy_consented = true; // 개인정보 동의 여부
+        userData.privacy_consented_at = new Date().toISOString(); // 동의 시각
       }
 
       console.log('전송할 데이터:', userData);
@@ -171,7 +187,21 @@ function SignupPage() {
     navigate('/login');
   };
 
+  const handlePrivacyAgree = async () => {
+    setPrivacyConsented(true);
+    setShowPrivacyModal(false);
+    // 동의 후 자동으로 회원가입 진행
+    await processSignup();
+  };
+
   return (
+    <>
+      {/* 개인정보 동의 모달 */}
+      <PrivacyConsentModal
+        isOpen={showPrivacyModal}
+        onClose={() => setShowPrivacyModal(false)}
+        onAgree={handlePrivacyAgree}
+      />
     <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8">
         {/* 로고 영역 */}
@@ -414,8 +444,22 @@ function SignupPage() {
             </button>
           </div>
         </form>
+
+        {/* 개인정보 동의 안내 (학생만) */}
+        {activeTab === 'student' && (
+          <div className="mt-4 text-xs text-gray-500 text-center bg-blue-50 p-3 rounded-lg">
+            <p className="mb-1">📋 회원가입 시 개인정보 수집·이용 동의가 필요합니다</p>
+            <button
+              type="button"
+              onClick={() => setShowPrivacyModal(true)}
+              className="text-blue-600 underline hover:text-blue-700"
+            >
+              개인정보 처리방침 미리보기
+            </button>
+          </div>
+        )}
       </div>
-    </div>
+    </>
   );
 }
 
