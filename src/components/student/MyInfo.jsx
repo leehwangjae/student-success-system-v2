@@ -6,7 +6,11 @@ function MyInfo() {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     email: currentUser?.email || '',
-    phone: currentUser?.phone || ''
+    phone: currentUser?.phone || '',
+    ssn: currentUser?.ssn || '',
+    bankName: currentUser?.bankName || '',
+    accountNumber: currentUser?.accountNumber || '',
+    accountHolder: currentUser?.accountHolder || ''
   });
 
   // 실시간으로 students에서 현재 사용자 정보 가져오기
@@ -16,30 +20,59 @@ function MyInfo() {
 
   const handleEdit = () => {
     setEditData({
-      email: student.email,
-      phone: student.phone
+      email: student.email || '',
+      phone: student.phone || '',
+      ssn: student.ssn || '',
+      bankName: student.bankName || '',
+      accountNumber: student.accountNumber || '',
+      accountHolder: student.accountHolder || ''
     });
     setIsEditing(true);
   };
 
   const handleSave = () => {
-    // 유효성 검사
-    if (!editData.email || !editData.phone) {
-      alert('모든 필드를 입력해주세요.');
-      return;
+    // 이메일 형식 검사 (입력된 경우에만)
+    if (editData.email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(editData.email)) {
+        alert('올바른 이메일 형식을 입력해주세요.');
+        return;
+      }
     }
 
-    // 이메일 형식 검사
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(editData.email)) {
-      alert('올바른 이메일 형식을 입력해주세요.');
-      return;
+    // 전화번호 형식 검사 (입력된 경우에만)
+    if (editData.phone) {
+      const phoneRegex = /^\d{2,3}-\d{3,4}-\d{4}$/;
+      if (!phoneRegex.test(editData.phone)) {
+        alert('올바른 전화번호 형식을 입력해주세요. (예: 010-1234-5678)');
+        return;
+      }
     }
 
-    // 전화번호 형식 검사 (기본적인 검사)
-    const phoneRegex = /^\d{2,3}-\d{3,4}-\d{4}$/;
-    if (!phoneRegex.test(editData.phone)) {
-      alert('올바른 전화번호 형식을 입력해주세요. (예: 010-1234-5678)');
+    // 주민등록번호 형식 검사 (입력된 경우에만)
+    if (editData.ssn) {
+      const ssnRegex = /^\d{6}-\d{7}$/;
+      if (!ssnRegex.test(editData.ssn)) {
+        alert('올바른 주민등록번호 형식을 입력해주세요. (예: 000000-0000000)');
+        return;
+      }
+    }
+
+    // 계좌번호 형식 검사 (입력된 경우에만)
+    if (editData.accountNumber) {
+      const accountRegex = /^\d{10,14}$/;
+      if (!accountRegex.test(editData.accountNumber.replace(/-/g, ''))) {
+        alert('올바른 계좌번호를 입력해주세요. (숫자만 입력)');
+        return;
+      }
+    }
+
+    // 계좌정보는 모두 입력하거나 모두 비워야 함
+    const hasAnyBankInfo = editData.bankName || editData.accountNumber || editData.accountHolder;
+    const hasAllBankInfo = editData.bankName && editData.accountNumber && editData.accountHolder;
+
+    if (hasAnyBankInfo && !hasAllBankInfo) {
+      alert('계좌정보는 은행명, 계좌번호, 예금주명을 모두 입력해주세요.');
       return;
     }
 
@@ -51,8 +84,12 @@ function MyInfo() {
 
   const handleCancel = () => {
     setEditData({
-      email: student.email,
-      phone: student.phone
+      email: student.email || '',
+      phone: student.phone || '',
+      ssn: student.ssn || '',
+      bankName: student.bankName || '',
+      accountNumber: student.accountNumber || '',
+      accountHolder: student.accountHolder || ''
     });
     setIsEditing(false);
   };
@@ -135,8 +172,98 @@ function MyInfo() {
                 placeholder="010-1234-5678"
               />
             ) : (
-              <p className="font-semibold">{student.phone}</p>
+              <p className="font-semibold">{student.phone || '-'}</p>
             )}
+          </div>
+        </div>
+
+        {/* 민감정보 섹션 */}
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <div className="flex items-center gap-2 mb-4">
+            <h4 className="text-lg font-bold text-gray-900">🔐 개인정보</h4>
+            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">선택 사항</span>
+          </div>
+          <p className="text-sm text-gray-600 mb-4">
+            장학금 및 수당 지급을 위해 필요한 정보입니다. 필요 시 입력해주세요.
+          </p>
+
+          <div className="grid grid-cols-1 gap-4">
+            {/* 주민등록번호 */}
+            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+              <p className="text-sm text-gray-600 mb-1 flex items-center gap-2">
+                <span>주민등록번호</span>
+                <span className="text-xs text-gray-500">(개인정보 동의서 작성 항목)</span>
+              </p>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editData.ssn}
+                  onChange={(e) => setEditData({...editData, ssn: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="000000-0000000"
+                  maxLength="14"
+                />
+              ) : (
+                <p className="font-semibold">{student.ssn ? '••••••-•••••••' : '-'}</p>
+              )}
+            </div>
+
+            {/* 계좌정보 */}
+            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+              <p className="text-sm text-gray-600 mb-3 flex items-center gap-2">
+                <span>계좌정보</span>
+                <span className="text-xs text-gray-500">(개인정보 동의서 작성 항목)</span>
+              </p>
+              <div className="space-y-3">
+                {/* 은행명 */}
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">은행명</p>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editData.bankName}
+                      onChange={(e) => setEditData({...editData, bankName: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="예: 국민은행"
+                    />
+                  ) : (
+                    <p className="font-semibold">{student.bankName || '-'}</p>
+                  )}
+                </div>
+
+                {/* 계좌번호 */}
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">계좌번호</p>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editData.accountNumber}
+                      onChange={(e) => setEditData({...editData, accountNumber: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="숫자만 입력"
+                    />
+                  ) : (
+                    <p className="font-semibold">{student.accountNumber ? '••••••••••••' : '-'}</p>
+                  )}
+                </div>
+
+                {/* 예금주명 */}
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">예금주명</p>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editData.accountHolder}
+                      onChange={(e) => setEditData({...editData, accountHolder: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="예금주 이름"
+                    />
+                  ) : (
+                    <p className="font-semibold">{student.accountHolder || '-'}</p>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -148,6 +275,9 @@ function MyInfo() {
             <ul className="text-sm text-blue-700 mt-2 space-y-1 ml-4">
               <li>• 이메일: example@email.com</li>
               <li>• 전화번호: 010-1234-5678 (하이픈 포함)</li>
+              <li>• 주민등록번호: 000000-0000000 (하이픈 포함)</li>
+              <li>• 계좌번호: 숫자만 입력 (하이픈 제외)</li>
+              <li>• 계좌정보는 은행명, 계좌번호, 예금주명을 모두 입력해야 합니다</li>
             </ul>
           </div>
         )}
