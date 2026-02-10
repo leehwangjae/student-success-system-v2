@@ -234,23 +234,27 @@ function StudentPage() {
         
         <div className="text-center mb-8">
           <div className="text-6xl font-bold mb-2">{studentScores.total}</div>
-          <div className="text-blue-100">총점</div>
+          <div className="text-blue-100 text-lg">총점</div>
+          <div className="text-blue-200 text-sm mt-2">/ 100점</div>
         </div>
 
         <div className="grid grid-cols-3 gap-6">
           <div className="bg-white bg-opacity-20 rounded-lg p-6 text-center backdrop-blur-sm">
             <div className="text-3xl font-bold mb-2">{studentScores.nonCurricularScore}</div>
-            <div className="text-sm text-blue-100">비교과</div>
+            <div className="text-sm text-blue-100">취업 비교과 참여</div>
+            <div className="text-xs text-blue-200 mt-1">/ 20점</div>
           </div>
 
           <div className="bg-white bg-opacity-20 rounded-lg p-6 text-center backdrop-blur-sm">
             <div className="text-3xl font-bold mb-2">{studentScores.coreSubjectScore}</div>
-            <div className="text-sm text-blue-100">핵심교과</div>
+            <div className="text-sm text-blue-100">전략산업 교과목 이수</div>
+            <div className="text-xs text-blue-200 mt-1">/ 50점</div>
           </div>
 
           <div className="bg-white bg-opacity-20 rounded-lg p-6 text-center backdrop-blur-sm">
             <div className="text-3xl font-bold mb-2">{studentScores.industryScore}</div>
-            <div className="text-sm text-blue-100">산학협력</div>
+            <div className="text-sm text-blue-100">산학협력 프로그램 참여</div>
+            <div className="text-xs text-blue-200 mt-1">/ 30점</div>
           </div>
         </div>
       </div>
@@ -895,7 +899,7 @@ function StudentPage() {
                   : 'text-gray-600 hover:text-blue-600'
               }`}
             >
-              🎓 핵심교과목 신청
+              🎓 전략산업 교과목 신청
             </button>
             <button
               onClick={() => setActiveTab('nonCurricular')}
