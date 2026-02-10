@@ -202,262 +202,264 @@ function SignupPage() {
         onClose={() => setShowPrivacyModal(false)}
         onAgree={handlePrivacyAgree}
       />
-    <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8">
-        {/* 로고 영역 */}
-        <div className="text-center mb-6">
-          <div className="flex justify-center mb-4">
-            <img 
-              src="/image/INU_RISE_logo.png" 
-              alt="RISE 사업단 로고" 
-              className="h-20 w-auto object-contain"
-              onError={(e) => {
-                e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'flex';
-              }}
-            />
-            <div 
-              className="h-20 w-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl items-center justify-center hidden"
-              style={{ display: 'none' }}
-            >
-              <span className="text-3xl text-white font-bold">RISE</span>
+
+      <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8">
+          {/* 로고 영역 */}
+          <div className="text-center mb-6">
+            <div className="flex justify-center mb-4">
+              <img
+                src="/image/INU_RISE_logo.png"
+                alt="RISE 사업단 로고"
+                className="h-20 w-auto object-contain"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
+              />
+              <div
+                className="h-20 w-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl items-center justify-center hidden"
+                style={{ display: 'none' }}
+              >
+                <span className="text-3xl text-white font-bold">RISE</span>
+              </div>
             </div>
-          </div>
-          
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">회원가입</h1>
-          <p className="text-gray-600">학생성공지수 관리 시스템</p>
-        </div>
 
-        {/* 탭 선택 */}
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => setActiveTab('student')}
-            className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
-              activeTab === 'student'
-                ? 'bg-blue-600 text-white shadow-lg'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            학생
-          </button>
-          <button
-            onClick={() => setActiveTab('admin')}
-            className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
-              activeTab === 'admin'
-                ? 'bg-blue-600 text-white shadow-lg'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            교수
-          </button>
-          <button
-            onClick={() => setActiveTab('staff')}
-            className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
-              activeTab === 'staff'
-                ? 'bg-blue-600 text-white shadow-lg'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            직원
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* 아이디 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              아이디 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="아이디를 입력하세요"
-              required
-            />
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">회원가입</h1>
+            <p className="text-gray-600">학생성공지수 관리 시스템</p>
           </div>
 
-          {/* 이름 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              이름 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="이름을 입력하세요"
-              required
-            />
+          {/* 탭 선택 */}
+          <div className="flex gap-2 mb-6">
+            <button
+              onClick={() => setActiveTab('student')}
+              className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
+                activeTab === 'student'
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              학생
+            </button>
+            <button
+              onClick={() => setActiveTab('admin')}
+              className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
+                activeTab === 'admin'
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              교수
+            </button>
+            <button
+              onClick={() => setActiveTab('staff')}
+              className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
+                activeTab === 'staff'
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              직원
+            </button>
           </div>
 
-          {/* 학생 전용 필드 */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* 아이디 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                아이디 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="아이디를 입력하세요"
+                required
+              />
+            </div>
+
+            {/* 이름 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                이름 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="이름을 입력하세요"
+                required
+              />
+            </div>
+
+            {/* 학생 전용 필드 */}
+            {activeTab === 'student' && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    학번 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="studentId"
+                    value={formData.studentId}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="학번을 입력하세요"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    분야 <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="field"
+                    value={formData.field}
+                    onChange={(e) => {
+                      handleChange(e);
+                      // 분야가 변경되면 학과를 해당 분야의 첫 번째 학과로 자동 설정
+                      const newField = e.target.value;
+                      const departments = FIELD_DEPARTMENTS[newField] || [];
+                      if (departments.length > 0) {
+                        setFormData(prev => ({
+                          ...prev,
+                          field: newField,
+                          department: departments[0]
+                        }));
+                      }
+                    }}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="바이오">바이오</option>
+                    <option value="반도체">반도체</option>
+                    <option value="물류">물류</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    전공 <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="department"
+                    value={formData.department}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  >
+                    {!formData.department && <option value="">전공을 선택하세요</option>}
+                    {(FIELD_DEPARTMENTS[formData.field] || []).map(dept => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
+
+            {/* 전화번호 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">전화번호</label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="010-0000-0000"
+              />
+            </div>
+
+            {/* 이메일 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">이메일</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="example@email.com"
+              />
+            </div>
+
+            {/* 비밀번호 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                비밀번호 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="비밀번호 (6자 이상)"
+                required
+              />
+            </div>
+
+            {/* 비밀번호 확인 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                비밀번호 확인 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="비밀번호를 다시 입력하세요"
+                required
+              />
+            </div>
+
+            {/* 에러 메시지 */}
+            {errorMessage && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
+                {errorMessage}
+              </div>
+            )}
+
+            {/* 버튼 */}
+            <div className="flex gap-3 pt-4">
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg"
+              >
+                회원가입
+              </button>
+            </div>
+          </form>
+
+          {/* 개인정보 동의 안내 (학생만) */}
           {activeTab === 'student' && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  학번 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="studentId"
-                  value={formData.studentId}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="학번을 입력하세요"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  분야 <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="field"
-                  value={formData.field}
-                  onChange={(e) => {
-                    handleChange(e);
-                    // 분야가 변경되면 학과를 해당 분야의 첫 번째 학과로 자동 설정
-                    const newField = e.target.value;
-                    const departments = FIELD_DEPARTMENTS[newField] || [];
-                    if (departments.length > 0) {
-                      setFormData(prev => ({
-                        ...prev,
-                        field: newField,
-                        department: departments[0]
-                      }));
-                    }
-                  }}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                >
-                  <option value="바이오">바이오</option>
-                  <option value="반도체">반도체</option>
-                  <option value="물류">물류</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  전공 <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="department"
-                  value={formData.department}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                >
-                  {!formData.department && <option value="">전공을 선택하세요</option>}
-                  {(FIELD_DEPARTMENTS[formData.field] || []).map(dept => (
-                    <option key={dept} value={dept}>{dept}</option>
-                  ))}
-                </select>
-              </div>
-            </>
-          )}
-
-          {/* 전화번호 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">전화번호</label>
-            <input
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="010-0000-0000"
-            />
-          </div>
-
-          {/* 이메일 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">이메일</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="example@email.com"
-            />
-          </div>
-
-          {/* 비밀번호 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              비밀번호 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="비밀번호 (6자 이상)"
-              required
-            />
-          </div>
-
-          {/* 비밀번호 확인 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              비밀번호 확인 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="password"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="비밀번호를 다시 입력하세요"
-              required
-            />
-          </div>
-
-          {/* 에러 메시지 */}
-          {errorMessage && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
-              {errorMessage}
+            <div className="mt-4 text-xs text-gray-500 text-center bg-blue-50 p-3 rounded-lg">
+              <p className="mb-1">📋 회원가입 시 개인정보 수집·이용 동의가 필요합니다</p>
+              <button
+                type="button"
+                onClick={() => setShowPrivacyModal(true)}
+                className="text-blue-600 underline hover:text-blue-700"
+              >
+                개인정보 처리방침 미리보기
+              </button>
             </div>
           )}
-
-          {/* 버튼 */}
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-colors"
-            >
-              취소
-            </button>
-            <button
-              type="submit"
-              className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg"
-            >
-              회원가입
-            </button>
-          </div>
-        </form>
-
-        {/* 개인정보 동의 안내 (학생만) */}
-        {activeTab === 'student' && (
-          <div className="mt-4 text-xs text-gray-500 text-center bg-blue-50 p-3 rounded-lg">
-            <p className="mb-1">📋 회원가입 시 개인정보 수집·이용 동의가 필요합니다</p>
-            <button
-              type="button"
-              onClick={() => setShowPrivacyModal(true)}
-              className="text-blue-600 underline hover:text-blue-700"
-            >
-              개인정보 처리방침 미리보기
-            </button>
-          </div>
-        )}
+        </div>
       </div>
     </>
   );
