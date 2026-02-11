@@ -302,18 +302,15 @@ function StudentManagement() {
                     className="w-4 h-4 text-blue-600 rounded"
                   />
                 </th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">분야</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">학과</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">학번</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">이름</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">학과</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">분야</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">개인정보동의</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">이메일</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">전화번호</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">주민번호</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">은행</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">계좌번호</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">예금주</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">총점</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">개인정보동의</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">지급정보</th>
                 <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">관리</th>
               </tr>
             </thead>
@@ -329,13 +326,18 @@ function StudentManagement() {
                       className="w-4 h-4 text-blue-600 rounded disabled:opacity-30"
                     />
                   </td>
-                  <td className="px-6 py-4">{student.studentId || student.student_id}</td>
-                  <td className="px-6 py-4 font-medium">{student.name}</td>
-                  <td className="px-6 py-4 text-gray-600">{student.department}</td>
                   <td className="px-6 py-4">
                     <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
                       {student.field}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 text-gray-600">{student.department}</td>
+                  <td className="px-6 py-4">{student.studentId || student.student_id}</td>
+                  <td className="px-6 py-4 font-medium">{student.name}</td>
+                  <td className="px-6 py-4 text-gray-600 text-sm">{student.email || '-'}</td>
+                  <td className="px-6 py-4 text-gray-600 text-sm">{student.phone || '-'}</td>
+                  <td className="px-6 py-4">
+                    <span className="font-bold text-blue-600">{student.total}</span>
                   </td>
                   <td className="px-6 py-4">
                     {student.privacy_consented ? (
@@ -359,20 +361,12 @@ function StudentManagement() {
                       <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">미동의</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-gray-600">{student.email}</td>
-                  <td className="px-6 py-4 text-gray-600">{student.phone}</td>
-                  <td className="px-6 py-4 text-gray-600">
-                    {student.ssn ? (
-                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">등록됨</span>
+                  <td className="px-6 py-4 text-center">
+                    {student.ssn && student.bankName && student.accountNumber ? (
+                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">✓ 등록완료</span>
                     ) : (
                       <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">미등록</span>
                     )}
-                  </td>
-                  <td className="px-6 py-4 text-gray-600 text-sm">{student.bankName || '-'}</td>
-                  <td className="px-6 py-4 text-gray-600 text-sm">{student.accountNumber || '-'}</td>
-                  <td className="px-6 py-4 text-gray-600 text-sm">{student.accountHolder || '-'}</td>
-                  <td className="px-6 py-4">
-                    <span className="font-bold text-blue-600">{student.total}</span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex justify-center space-x-2">
