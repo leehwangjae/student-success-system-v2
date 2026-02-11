@@ -7,5 +7,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>,
-)// Cache bust 1770775188
-// Force rebuild 2026년 02월 11일 수 오후  4:37:48
+)
+// v3.2 - MyInfo modal fixed
+// Build timestamp: 2026-02-11 17:00:00

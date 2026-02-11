@@ -13,10 +13,13 @@ function MyInfo() {
 
       <div className="bg-white rounded-xl shadow-md p-8 mb-6">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold">기본 정보</h3>
+          <div className="flex items-center gap-3">
+            <h3 className="text-xl font-bold">기본 정보</h3>
+            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">v3.2</span>
+          </div>
           <button
             onClick={() => setShowModal(true)}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
           >
             📋 개인정보활용동의
           </button>
