@@ -154,23 +154,19 @@ function MyInfo() {
               <p className="font-semibold">{student.phone || '-'}</p>
             )}
           </div>
-        </div>
 
-        {/* 지급정보 상태 표시 */}
-        {hasPaymentInfo && (
-          <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-green-600 text-xl">✓</span>
-              <span className="text-green-800 font-medium">지급 정보가 등록되었습니다</span>
-            </div>
+          {/* 지급정보 입력 버튼 - 그리드 아이템으로 추가 */}
+          <div className="bg-white p-4 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center col-span-2">
             <button
               onClick={() => setShowPaymentModal(true)}
-              className="text-green-700 hover:text-green-900 text-sm underline"
+              className="w-full py-3 px-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 font-semibold transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
             >
-              확인 및 수정
+              <span className="text-xl">💳</span>
+              <span>{hasPaymentInfo ? '지급 정보 수정하기' : '지급 정보 입력하기'}</span>
+              {hasPaymentInfo && <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded">✓ 등록됨</span>}
             </button>
           </div>
-        )}
+        </div>
 
         {isEditing && (
           <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
