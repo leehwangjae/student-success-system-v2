@@ -730,6 +730,9 @@ export const AppProvider = ({ children }) => {
         completedCourses: sub.completed_courses || [],
         totalCompletedCount: sub.total_completed_count,
         totalScore: sub.total_score,
+        uploadedFiles: sub.uploaded_files || [],
+        paymentInfo: sub.payment_info || null,
+        // 이전 필드 호환성 유지
         transcriptFile: sub.transcript_file,
         transcriptFileName: sub.transcript_file_name,
         transcriptFileSize: sub.transcript_file_size,
@@ -906,53 +909,56 @@ export const AppProvider = ({ children }) => {
       const student = students.find(s => s.id === submissionData.studentId);
       if (!student) throw new Error('학생 정보를 찾을 수 없습니다.');
 
+      console.log('📤 submitCoreCourses 함수 실행');
+      console.log('전달받은 데이터:', submissionData);
+
       const { data: existing } = await supabase
         .from('core_courses_submissions_2025_11_27_07_17')
         .select('id')
         .eq('student_id', submissionData.studentId)
         .maybeSingle();
 
+      const submissionPayload = {
+        field: student.field,
+        department: student.department,
+        completed_courses: submissionData.completedCourses,
+        total_completed_count: submissionData.totalCompletedCount,
+        total_score: submissionData.totalScore,
+        uploaded_files: submissionData.uploadedFiles || [],
+        payment_info: submissionData.paymentInfo || null,
+        status: 'pending',
+        updated_at: new Date().toISOString()
+      };
+
       let result;
       if (existing) {
+        console.log('✏️ 기존 제출 업데이트');
+        submissionPayload.submitted_at = new Date().toISOString();
+
         result = await supabase
           .from('core_courses_submissions_2025_11_27_07_17')
-          .update({
-            field: student.field,
-            department: student.department,
-            completed_courses: submissionData.completedCourses,
-            total_completed_count: submissionData.totalCompletedCount,
-            total_score: submissionData.totalScore,
-            transcript_file: submissionData.transcriptFile,
-            transcript_file_name: submissionData.transcriptFileName,
-            transcript_file_size: submissionData.transcriptFileSize,
-            status: 'pending',
-            submitted_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
+          .update(submissionPayload)
           .eq('student_id', submissionData.studentId);
       } else {
+        console.log('➕ 새로운 제출 생성');
+        submissionPayload.student_id = submissionData.studentId;
+        submissionPayload.submitted_at = new Date().toISOString();
+
         result = await supabase
           .from('core_courses_submissions_2025_11_27_07_17')
-          .insert([{
-            student_id: submissionData.studentId,
-            field: student.field,
-            department: student.department,
-            completed_courses: submissionData.completedCourses,
-            total_completed_count: submissionData.totalCompletedCount,
-            total_score: submissionData.totalScore,
-            transcript_file: submissionData.transcriptFile,
-            transcript_file_name: submissionData.transcriptFileName,
-            transcript_file_size: submissionData.transcriptFileSize,
-            status: 'pending',
-            submitted_at: new Date().toISOString()
-          }]);
+          .insert([submissionPayload]);
       }
 
-      if (result.error) throw result.error;
+      if (result.error) {
+        console.error('❌ Supabase 저장 오류:', result.error);
+        throw result.error;
+      }
 
+      console.log('✅ 제출 성공');
       await loadCoreCoursesSubmissionsFromSupabase();
       return { success: true };
     } catch (error) {
+      console.error('❌ submitCoreCourses 오류:', error);
       return { success: false, error: error.message };
     }
   };

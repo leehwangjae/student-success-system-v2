@@ -262,8 +262,8 @@ function StudentManagement() {
           <!-- 서명 -->
           <div style="margin-bottom: 8px; text-align: center;">
             <p style="font-size: 10px; font-weight: bold; margin-bottom: 5px;">■ 동의자 서명</p>
-            <div id="signature-container" style="border: 2px solid #d1d5db; border-radius: 4px; padding: 5px; height: 60px; background: #fafafa; display: flex; align-items: center; justify-content: center; position: relative;">
-              <img id="signature-img" style="max-width: 250px; max-height: 50px; display: none;" />
+            <div id="signature-container" style="border: 2px solid #d1d5db; border-radius: 4px; padding: 10px; min-height: 70px; background: #fafafa; text-align: center;">
+              <img id="signature-img" src="" style="max-width: 100%; max-height: 60px; vertical-align: middle;" />
             </div>
           </div>
 
@@ -277,37 +277,86 @@ function StudentManagement() {
 
       document.body.appendChild(container);
 
-      // 서명 이미지 로드
+      // 서명 이미지 로드 및 디버깅
+      console.log('=== PDF 생성 시작 ===');
+      console.log('학생 데이터:', student.name, student.studentId || student.student_id);
+      console.log('서명 데이터 존재 여부:', !!student.privacy_signature);
+      console.log('서명 데이터 길이:', student.privacy_signature ? student.privacy_signature.length : 0);
+      console.log('서명 데이터 시작:', student.privacy_signature ? student.privacy_signature.substring(0, 50) : 'N/A');
+
       if (student.privacy_signature) {
         const signatureImg = container.querySelector('#signature-img');
         if (signatureImg) {
-          signatureImg.style.display = 'block';
+          console.log('서명 이미지 요소 찾음');
+
+          // 이미지를 먼저 설정하고 표시
           signatureImg.src = student.privacy_signature;
-          // 이미지 로드 대기
+          signatureImg.style.display = 'block';
+          signatureImg.style.visibility = 'visible';
+          signatureImg.style.opacity = '1';
+
+          // 이미지 로드 완료 대기
           await new Promise((resolve) => {
+            let resolved = false;
+
             signatureImg.onload = () => {
-              console.log('서명 이미지 로드 완료');
-              resolve();
+              if (!resolved) {
+                console.log('✅ 서명 이미지 로드 성공');
+                console.log('이미지 크기:', signatureImg.naturalWidth, 'x', signatureImg.naturalHeight);
+                resolved = true;
+                resolve();
+              }
             };
-            signatureImg.onerror = () => {
-              console.error('서명 이미지 로드 실패');
-              resolve();
+
+            signatureImg.onerror = (e) => {
+              if (!resolved) {
+                console.error('❌ 서명 이미지 로드 실패:', e);
+                resolved = true;
+                resolve();
+              }
             };
-            // 타임아웃 추가
-            setTimeout(resolve, 2000);
+
+            // 이미 로드되었을 경우 대비
+            if (signatureImg.complete) {
+              console.log('✅ 서명 이미지 이미 로드됨');
+              console.log('이미지 크기:', signatureImg.naturalWidth, 'x', signatureImg.naturalHeight);
+              resolved = true;
+              resolve();
+            }
+
+            // 3초 타임아웃
+            setTimeout(() => {
+              if (!resolved) {
+                console.warn('⚠️ 서명 이미지 로드 타임아웃');
+                resolved = true;
+                resolve();
+              }
+            }, 3000);
           });
+
+          console.log('이미지 최종 상태 - display:', signatureImg.style.display, 'src 길이:', signatureImg.src.length);
+        } else {
+          console.error('❌ 서명 이미지 요소를 찾을 수 없음');
         }
       } else {
-        console.log('서명 이미지 없음');
+        console.warn('⚠️ 학생에게 서명 데이터 없음');
       }
 
+      // 렌더링 완료 대기
+      console.log('렌더링 대기 중...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      console.log('html2canvas 변환 시작...');
       // HTML을 캔버스로 변환
       const canvas = await html2canvas(container, {
         scale: 2,
         useCORS: true,
-        logging: false,
+        allowTaint: true,
+        logging: true,
         backgroundColor: '#ffffff'
       });
+
+      console.log('✅ 캔버스 변환 완료, 크기:', canvas.width, 'x', canvas.height);
 
       // PDF 생성
       const imgData = canvas.toDataURL('image/png');
@@ -337,10 +386,13 @@ function StudentManagement() {
       }
 
       // 파일 저장
-      pdf.save(`개인정보동의서_${student.name}_${student.studentId || student.student_id}.pdf`);
+      const filename = `개인정보동의서_${student.name}_${student.studentId || student.student_id}.pdf`;
+      pdf.save(filename);
+      console.log('✅ PDF 저장 완료:', filename);
 
       // 임시 요소 제거
       document.body.removeChild(container);
+      console.log('=== PDF 생성 완료 ===');
     } catch (error) {
       console.error('PDF 생성 오류:', error);
       alert('PDF 생성 중 오류가 발생했습니다.');

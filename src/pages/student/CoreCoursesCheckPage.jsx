@@ -32,6 +32,13 @@ function CoreCoursesCheckPage() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // 지급 관련 정보
+  const [paymentInfo, setPaymentInfo] = useState({
+    bankName: '',
+    accountNumber: '',
+    accountHolder: ''
+  });
+
   // 학생의 학과에 맞는 교과목 가져오기
   const departmentCourses = useMemo(() => {
     if (!currentUser) return [];
@@ -56,6 +63,11 @@ function CoreCoursesCheckPage() {
     if (submission) {
       setCompletedCourses(submission.completedCourses || []);
       setUploadedFiles(submission.uploadedFiles || []);
+
+      // 지급 정보 로드
+      if (submission.paymentInfo) {
+        setPaymentInfo(submission.paymentInfo);
+      }
 
       // 승인된 상태면 수정 불가
       if (submission.status === 'approved') {
@@ -169,13 +181,12 @@ function CoreCoursesCheckPage() {
     console.log('🔥 제출하기 버튼 클릭!');
     console.log('현재 사용자:', currentUser);
     console.log('완료된 과목:', completedCourses);
-    console.log('파일:', transcriptFile);
-    console.log('파일명:', transcriptFileName);
-    
+    console.log('지급 정보:', paymentInfo);
+
     // 검증
     const completedCount = completedCourses.filter(c => c.isCompleted).length;
     console.log('체크된 과목 수:', completedCount);
-    
+
     if (completedCount === 0) {
       console.log('❌ 과목 미선택');
       showAlert('이수한 과목을 최소 1개 이상 선택해주세요.');
@@ -188,15 +199,22 @@ function CoreCoursesCheckPage() {
       return;
     }
 
+    // 지급 정보 검증
+    if (!paymentInfo.bankName || !paymentInfo.accountNumber || !paymentInfo.accountHolder) {
+      console.log('❌ 지급 정보 미입력');
+      showAlert('지급 관련 정보를 모두 입력해주세요.\n(은행명, 계좌번호, 예금주)');
+      return;
+    }
+
     console.log('✅ 검증 통과 - 확인 모달 표시');
     console.log('점수 정보:', scoreInfo);
-    
+
     showConfirm(
-      `${scoreInfo.completedCount}개 과목 (${scoreInfo.score}점)을 제출하시겠습니까?\n\n제출 후에는 관리자 승인 전까지 수정할 수 없습니다.`,
+      `${scoreInfo.completedCount}개 과목 (${scoreInfo.score}점)을 제출하시겠습니까?\n\n제출 후에는 관리자 승인 전까지 수정할 수 있습니다.`,
       async () => {
         console.log('✅ 사용자가 확인 버튼 클릭!');
         setIsSubmitting(true);
-        
+
         try {
           console.log('📤 submitCoreCourses 호출 시작...');
           const submissionData = {
@@ -204,12 +222,13 @@ function CoreCoursesCheckPage() {
             completedCourses: completedCourses.filter(c => c.isCompleted),
             totalCompletedCount: scoreInfo.completedCount,
             totalScore: scoreInfo.score,
-            uploadedFiles
+            uploadedFiles,
+            paymentInfo
           };
           console.log('제출할 데이터:', submissionData);
-          
+
           const result = await submitCoreCourses(submissionData);
-          
+
           console.log('📥 제출 결과:', result);
 
           if (result.success) {
@@ -475,6 +494,96 @@ function CoreCoursesCheckPage() {
           )}
         </div>
 
+        {/* 지급 관련 정보 입력 */}
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+          <h3 className="font-bold text-gray-900 mb-4">
+            💳 지급 관련 정보 입력 <span className="text-red-500">*</span>
+          </h3>
+
+          <div className="space-y-4">
+            {/* 은행명 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                은행명 <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={paymentInfo.bankName}
+                onChange={(e) => setPaymentInfo({ ...paymentInfo, bankName: e.target.value })}
+                disabled={!canEdit}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              >
+                <option value="">은행을 선택하세요</option>
+                <option value="KB국민은행">KB국민은행</option>
+                <option value="신한은행">신한은행</option>
+                <option value="우리은행">우리은행</option>
+                <option value="하나은행">하나은행</option>
+                <option value="NH농협은행">NH농협은행</option>
+                <option value="IBK기업은행">IBK기업은행</option>
+                <option value="SC제일은행">SC제일은행</option>
+                <option value="한국씨티은행">한국씨티은행</option>
+                <option value="케이뱅크">케이뱅크</option>
+                <option value="카카오뱅크">카카오뱅크</option>
+                <option value="토스뱅크">토스뱅크</option>
+                <option value="부산은행">부산은행</option>
+                <option value="대구은행">대구은행</option>
+                <option value="광주은행">광주은행</option>
+                <option value="경남은행">경남은행</option>
+                <option value="전북은행">전북은행</option>
+                <option value="제주은행">제주은행</option>
+                <option value="새마을금고">새마을금고</option>
+                <option value="신협">신협</option>
+                <option value="우체국">우체국</option>
+              </select>
+            </div>
+
+            {/* 계좌번호 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                계좌번호 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={paymentInfo.accountNumber}
+                onChange={(e) => setPaymentInfo({ ...paymentInfo, accountNumber: e.target.value.replace(/[^0-9-]/g, '') })}
+                disabled={!canEdit}
+                placeholder="숫자와 하이픈(-)만 입력 (예: 123-456-789012)"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              />
+            </div>
+
+            {/* 예금주 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                예금주 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={paymentInfo.accountHolder}
+                onChange={(e) => setPaymentInfo({ ...paymentInfo, accountHolder: e.target.value })}
+                disabled={!canEdit}
+                placeholder="예금주명을 입력하세요"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              />
+            </div>
+          </div>
+
+          {/* 안내 메시지 */}
+          <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <div className="flex gap-2">
+              <div className="text-yellow-600">⚠️</div>
+              <div className="text-sm text-yellow-800">
+                <p className="font-semibold mb-1">입력 시 주의사항</p>
+                <ul className="space-y-1 text-xs">
+                  <li>• 지급금을 받을 본인 명의의 계좌를 입력해주세요.</li>
+                  <li>• 예금주명은 학생 이름과 일치해야 합니다.</li>
+                  <li>• 계좌번호는 정확하게 입력해주세요. (오류 시 지급이 지연될 수 있습니다)</li>
+                  <li>• 관리자 승인 전까지 수정이 가능합니다.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* 제출 버튼 */}
         {canEdit && (
           <div className="bg-white rounded-xl shadow-sm p-6">
@@ -497,7 +606,7 @@ function CoreCoursesCheckPage() {
             </div>
 
             <div className="mt-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-              ℹ️ 제출 후에는 관리자 승인 전까지 수정할 수 없습니다.
+              ℹ️ 제출 후에도 관리자 승인 전까지는 수정이 가능합니다.
             </div>
           </div>
         )}
@@ -525,6 +634,8 @@ function CoreCoursesCheckPage() {
                 <li>• 동일 과목 중복 체크는 불가능합니다.</li>
                 <li>• 최대 {MAX_COURSES}과목({MAX_COURSES * POINTS_PER_COURSE}점)까지 인정됩니다.</li>
                 <li>• 과목당 {POINTS_PER_COURSE}점이 부여됩니다.</li>
+                <li>• 교과과정 이수표, 개인정보동의서, 지급 정보는 필수 입력 사항입니다.</li>
+                <li>• 제출 후에도 관리자 승인 전까지는 수정이 가능합니다.</li>
               </ul>
             </div>
           </div>
