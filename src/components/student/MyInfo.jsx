@@ -72,20 +72,12 @@ function MyInfo() {
           <h3 className="text-xl font-bold">기본 정보</h3>
           <div className="flex gap-2">
             {!isEditing ? (
-              <>
-                <button
-                  onClick={handleEdit}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
-                >
-                  ✏️ 정보 수정
-                </button>
-                <button
-                  onClick={() => setShowPaymentModal(true)}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold flex items-center gap-2"
-                >
-                  💳 지급 정보 {hasPaymentInfo ? '수정' : '입력'}
-                </button>
-              </>
+              <button
+                onClick={handleEdit}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+              >
+                ✏️ 정보 수정
+              </button>
             ) : (
               <div className="flex space-x-2">
                 <button
