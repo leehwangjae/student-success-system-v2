@@ -1,45 +1,30 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
+import PaymentInfoModal from '../modals/PaymentInfoModal';
 
 function MyInfo() {
   const { currentUser, students, updateStudentInfo } = useAppContext();
   const [isEditing, setIsEditing] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [editData, setEditData] = useState({
     email: currentUser?.email || '',
-    phone: currentUser?.phone || '',
-    ssn: currentUser?.ssn || '',
-    bankName: currentUser?.bankName || '',
-    accountNumber: currentUser?.accountNumber || '',
-    accountHolder: currentUser?.accountHolder || ''
+    phone: currentUser?.phone || ''
   });
 
   // 실시간으로 students에서 현재 사용자 정보 가져오기
   const student = students.find(s => s.id === currentUser?.id) || currentUser;
-
-  // 디버그: 콘솔에 출력
-  console.log('🔍 MyInfo Debug:', {
-    currentUser,
-    student,
-    hasSSN: !!student?.ssn,
-    hasBankName: !!student?.bankName,
-    students: students.length
-  });
 
   if (!student) return null;
 
   const handleEdit = () => {
     setEditData({
       email: student.email || '',
-      phone: student.phone || '',
-      ssn: student.ssn || '',
-      bankName: student.bankName || '',
-      accountNumber: student.accountNumber || '',
-      accountHolder: student.accountHolder || ''
+      phone: student.phone || ''
     });
     setIsEditing(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // 이메일 형식 검사 (입력된 경우에만)
     if (editData.email) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -58,83 +43,68 @@ function MyInfo() {
       }
     }
 
-    // 주민등록번호 형식 검사 (입력된 경우에만)
-    if (editData.ssn) {
-      const ssnRegex = /^\d{6}-\d{7}$/;
-      if (!ssnRegex.test(editData.ssn)) {
-        alert('올바른 주민등록번호 형식을 입력해주세요. (예: 000000-0000000)');
-        return;
-      }
-    }
-
-    // 계좌번호 형식 검사 (입력된 경우에만)
-    if (editData.accountNumber) {
-      const accountRegex = /^\d{10,14}$/;
-      if (!accountRegex.test(editData.accountNumber.replace(/-/g, ''))) {
-        alert('올바른 계좌번호를 입력해주세요. (숫자만 입력)');
-        return;
-      }
-    }
-
-    // 계좌정보는 모두 입력하거나 모두 비워야 함
-    const hasAnyBankInfo = editData.bankName || editData.accountNumber || editData.accountHolder;
-    const hasAllBankInfo = editData.bankName && editData.accountNumber && editData.accountHolder;
-
-    if (hasAnyBankInfo && !hasAllBankInfo) {
-      alert('계좌정보는 은행명, 계좌번호, 예금주명을 모두 입력해주세요.');
-      return;
-    }
-
-    const success = updateStudentInfo(student.id, editData);
-    if (success) {
+    try {
+      await updateStudentInfo(student.id, editData);
       setIsEditing(false);
+      alert('정보가 수정되었습니다.');
+    } catch (error) {
+      alert('정보 수정에 실패했습니다.');
     }
   };
 
   const handleCancel = () => {
     setEditData({
       email: student.email || '',
-      phone: student.phone || '',
-      ssn: student.ssn || '',
-      bankName: student.bankName || '',
-      accountNumber: student.accountNumber || '',
-      accountHolder: student.accountHolder || ''
+      phone: student.phone || ''
     });
     setIsEditing(false);
   };
 
+  // 지급정보 입력 여부 확인
+  const hasPaymentInfo = student.ssn || student.bankName;
+
   return (
     <div>
       <h2 className="text-3xl font-bold mb-6">내 정보</h2>
-      
+
       <div className="bg-white rounded-xl shadow-md p-8 mb-6">
         <div className="flex justify-between items-start mb-6">
           <h3 className="text-xl font-bold">기본 정보</h3>
-          {!isEditing ? (
-            <button
-              onClick={handleEdit}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
-            >
-              ✏️ 정보 수정
-            </button>
-          ) : (
-            <div className="flex space-x-2">
-              <button
-                onClick={handleSave}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
-              >
-                💾 저장
-              </button>
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 font-semibold"
-              >
-                ✖️ 취소
-              </button>
-            </div>
-          )}
+          <div className="flex gap-2">
+            {!isEditing ? (
+              <>
+                <button
+                  onClick={handleEdit}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+                >
+                  ✏️ 정보 수정
+                </button>
+                <button
+                  onClick={() => setShowPaymentModal(true)}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold flex items-center gap-2"
+                >
+                  💳 지급 정보 {hasPaymentInfo ? '수정' : '입력'}
+                </button>
+              </>
+            ) : (
+              <div className="flex space-x-2">
+                <button
+                  onClick={handleSave}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+                >
+                  💾 저장
+                </button>
+                <button
+                  onClick={handleCancel}
+                  className="px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 font-semibold"
+                >
+                  ✖️ 취소
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-        
+
         <div className="grid grid-cols-2 gap-6">
           <div className="bg-gray-50 p-4 rounded-lg">
             <p className="text-sm text-gray-600 mb-1">학번</p>
@@ -152,7 +122,7 @@ function MyInfo() {
             <p className="text-sm text-gray-600 mb-1">분야</p>
             <p className="font-semibold">{student.field}</p>
           </div>
-          
+
           {/* 이메일 - 수정 가능 */}
           <div className="bg-gray-50 p-4 rounded-lg">
             <p className="text-sm text-gray-600 mb-1">이메일</p>
@@ -165,10 +135,10 @@ function MyInfo() {
                 placeholder="example@email.com"
               />
             ) : (
-              <p className="font-semibold">{student.email}</p>
+              <p className="font-semibold">{student.email || '-'}</p>
             )}
           </div>
-          
+
           {/* 전화번호 - 수정 가능 */}
           <div className="bg-gray-50 p-4 rounded-lg">
             <p className="text-sm text-gray-600 mb-1">전화번호</p>
@@ -186,96 +156,22 @@ function MyInfo() {
           </div>
         </div>
 
-        {/* 민감정보 섹션 */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <div className="flex items-center gap-2 mb-4">
-            <h4 className="text-lg font-bold text-gray-900">🔐 개인정보</h4>
-            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">선택 사항</span>
-          </div>
-          <p className="text-sm text-gray-600 mb-4">
-            장학금 및 수당 지급을 위해 필요한 정보입니다. 필요 시 입력해주세요.
-          </p>
-
-          <div className="grid grid-cols-1 gap-4">
-            {/* 주민등록번호 */}
-            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-              <p className="text-sm text-gray-600 mb-1 flex items-center gap-2">
-                <span>주민등록번호</span>
-                <span className="text-xs text-gray-500">(개인정보 동의서 작성 항목)</span>
-              </p>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={editData.ssn}
-                  onChange={(e) => setEditData({...editData, ssn: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="000000-0000000"
-                  maxLength="14"
-                />
-              ) : (
-                <p className="font-semibold">{student.ssn ? '••••••-•••••••' : '-'}</p>
-              )}
+        {/* 지급정보 상태 표시 */}
+        {hasPaymentInfo && (
+          <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-green-600 text-xl">✓</span>
+              <span className="text-green-800 font-medium">지급 정보가 등록되었습니다</span>
             </div>
-
-            {/* 계좌정보 */}
-            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-              <p className="text-sm text-gray-600 mb-3 flex items-center gap-2">
-                <span>계좌정보</span>
-                <span className="text-xs text-gray-500">(개인정보 동의서 작성 항목)</span>
-              </p>
-              <div className="space-y-3">
-                {/* 은행명 */}
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">은행명</p>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={editData.bankName}
-                      onChange={(e) => setEditData({...editData, bankName: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="예: 국민은행"
-                    />
-                  ) : (
-                    <p className="font-semibold">{student.bankName || '-'}</p>
-                  )}
-                </div>
-
-                {/* 계좌번호 */}
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">계좌번호</p>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={editData.accountNumber}
-                      onChange={(e) => setEditData({...editData, accountNumber: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="숫자만 입력"
-                    />
-                  ) : (
-                    <p className="font-semibold">{student.accountNumber ? '••••••••••••' : '-'}</p>
-                  )}
-                </div>
-
-                {/* 예금주명 */}
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">예금주명</p>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={editData.accountHolder}
-                      onChange={(e) => setEditData({...editData, accountHolder: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="예금주 이름"
-                    />
-                  ) : (
-                    <p className="font-semibold">{student.accountHolder || '-'}</p>
-                  )}
-                </div>
-              </div>
-            </div>
+            <button
+              onClick={() => setShowPaymentModal(true)}
+              className="text-green-700 hover:text-green-900 text-sm underline"
+            >
+              확인 및 수정
+            </button>
           </div>
-        </div>
-        
+        )}
+
         {isEditing && (
           <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-800">
@@ -284,9 +180,6 @@ function MyInfo() {
             <ul className="text-sm text-blue-700 mt-2 space-y-1 ml-4">
               <li>• 이메일: example@email.com</li>
               <li>• 전화번호: 010-1234-5678 (하이픈 포함)</li>
-              <li>• 주민등록번호: 000000-0000000 (하이픈 포함)</li>
-              <li>• 계좌번호: 숫자만 입력 (하이픈 제외)</li>
-              <li>• 계좌정보는 은행명, 계좌번호, 예금주명을 모두 입력해야 합니다</li>
             </ul>
           </div>
         )}
@@ -298,19 +191,19 @@ function MyInfo() {
         <div className="grid grid-cols-4 gap-4">
           <div className="bg-blue-50 p-6 rounded-lg text-center">
             <p className="text-sm text-gray-600 mb-2">비교과</p>
-            <p className="text-3xl font-bold text-blue-600">{student.nonCurricularScore}</p>
+            <p className="text-3xl font-bold text-blue-600">{student.nonCurricularScore || 0}</p>
           </div>
           <div className="bg-green-50 p-6 rounded-lg text-center">
             <p className="text-sm text-gray-600 mb-2">핵심교과</p>
-            <p className="text-3xl font-bold text-green-600">{student.coreSubjectScore}</p>
+            <p className="text-3xl font-bold text-green-600">{student.coreSubjectScore || 0}</p>
           </div>
           <div className="bg-purple-50 p-6 rounded-lg text-center">
             <p className="text-sm text-gray-600 mb-2">산학협력</p>
-            <p className="text-3xl font-bold text-purple-600">{student.industryScore}</p>
+            <p className="text-3xl font-bold text-purple-600">{student.industryScore || 0}</p>
           </div>
           <div className="bg-orange-50 p-6 rounded-lg text-center">
             <p className="text-sm text-gray-600 mb-2">총점</p>
-            <p className="text-3xl font-bold text-orange-600">{student.total}</p>
+            <p className="text-3xl font-bold text-orange-600">{student.total || 0}</p>
           </div>
         </div>
       </div>
@@ -318,12 +211,12 @@ function MyInfo() {
       {/* 비교과 활동 내역 */}
       <div className="bg-white rounded-xl shadow-md p-8 mb-6">
         <h3 className="text-xl font-bold mb-4">비교과 활동 내역</h3>
-        {student.nonCurricularHistory?.length === 0 ? (
+        {(!student.nonCurricularHistory || student.nonCurricularHistory.length === 0) ? (
           <p className="text-gray-500 text-center py-4">활동 내역이 없습니다.</p>
         ) : (
           <div className="space-y-3">
-            {student.nonCurricularHistory?.map((item) => (
-              <div key={item.id} className="bg-blue-50 p-4 rounded-lg flex justify-between items-center">
+            {student.nonCurricularHistory.map((item, index) => (
+              <div key={index} className="bg-blue-50 p-4 rounded-lg flex justify-between items-center">
                 <div>
                   <p className="font-medium">{item.program}</p>
                   <p className="text-sm text-gray-600">{item.date}</p>
@@ -338,12 +231,12 @@ function MyInfo() {
       {/* 핵심교과 이수 내역 */}
       <div className="bg-white rounded-xl shadow-md p-8 mb-6">
         <h3 className="text-xl font-bold mb-4">핵심교과 이수 내역</h3>
-        {student.coreSubjectHistory?.length === 0 ? (
+        {(!student.coreSubjectHistory || student.coreSubjectHistory.length === 0) ? (
           <p className="text-gray-500 text-center py-4">이수 내역이 없습니다.</p>
         ) : (
           <div className="space-y-3">
-            {student.coreSubjectHistory?.map((item) => (
-              <div key={item.id} className="bg-green-50 p-4 rounded-lg flex justify-between items-center">
+            {student.coreSubjectHistory.map((item, index) => (
+              <div key={index} className="bg-green-50 p-4 rounded-lg flex justify-between items-center">
                 <div>
                   <p className="font-medium">{item.subject}</p>
                   <p className="text-sm text-gray-600">{item.semester}</p>
@@ -358,12 +251,12 @@ function MyInfo() {
       {/* 산학협력 활동 내역 */}
       <div className="bg-white rounded-xl shadow-md p-8">
         <h3 className="text-xl font-bold mb-4">산학협력 활동 내역</h3>
-        {student.industryHistory?.length === 0 ? (
+        {(!student.industryHistory || student.industryHistory.length === 0) ? (
           <p className="text-gray-500 text-center py-4">활동 내역이 없습니다.</p>
         ) : (
           <div className="space-y-3">
-            {student.industryHistory?.map((item) => (
-              <div key={item.id} className="bg-purple-50 p-4 rounded-lg flex justify-between items-center">
+            {student.industryHistory.map((item, index) => (
+              <div key={index} className="bg-purple-50 p-4 rounded-lg flex justify-between items-center">
                 <div>
                   <p className="font-medium">{item.program}</p>
                   <p className="text-sm text-gray-600">{item.date}</p>
@@ -374,6 +267,14 @@ function MyInfo() {
           </div>
         )}
       </div>
+
+      {/* 지급정보 입력 모달 */}
+      {showPaymentModal && (
+        <PaymentInfoModal
+          student={student}
+          onClose={() => setShowPaymentModal(false)}
+        />
+      )}
     </div>
   );
 }
