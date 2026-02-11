@@ -19,8 +19,14 @@ function StudentManagement() {
 
   const getFilteredStudents = () => {
     if (filter === '전체') return students;
-    if (filter === '기타') return students.filter(s => s.field === '기타' || !['바이오 분야', '반도체 분야', '물류 분야'].includes(s.field));
-    return students.filter(s => s.field === filter);
+    if (filter === '기타') return students.filter(s => s.field === '기타' || !['바이오', '반도체', '물류', '바이오 분야', '반도체 분야', '물류 분야'].includes(s.field));
+
+    // 필터 값 정규화 ('바이오 분야' -> '바이오')
+    const normalizedFilter = filter.replace(' 분야', '');
+    return students.filter(s => {
+      const normalizedField = (s.field || '').replace(' 분야', '');
+      return normalizedField === normalizedFilter;
+    });
   };
 
   const handleExcelUpload = (e) => {
@@ -232,9 +238,9 @@ function StudentManagement() {
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           >
             <option value="전체">전체</option>
-            <option value="바이오 분야">바이오 분야</option>
-            <option value="반도체 분야">반도체 분야</option>
-            <option value="물류 분야">물류 분야</option>
+            <option value="바이오">바이오</option>
+            <option value="반도체">반도체</option>
+            <option value="물류">물류</option>
             <option value="기타">기타</option>
           </select>
         </div>
