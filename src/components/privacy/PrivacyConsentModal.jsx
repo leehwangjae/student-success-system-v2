@@ -4,7 +4,10 @@ import PrivacyPolicyContent from './PrivacyPolicyContent';
 function PrivacyConsentModal({ isOpen, onClose, onAgree }) {
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const [agreedToAll, setAgreedToAll] = useState(false);
+  const [hasSigned, setHasSigned] = useState(false);
   const contentRef = useRef(null);
+  const canvasRef = useRef(null);
+  const [isDrawing, setIsDrawing] = useState(false);
 
   // 스크롤 감지
   const handleScroll = (e) => {
@@ -21,18 +24,76 @@ function PrivacyConsentModal({ isOpen, onClose, onAgree }) {
     if (isOpen) {
       setHasScrolledToBottom(false);
       setAgreedToAll(false);
+      setHasSigned(false);
+      clearSignature();
+    }
+  }, [isOpen]);
+
+  // 캔버스 초기화
+  useEffect(() => {
+    if (canvasRef.current) {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
     }
   }, [isOpen]);
 
   const handleAgree = () => {
-    if (agreedToAll) {
+    if (agreedToAll && hasSigned) {
       onAgree();
     }
   };
 
-  const handleDownloadPDF = () => {
-    // PDF 다운로드 링크
-    window.open('/documents/privacy-policy.pdf', '_blank');
+  // 서명 시작
+  const startDrawing = (e) => {
+    if (!hasScrolledToBottom || !agreedToAll) return;
+
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const ctx = canvas.getContext('2d');
+
+    setIsDrawing(true);
+    ctx.beginPath();
+
+    const x = e.type.includes('touch') ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+    const y = e.type.includes('touch') ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+
+    ctx.moveTo(x, y);
+  };
+
+  // 서명 그리기
+  const draw = (e) => {
+    if (!isDrawing) return;
+
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const ctx = canvas.getContext('2d');
+
+    const x = e.type.includes('touch') ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+    const y = e.type.includes('touch') ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+
+    ctx.lineTo(x, y);
+    ctx.stroke();
+
+    setHasSigned(true);
+  };
+
+  // 서명 종료
+  const stopDrawing = () => {
+    setIsDrawing(false);
+  };
+
+  // 서명 지우기
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      setHasSigned(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -106,14 +167,61 @@ function PrivacyConsentModal({ isOpen, onClose, onAgree }) {
             </div>
           </label>
 
+          {/* 서명 박스 */}
+          <div className={`border-2 rounded-lg p-4 mb-4 transition-all ${
+            hasScrolledToBottom && agreedToAll
+              ? 'border-blue-300 bg-blue-50'
+              : 'border-gray-200 bg-gray-100 opacity-60'
+          }`}>
+            <div className="flex justify-between items-center mb-2">
+              <label className="font-bold text-gray-900 flex items-center gap-2">
+                <span className="text-red-500">*</span>
+                서명
+              </label>
+              <button
+                onClick={clearSignature}
+                disabled={!hasScrolledToBottom || !agreedToAll}
+                className={`text-sm px-3 py-1 rounded ${
+                  hasScrolledToBottom && agreedToAll
+                    ? 'text-gray-600 hover:bg-gray-200'
+                    : 'text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                🗑️ 지우기
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 mb-2">
+              위의 동의 사항을 확인하였으며, 아래 서명란에 서명해주세요
+            </p>
+            <div className="relative">
+              <canvas
+                ref={canvasRef}
+                width={600}
+                height={150}
+                onMouseDown={startDrawing}
+                onMouseMove={draw}
+                onMouseUp={stopDrawing}
+                onMouseLeave={stopDrawing}
+                onTouchStart={startDrawing}
+                onTouchMove={draw}
+                onTouchEnd={stopDrawing}
+                className={`border-2 border-dashed rounded w-full bg-white ${
+                  hasScrolledToBottom && agreedToAll
+                    ? 'border-gray-300 cursor-crosshair'
+                    : 'border-gray-200 cursor-not-allowed'
+                }`}
+                style={{ touchAction: 'none' }}
+              />
+              {!hasSigned && hasScrolledToBottom && agreedToAll && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <span className="text-gray-400 text-sm">✍️ 여기에 서명하세요</span>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* 버튼 그룹 */}
           <div className="flex gap-3">
-            <button
-              onClick={handleDownloadPDF}
-              className="flex-1 px-6 py-3 bg-gray-600 text-white rounded-lg font-bold hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
-            >
-              📥 PDF 다운로드
-            </button>
             <button
               onClick={onClose}
               className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-bold hover:bg-gray-300 transition-colors"
@@ -122,9 +230,9 @@ function PrivacyConsentModal({ isOpen, onClose, onAgree }) {
             </button>
             <button
               onClick={handleAgree}
-              disabled={!agreedToAll}
+              disabled={!agreedToAll || !hasSigned}
               className={`flex-1 px-6 py-3 rounded-lg font-bold transition-colors ${
-                agreedToAll
+                agreedToAll && hasSigned
                   ? 'bg-blue-600 text-white hover:bg-blue-700'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
@@ -137,6 +245,11 @@ function PrivacyConsentModal({ isOpen, onClose, onAgree }) {
           {!hasScrolledToBottom && (
             <p className="text-xs text-gray-500 text-center mt-3">
               ⚠️ 동의서를 끝까지 읽으신 후 동의할 수 있습니다
+            </p>
+          )}
+          {hasScrolledToBottom && (!agreedToAll || !hasSigned) && (
+            <p className="text-xs text-red-500 text-center mt-3 font-semibold">
+              ⚠️ 동의 체크와 서명을 모두 완료해야 회원가입을 진행할 수 있습니다
             </p>
           )}
         </div>
