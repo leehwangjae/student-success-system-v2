@@ -29,9 +29,7 @@ function CoreCoursesCheckPage() {
   const { showAlert, showConfirm } = useModalStore();
 
   const [completedCourses, setCompletedCourses] = useState([]);
-  const [transcriptFile, setTranscriptFile] = useState(null);
-  const [transcriptFileName, setTranscriptFileName] = useState('');
-  const [transcriptFileSize, setTranscriptFileSize] = useState(0);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 학생의 학과에 맞는 교과목 가져오기
@@ -57,9 +55,8 @@ function CoreCoursesCheckPage() {
     const submission = getStudentSubmission(currentUser.id);
     if (submission) {
       setCompletedCourses(submission.completedCourses || []);
-      setTranscriptFileName(submission.transcriptFileName || '');
-      setTranscriptFileSize(submission.transcriptFileSize || 0);
-      
+      setUploadedFiles(submission.uploadedFiles || []);
+
       // 승인된 상태면 수정 불가
       if (submission.status === 'approved') {
         showAlert('이미 승인된 제출입니다. 수정할 수 없습니다.');
@@ -115,39 +112,56 @@ function CoreCoursesCheckPage() {
     }
   };
 
-  // 파일 선택
+  // 여러 파일 선택
   const handleFileChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
 
-    const validation = validateFile(
-      file,
-      FILE_UPLOAD_CONFIG.maxSize,
-      FILE_UPLOAD_CONFIG.acceptedFormats
-    );
+    for (const file of files) {
+      const validation = validateFile(
+        file,
+        FILE_UPLOAD_CONFIG.maxSize,
+        FILE_UPLOAD_CONFIG.acceptedFormats
+      );
 
-    if (!validation.valid) {
-      showAlert(validation.error);
-      e.target.value = '';
-      return;
+      if (!validation.valid) {
+        showAlert(`${file.name}: ${validation.error}`);
+        continue;
+      }
+
+      try {
+        const base64 = await fileToBase64(file);
+        setUploadedFiles(prev => [
+          ...prev,
+          {
+            name: file.name,
+            size: file.size,
+            data: base64,
+            uploadedAt: new Date().toISOString()
+          }
+        ]);
+      } catch (error) {
+        showAlert(`${file.name} 업로드 중 오류가 발생했습니다.`);
+        console.error('File upload error:', error);
+      }
     }
 
-    try {
-      const base64 = await fileToBase64(file);
-      setTranscriptFile(base64);
-      setTranscriptFileName(file.name);
-      setTranscriptFileSize(file.size);
-    } catch (error) {
-      showAlert('파일 업로드 중 오류가 발생했습니다.');
-      console.error('File upload error:', error);
-    }
+    e.target.value = '';
   };
 
   // 파일 삭제
-  const handleFileRemove = () => {
-    setTranscriptFile(null);
-    setTranscriptFileName('');
-    setTranscriptFileSize(0);
+  const handleFileRemove = (index) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // 파일 다운로드
+  const handleFileDownload = (file) => {
+    const link = document.createElement('a');
+    link.href = file.data;
+    link.download = file.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // 제출
@@ -168,9 +182,9 @@ function CoreCoursesCheckPage() {
       return;
     }
 
-    if (!transcriptFile && !transcriptFileName) {
+    if (uploadedFiles.length === 0) {
       console.log('❌ 파일 미업로드');
-      showAlert('교과과정 이수표를 업로드해주세요.');
+      showAlert('교과과정 이수표 및 개인정보제공동의서를 업로드해주세요.');
       return;
     }
 
@@ -190,9 +204,7 @@ function CoreCoursesCheckPage() {
             completedCourses: completedCourses.filter(c => c.isCompleted),
             totalCompletedCount: scoreInfo.completedCount,
             totalScore: scoreInfo.score,
-            transcriptFile,
-            transcriptFileName,
-            transcriptFileSize
+            uploadedFiles
           };
           console.log('제출할 데이터:', submissionData);
           
@@ -391,47 +403,61 @@ function CoreCoursesCheckPage() {
           })}
         </div>
 
-        {/* 이수표 업로드 */}
+        {/* 파일 업로드 */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
           <h3 className="font-bold text-gray-900 mb-4">
-            📎 교과과정 이수표 업로드 <span className="text-red-500">*</span>
+            📎 교과과정 이수표 및 개인정보제공동의서 업로드 <span className="text-red-500">*</span>
           </h3>
 
-          {transcriptFileName ? (
-            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-300">
-              <div className="text-3xl">📄</div>
-              <div className="flex-1">
-                <div className="font-medium text-gray-900">{transcriptFileName}</div>
-                <div className="text-sm text-gray-600">{formatFileSize(transcriptFileSize)}</div>
-              </div>
-              {canEdit && (
-                <button
-                  onClick={handleFileRemove}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
+          {/* 업로드된 파일 목록 */}
+          {uploadedFiles.length > 0 && (
+            <div className="space-y-2 mb-4">
+              {uploadedFiles.map((file, index) => (
+                <div key={index} className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-300">
+                  <div className="text-3xl">📄</div>
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">{file.name}</div>
+                    <div className="text-sm text-gray-600">{formatFileSize(file.size)}</div>
+                  </div>
+                  <button
+                    onClick={() => handleFileDownload(file)}
+                    className="text-blue-600 hover:text-blue-700 p-2"
+                    title="다운로드"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                  </button>
+                  {canEdit && (
+                    <button
+                      onClick={() => handleFileRemove(index)}
+                      className="text-red-600 hover:text-red-700 p-2"
+                      title="삭제"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
-          ) : (
+          )}
+
+          {/* 파일 업로드 영역 */}
+          {canEdit && (
             <div>
               <input
                 type="file"
                 id="transcript"
                 accept=".pdf,.jpg,.jpeg,.png"
                 onChange={handleFileChange}
-                disabled={!canEdit}
+                multiple
                 className="hidden"
               />
               <label
                 htmlFor="transcript"
-                className={`flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg ${
-                  canEdit
-                    ? 'border-gray-300 hover:border-blue-500 cursor-pointer'
-                    : 'border-gray-200 cursor-not-allowed opacity-60'
-                }`}
+                className="flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg border-gray-300 hover:border-blue-500 cursor-pointer"
               >
                 <svg className="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -439,7 +465,7 @@ function CoreCoursesCheckPage() {
                 <div className="text-sm text-gray-600 text-center">
                   <span className="text-blue-600 font-medium">파일 선택</span> 또는 드래그 앤 드롭
                   <br />
-                  PDF, JPG, PNG (최대 10MB)
+                  PDF, JPG, PNG (최대 10MB) · 여러 파일 선택 가능
                 </div>
               </label>
             </div>
