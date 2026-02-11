@@ -386,7 +386,11 @@ function StudentManagement() {
                         수정
                       </button>
                       <button
-                        onClick={() => deleteStudent(student.id)}
+                        onClick={() => {
+                          if (window.confirm(`${student.name} 학생을 삭제하시겠습니까?`)) {
+                            deleteStudent(student.id);
+                          }
+                        }}
                         className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
                       >
                         삭제
