@@ -405,9 +405,12 @@ function CoreCoursesCheckPage() {
 
         {/* 파일 업로드 */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <h3 className="font-bold text-gray-900 mb-4">
-            📎 교과과정 이수표 및 개인정보제공동의서 업로드 <span className="text-red-500">*</span>
-          </h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold text-gray-900">
+              📎 교과과정 이수표 및 개인정보제공동의서 업로드 <span className="text-red-500">*</span>
+            </h3>
+            <span className="text-xs text-gray-400">v3.1</span>
+          </div>
 
           {/* 업로드된 파일 목록 */}
           {uploadedFiles.length > 0 && (

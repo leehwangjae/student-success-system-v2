@@ -19,7 +19,9 @@
       "Bash(where:*)",
       "Bash(git ls-tree:*)",
       "Bash(dir:*)",
-      "Bash(npm version:*)"
+      "Bash(npm version:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)"
     ]
   }
 }
