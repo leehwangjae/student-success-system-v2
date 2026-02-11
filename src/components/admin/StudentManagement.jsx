@@ -407,7 +407,8 @@ function StudentManagement() {
       {/* 모달들 */}
       {showStudentModal && (
         <StudentModal
-          editingStudent={editingStudent}
+          isOpen={true}
+          student={editingStudent}
           onClose={() => {
             setShowStudentModal(false);
             setEditingStudent(null);
@@ -417,6 +418,7 @@ function StudentManagement() {
 
       {showStudentDetail && (
         <StudentDetailModal
+          isOpen={true}
           student={showStudentDetail}
           onClose={() => setShowStudentDetail(null)}
         />
