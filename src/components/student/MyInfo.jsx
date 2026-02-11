@@ -97,58 +97,60 @@ function MyInfo() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">학번</p>
-            <p className="font-semibold">{student.studentId}</p>
-          </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">이름</p>
-            <p className="font-semibold">{student.name}</p>
-          </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">학과</p>
-            <p className="font-semibold">{student.department}</p>
-          </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">분야</p>
-            <p className="font-semibold">{student.field}</p>
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="text-sm text-gray-600 mb-1">학번</p>
+              <p className="font-semibold">{student.studentId}</p>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="text-sm text-gray-600 mb-1">이름</p>
+              <p className="font-semibold">{student.name}</p>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="text-sm text-gray-600 mb-1">학과</p>
+              <p className="font-semibold">{student.department}</p>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="text-sm text-gray-600 mb-1">분야</p>
+              <p className="font-semibold">{student.field}</p>
+            </div>
+
+            {/* 이메일 - 수정 가능 */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="text-sm text-gray-600 mb-1">이메일</p>
+              {isEditing ? (
+                <input
+                  type="email"
+                  value={editData.email}
+                  onChange={(e) => setEditData({...editData, email: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="example@email.com"
+                />
+              ) : (
+                <p className="font-semibold">{student.email || '-'}</p>
+              )}
+            </div>
+
+            {/* 전화번호 - 수정 가능 */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="text-sm text-gray-600 mb-1">전화번호</p>
+              {isEditing ? (
+                <input
+                  type="tel"
+                  value={editData.phone}
+                  onChange={(e) => setEditData({...editData, phone: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="010-1234-5678"
+                />
+              ) : (
+                <p className="font-semibold">{student.phone || '-'}</p>
+              )}
+            </div>
           </div>
 
-          {/* 이메일 - 수정 가능 */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">이메일</p>
-            {isEditing ? (
-              <input
-                type="email"
-                value={editData.email}
-                onChange={(e) => setEditData({...editData, email: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="example@email.com"
-              />
-            ) : (
-              <p className="font-semibold">{student.email || '-'}</p>
-            )}
-          </div>
-
-          {/* 전화번호 - 수정 가능 */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">전화번호</p>
-            {isEditing ? (
-              <input
-                type="tel"
-                value={editData.phone}
-                onChange={(e) => setEditData({...editData, phone: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="010-1234-5678"
-              />
-            ) : (
-              <p className="font-semibold">{student.phone || '-'}</p>
-            )}
-          </div>
-
-          {/* 지급정보 입력 버튼 - 그리드 아이템으로 추가 */}
-          <div className="bg-white p-4 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center col-span-2">
+          {/* 지급정보 입력 버튼 - 별도 섹션 */}
+          <div className="bg-white p-4 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
             <button
               onClick={() => setShowPaymentModal(true)}
               className="w-full py-3 px-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 font-semibold transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
