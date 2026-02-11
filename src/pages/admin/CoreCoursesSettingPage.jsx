@@ -177,6 +177,35 @@ function CoreCoursesSettingPage() {
     showAlert('템플릿이 다운로드되었습니다.');
   };
 
+  // 현재 목록 다운로드
+  const handleDownloadCurrentList = () => {
+    const excelData = sortedCourses.map(course => ({
+      '과목명': course.courseName,
+      '학수번호': course.courseCode,
+      '학점': course.credits,
+      '과목구분': course.courseType,
+      '대상학과': course.targetDepartments?.join(', ') || course.department || selectedDepartment,
+      '학기': course.semester || ''
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, '핵심교과목');
+
+    // 컬럼 너비 설정
+    worksheet['!cols'] = [
+      { wch: 30 }, // 과목명
+      { wch: 15 }, // 학수번호
+      { wch: 10 }, // 학점
+      { wch: 15 }, // 과목구분
+      { wch: 25 }, // 대상학과
+      { wch: 12 }  // 학기
+    ];
+
+    XLSX.writeFile(workbook, `핵심교과목_${selectedField}_${selectedDepartment}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    showAlert('현재 목록이 다운로드되었습니다.');
+  };
+
   // 엑셀 업로드
   const handleExcelUpload = (e) => {
     const file = e.target.files[0];
@@ -316,6 +345,15 @@ function CoreCoursesSettingPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               템플릿 다운로드
+            </button>
+            <button
+              onClick={handleDownloadCurrentList}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              현재 목록 다운로드
             </button>
           </div>
         </div>
