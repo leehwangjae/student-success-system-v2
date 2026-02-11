@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { supabase } from '../../lib/supabase';
-import PaymentInfoModal from '../modals/PaymentInfoModal';
 
 function MyInfo() {
   const { currentUser, students, updateStudentInfo } = useAppContext();
   const [isEditing, setIsEditing] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [student, setStudent] = useState(null);
   const [editData, setEditData] = useState({
     email: '',
@@ -110,9 +109,6 @@ function MyInfo() {
     setIsEditing(false);
   };
 
-  // 지급정보 입력 여부 확인
-  const hasPaymentInfo = student.ssn || student.bankName;
-
   return (
     <div>
       <h2 className="text-3xl font-bold mb-6">내 정보</h2>
@@ -121,6 +117,12 @@ function MyInfo() {
         <div className="flex justify-between items-start mb-6">
           <h3 className="text-xl font-bold">기본 정보</h3>
           <div className="flex gap-2">
+            <button
+              onClick={() => setShowPrivacyModal(true)}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold"
+            >
+              📋 개인정보활용동의
+            </button>
             {!isEditing ? (
               <button
                 onClick={handleEdit}
@@ -197,18 +199,6 @@ function MyInfo() {
                 <p className="font-semibold">{student.phone || '-'}</p>
               )}
             </div>
-          </div>
-
-          {/* 지급정보 입력 버튼 - 별도 섹션 */}
-          <div className="bg-white p-4 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
-            <button
-              onClick={() => setShowPaymentModal(true)}
-              className="w-full py-3 px-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 font-semibold transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-            >
-              <span className="text-xl">💳</span>
-              <span>{hasPaymentInfo ? '지급 정보 수정하기' : '지급 정보 입력하기'}</span>
-              {hasPaymentInfo && <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded">✓ 등록됨</span>}
-            </button>
           </div>
         </div>
 
@@ -308,12 +298,25 @@ function MyInfo() {
         )}
       </div>
 
-      {/* 지급정보 입력 모달 */}
-      {showPaymentModal && (
-        <PaymentInfoModal
-          student={student}
-          onClose={() => setShowPaymentModal(false)}
-        />
+      {/* 개인정보활용동의 모달 */}
+      {showPrivacyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">개인정보활용동의</h2>
+              <button
+                onClick={() => setShowPrivacyModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="text-center py-20">
+              <p className="text-gray-500 text-lg">모달 내용이 여기에 표시됩니다</p>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
