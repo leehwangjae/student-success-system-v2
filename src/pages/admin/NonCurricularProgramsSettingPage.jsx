@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { PROGRAM_CATEGORIES, FIELD_DEPARTMENTS } from '../../components/nonCurricularPrograms/constants';
 import { useModalStore } from '../../hooks/useModal';
@@ -13,6 +13,7 @@ function NonCurricularProgramsSettingPage() {
   const [selectedCategory, setSelectedCategory] = useState('전체');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const fileInputRef = useRef(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProgram, setEditingProgram] = useState(null);
@@ -140,6 +141,98 @@ function NonCurricularProgramsSettingPage() {
     }
   };
 
+  // 엑셀 템플릿 다운로드
+  const handleDownloadTemplate = () => {
+    const templateData = [
+      {
+        '프로그램명': '취업역량 강화 프로그램',
+        '분야': '바이오',
+        '전공': '생명과학전공',
+        '카테고리': '취업역량',
+        '점수': 10,
+        '설명': '취업 역량 향상을 위한 프로그램'
+      },
+      {
+        '프로그램명': '산학협력 현장실습',
+        '분야': '바이오',
+        '전공': '나노바이오공학전공',
+        '카테고리': '산학협력',
+        '점수': 15,
+        '설명': '기업 현장 실습 프로그램'
+      }
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, '비교과프로그램');
+
+    worksheet['!cols'] = [
+      { wch: 40 }, // 프로그램명
+      { wch: 10 }, // 분야
+      { wch: 25 }, // 전공
+      { wch: 12 }, // 카테고리
+      { wch: 8 },  // 점수
+      { wch: 50 }  // 설명
+    ];
+
+    XLSX.writeFile(workbook, `비교과프로그램_템플릿_${selectedField}.xlsx`);
+    showAlert('템플릿이 다운로드되었습니다.');
+  };
+
+  // 엑셀 업로드
+  const handleExcelUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const row of jsonData) {
+          const programData = {
+            programName: row['프로그램명'],
+            field: row['분야'] || selectedField,
+            department: row['전공'] || (selectedDepartment !== '전체' ? selectedDepartment : FIELD_DEPARTMENTS[selectedField][0]),
+            category: row['카테고리'] || '취업역량',
+            score: parseInt(row['점수']) || 10,
+            description: row['설명'] || ''
+          };
+
+          if (!programData.programName) {
+            failCount++;
+            continue;
+          }
+
+          try {
+            await addNonCurricularProgram(programData);
+            successCount++;
+          } catch (error) {
+            failCount++;
+          }
+        }
+
+        showAlert(`업로드 완료\n성공: ${successCount}개, 실패: ${failCount}개`);
+
+        // 파일 입력 초기화
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      } catch (error) {
+        showAlert('엑셀 파일 읽기 실패: ' + error.message);
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
+  };
+
   const handleExcelDownload = () => {
     const excelData = sortedPrograms.map(program => ({
       '프로그램명': program.program_name,
@@ -253,13 +346,38 @@ function NonCurricularProgramsSettingPage() {
               프로그램 추가
             </button>
             <button
-              onClick={handleExcelDownload}
+              onClick={() => fileInputRef.current?.click()}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
-              엑셀 다운로드
+              엑셀 업로드
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleExcelUpload}
+              className="hidden"
+            />
+            <button
+              onClick={handleDownloadTemplate}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              템플릿 다운로드
+            </button>
+            <button
+              onClick={handleExcelDownload}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              현재 목록 다운로드
             </button>
           </div>
         </div>
