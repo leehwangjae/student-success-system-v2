@@ -144,28 +144,28 @@ function StudentManagement() {
       container.style.position = 'absolute';
       container.style.left = '-9999px';
       container.style.width = '210mm'; // A4 width
-      container.style.padding = '20mm';
+      container.style.padding = '10mm 15mm'; // 상하 여백 축소
       container.style.background = 'white';
       container.style.fontFamily = 'Arial, sans-serif';
 
       container.innerHTML = `
-        <div style="font-size: 12px; line-height: 1.6;">
+        <div style="font-size: 10px; line-height: 1.4;">
           <!-- 헤더 -->
-          <div style="text-align: center; margin-bottom: 20px;">
-            <div style="font-size: 10px; color: #666; margin-bottom: 5px;">[별지 제30호 서식] &lt;개정 2019.9.2.&gt;</div>
-            <h1 style="font-size: 20px; font-weight: bold; margin: 10px 0;">개인정보 수집 · 이용 및 제3자 제공 동의서</h1>
+          <div style="text-align: center; margin-bottom: 8px;">
+            <div style="font-size: 8px; color: #666; margin-bottom: 3px;">[별지 제30호 서식] &lt;개정 2019.9.2.&gt;</div>
+            <h1 style="font-size: 16px; font-weight: bold; margin: 5px 0;">개인정보 수집 · 이용 및 제3자 제공 동의서</h1>
           </div>
 
           <!-- 안내 문구 -->
-          <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px; margin-bottom: 15px; font-size: 11px;">
+          <div style="background: #eff6ff; border-left: 3px solid #3b82f6; padding: 6px; margin-bottom: 8px; font-size: 9px; line-height: 1.3;">
             「개인정보보호법」에 따라 인천대학교산학협력단은 연구․사업 수행과 관련하여 귀하의 개인정보를 아래와 같이 수집․이용 및
             제3자 제공을 하고자 합니다. 다음의 사항에 대하여 자세히 읽어보신 후 동의 여부를 체크, 서명하여 주시기 바랍니다.
           </div>
 
           <!-- 학생 정보 -->
-          <div style="margin-bottom: 20px; padding: 15px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;">
-            <h3 style="font-size: 14px; font-weight: bold; margin-bottom: 10px;">■ 동의자 정보</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;">
+          <div style="margin-bottom: 8px; padding: 8px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px;">
+            <h3 style="font-size: 10px; font-weight: bold; margin-bottom: 5px;">■ 동의자 정보</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 9px;">
               <div><strong>성명:</strong> ${student.name}</div>
               <div><strong>학번:</strong> ${student.studentId || student.student_id}</div>
               <div><strong>학과:</strong> ${student.department}</div>
@@ -176,106 +176,101 @@ function StudentManagement() {
           </div>
 
           <!-- 개인정보 수집·이용 동의 -->
-          <div style="margin-bottom: 15px;">
-            <h3 style="font-size: 13px; font-weight: bold; margin-bottom: 8px;">☑ 개인정보 수집·이용 동의 <span style="color: #dc2626; font-size: 11px;">[필수]</span></h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 8px;">
+          <div style="margin-bottom: 6px;">
+            <h3 style="font-size: 10px; font-weight: bold; margin-bottom: 4px;">☑ 개인정보 수집·이용 동의 <span style="color: #dc2626; font-size: 9px;">[필수]</span></h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 8px; margin-bottom: 4px;">
               <thead style="background: #f3f4f6;">
                 <tr>
-                  <th style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">항목</th>
-                  <th style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">수집목적</th>
-                  <th style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">보유기간</th>
+                  <th style="border: 1px solid #d1d5db; padding: 4px; text-align: center;">항목</th>
+                  <th style="border: 1px solid #d1d5db; padding: 4px; text-align: center;">수집목적</th>
+                  <th style="border: 1px solid #d1d5db; padding: 4px; text-align: center;">보유기간</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td style="border: 1px solid #d1d5db; padding: 8px;">성명, 연락처(휴대폰, 전화번호, e-mail주소), 주소, 소속, 학위, 학번, 학력, 경력, 계좌정보</td>
-                  <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">인건비, 수당 및 경비 지급<br/>연구과제 관련 홍보</td>
-                  <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center; font-weight: bold;">공공기록물관리법에 따른<br/>회계서류의 준함</td>
+                  <td style="border: 1px solid #d1d5db; padding: 4px;">성명, 연락처(휴대폰, 전화번호, e-mail주소), 주소, 소속, 학위, 학번, 학력, 경력, 계좌정보</td>
+                  <td style="border: 1px solid #d1d5db; padding: 4px; text-align: center;">인건비, 수당 및 경비 지급<br/>연구과제 관련 홍보</td>
+                  <td style="border: 1px solid #d1d5db; padding: 4px; text-align: center; font-weight: bold;">공공기록물관리법에 따른<br/>회계서류의 준함</td>
                 </tr>
               </tbody>
             </table>
-            <div style="background: #fef3c7; border: 1px solid #fbbf24; padding: 6px; font-size: 9px;">
-              ※ 위의 개인정보 수집·이용에 대한 동의를 거부할 권리가 있습니다.<br/>
-              &nbsp;&nbsp;&nbsp;그러나 동의를 거부할 경우 원활한 연구과제 참여에 제한을 받을수 있습니다.
+            <div style="background: #fef3c7; border: 1px solid #fbbf24; padding: 3px; font-size: 7px; line-height: 1.2;">
+              ※ 위의 개인정보 수집·이용에 대한 동의를 거부할 권리가 있습니다. 그러나 동의를 거부할 경우 원활한 연구과제 참여에 제한을 받을수 있습니다.
             </div>
           </div>
 
           <!-- 고유식별정보 수집·이용 -->
-          <div style="margin-bottom: 15px;">
-            <h3 style="font-size: 13px; font-weight: bold; margin-bottom: 8px;">☑ 고유식별정보 수집·이용 내역 <span style="color: #dc2626; font-size: 11px;">[필수]</span></h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 8px;">
+          <div style="margin-bottom: 6px;">
+            <h3 style="font-size: 10px; font-weight: bold; margin-bottom: 4px;">☑ 고유식별정보 수집·이용 내역 <span style="color: #dc2626; font-size: 9px;">[필수]</span></h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 8px; margin-bottom: 4px;">
               <thead style="background: #f3f4f6;">
                 <tr>
-                  <th style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">항목</th>
-                  <th style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">수집목적</th>
-                  <th style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">보유기간</th>
+                  <th style="border: 1px solid #d1d5db; padding: 4px; text-align: center;">항목</th>
+                  <th style="border: 1px solid #d1d5db; padding: 4px; text-align: center;">수집목적</th>
+                  <th style="border: 1px solid #d1d5db; padding: 4px; text-align: center;">보유기간</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td style="border: 1px solid #d1d5db; padding: 8px; font-weight: bold; color: #dc2626;">주민등록번호,<br/>외국인등록번호, 여권번호</td>
-                  <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">본인식별절차,<br/>인건비, 수당 및 경비 지급</td>
-                  <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center; font-weight: bold;">공공기록물관리법에 따른<br/>회계서류의 준함</td>
+                  <td style="border: 1px solid #d1d5db; padding: 4px; font-weight: bold; color: #dc2626;">주민등록번호,<br/>외국인등록번호, 여권번호</td>
+                  <td style="border: 1px solid #d1d5db; padding: 4px; text-align: center;">본인식별절차,<br/>인건비, 수당 및 경비 지급</td>
+                  <td style="border: 1px solid #d1d5db; padding: 4px; text-align: center; font-weight: bold;">공공기록물관리법에 따른<br/>회계서류의 준함</td>
                 </tr>
               </tbody>
             </table>
-            <div style="background: #fef3c7; border: 1px solid #fbbf24; padding: 6px; font-size: 9px;">
-              ※ 위의 개인정보 수집·이용에 대한 동의를 거부할 권리가 있습니다.<br/>
-              &nbsp;&nbsp;&nbsp;그러나 동의를 거부할 경우 원활한 연구과제 참여에 제한을 받을수 있습니다.
+            <div style="background: #fef3c7; border: 1px solid #fbbf24; padding: 3px; font-size: 7px; line-height: 1.2;">
+              ※ 위의 개인정보 수집·이용에 대한 동의를 거부할 권리가 있습니다. 그러나 동의를 거부할 경우 원활한 연구과제 참여에 제한을 받을수 있습니다.
             </div>
           </div>
 
           <!-- 제3자 제공 동의 -->
-          <div style="margin-bottom: 15px;">
-            <h3 style="font-size: 13px; font-weight: bold; margin-bottom: 8px;">☑ 개인정보의 제3자 제공 동의 <span style="color: #dc2626; font-size: 11px;">[필수]</span></h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 8px;">
+          <div style="margin-bottom: 6px;">
+            <h3 style="font-size: 10px; font-weight: bold; margin-bottom: 4px;">☑ 개인정보의 제3자 제공 동의 <span style="color: #dc2626; font-size: 9px;">[필수]</span></h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 8px; margin-bottom: 4px;">
               <thead style="background: #f3f4f6;">
                 <tr>
-                  <th style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">제공받는 자</th>
-                  <th style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">제공항목</th>
-                  <th style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">제공목적</th>
-                  <th style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">보유기간</th>
+                  <th style="border: 1px solid #d1d5db; padding: 4px; text-align: center;">제공받는 자</th>
+                  <th style="border: 1px solid #d1d5db; padding: 4px; text-align: center;">제공항목</th>
+                  <th style="border: 1px solid #d1d5db; padding: 4px; text-align: center;">제공목적</th>
+                  <th style="border: 1px solid #d1d5db; padding: 4px; text-align: center;">보유기간</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td style="border: 1px solid #d1d5db; padding: 8px;">중앙행정기관 및 전문기관, 지원기관, 회계정산기관, 금융기관</td>
-                  <td style="border: 1px solid #d1d5db; padding: 8px;"><span style="font-weight: bold; color: #dc2626;">주민등록번호, 외국인등록번호, 여권번호</span>, 성명, 연락처(휴대폰, 전화번호, e-mail주소), 주소, 계좌정보, 연구비카드사용내역 등</td>
-                  <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">연구비의 사용,<br/>연구부정행위 검증 및<br/>조치에 관한 사무</td>
-                  <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center; font-weight: bold;">연구개발과제 종료<br/>후 5년</td>
+                  <td style="border: 1px solid #d1d5db; padding: 4px;">중앙행정기관 및 전문기관, 지원기관, 회계정산기관, 금융기관</td>
+                  <td style="border: 1px solid #d1d5db; padding: 4px;"><span style="font-weight: bold; color: #dc2626;">주민등록번호, 외국인등록번호, 여권번호</span>, 성명, 연락처(휴대폰, 전화번호, e-mail주소), 주소, 계좌정보, 연구비카드사용내역 등</td>
+                  <td style="border: 1px solid #d1d5db; padding: 4px; text-align: center;">연구비의 사용,<br/>연구부정행위 검증 및<br/>조치에 관한 사무</td>
+                  <td style="border: 1px solid #d1d5db; padding: 4px; text-align: center; font-weight: bold;">연구개발과제 종료<br/>후 5년</td>
                 </tr>
               </tbody>
             </table>
-            <div style="background: #fef3c7; border: 1px solid #fbbf24; padding: 6px; font-size: 9px;">
-              ※ 위의 개인정보 제공에 대한 동의를 거부할 권리가 있습니다.<br/>
-              &nbsp;&nbsp;&nbsp;그러나 동의를 거부할 경우 원활한 연구과제 참여에 제한을 받을수 있습니다.
+            <div style="background: #fef3c7; border: 1px solid #fbbf24; padding: 3px; font-size: 7px; line-height: 1.2;">
+              ※ 위의 개인정보 제공에 대한 동의를 거부할 권리가 있습니다. 그러나 동의를 거부할 경우 원활한 연구과제 참여에 제한을 받을수 있습니다.
             </div>
           </div>
 
           <!-- 동의 문구 -->
-          <div style="background: linear-gradient(to right, #eff6ff, #f5f3ff); border: 2px solid #3b82f6; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 15px;">
-            <p style="font-size: 12px; font-weight: bold; margin-bottom: 8px;">
-              본인은 본 "개인정보의 수집․이용 및 제3자 제공 동의서" 내용을 읽고 명확히 이해하였으며,<br/>
-              이에 동의합니다.
+          <div style="background: linear-gradient(to right, #eff6ff, #f5f3ff); border: 2px solid #3b82f6; border-radius: 4px; padding: 8px; text-align: center; margin-bottom: 8px;">
+            <p style="font-size: 10px; font-weight: bold; margin: 0 0 4px 0; line-height: 1.3;">
+              본인은 본 "개인정보의 수집․이용 및 제3자 제공 동의서" 내용을 읽고 명확히 이해하였으며, 이에 동의합니다.
             </p>
-            <p style="font-size: 11px; color: #666; margin-top: 10px;">
+            <p style="font-size: 9px; color: #666; margin: 0;">
               동의일: ${student.privacy_consented_at ? new Date(student.privacy_consented_at).toLocaleDateString('ko-KR') : '-'}
             </p>
           </div>
 
           <!-- 서명 -->
-          <div style="margin-bottom: 15px; text-align: center;">
-            <p style="font-size: 11px; font-weight: bold; margin-bottom: 10px;">■ 동의자 서명</p>
-            <div id="signature-placeholder" style="border: 2px solid #d1d5db; border-radius: 8px; padding: 10px; min-height: 100px; background: #fafafa; display: flex; align-items: center; justify-content: center;">
-              ${student.privacy_signature ? '<img id="signature-img" style="max-width: 300px; max-height: 80px;" />' : '<span style="color: #9ca3af;">서명 없음</span>'}
+          <div style="margin-bottom: 8px; text-align: center;">
+            <p style="font-size: 10px; font-weight: bold; margin-bottom: 5px;">■ 동의자 서명</p>
+            <div id="signature-container" style="border: 2px solid #d1d5db; border-radius: 4px; padding: 5px; height: 60px; background: #fafafa; display: flex; align-items: center; justify-content: center; position: relative;">
+              <img id="signature-img" style="max-width: 250px; max-height: 50px; display: none;" />
             </div>
           </div>
 
           <!-- 하단 -->
-          <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
-            <p style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">인천대학교 산학협력단장 귀하</p>
-            <p style="font-size: 9px; color: #666; margin-top: 10px;">※ 본 동의서는 인천대학교 산학협력단의 공식 서식입니다.</p>
-            <p style="font-size: 9px; color: #666;">※ 생성일: ${new Date().toLocaleString('ko-KR')}</p>
+          <div style="text-align: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+            <p style="font-size: 10px; font-weight: bold; margin: 0 0 3px 0;">인천대학교 산학협력단장 귀하</p>
+            <p style="font-size: 7px; color: #666; margin: 0;">※ 본 동의서는 인천대학교 산학협력단의 공식 서식입니다. ※ 생성일: ${new Date().toLocaleString('ko-KR')}</p>
           </div>
         </div>
       `;
@@ -286,13 +281,24 @@ function StudentManagement() {
       if (student.privacy_signature) {
         const signatureImg = container.querySelector('#signature-img');
         if (signatureImg) {
+          signatureImg.style.display = 'block';
           signatureImg.src = student.privacy_signature;
           // 이미지 로드 대기
-          await new Promise(resolve => {
-            signatureImg.onload = resolve;
-            signatureImg.onerror = resolve;
+          await new Promise((resolve) => {
+            signatureImg.onload = () => {
+              console.log('서명 이미지 로드 완료');
+              resolve();
+            };
+            signatureImg.onerror = () => {
+              console.error('서명 이미지 로드 실패');
+              resolve();
+            };
+            // 타임아웃 추가
+            setTimeout(resolve, 2000);
           });
         }
+      } else {
+        console.log('서명 이미지 없음');
       }
 
       // HTML을 캔버스로 변환
