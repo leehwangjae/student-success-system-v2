@@ -97,8 +97,8 @@ function MyInfo() {
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-6">
+        <div>
+          <div className="grid grid-cols-2 gap-6 mb-6">
             <div className="bg-gray-50 p-4 rounded-lg">
               <p className="text-sm text-gray-600 mb-1">학번</p>
               <p className="font-semibold">{student.studentId}</p>
