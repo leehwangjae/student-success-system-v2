@@ -20,6 +20,7 @@ import {
   formatFileSize
 } from '../utils/coreCoursesHelpers';
 import NonCurricularProgramsApplicationPage from './student/NonCurricularProgramsApplicationPage';
+import MyInfo from '../components/student/MyInfo';
 
 function StudentPage() {
   const {
@@ -51,56 +52,6 @@ function StudentPage() {
   const [transcriptFileName, setTranscriptFileName] = useState('');
   const [transcriptFileSize, setTranscriptFileSize] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // 🔥 학생 점수 데이터 상태
-  const [studentScores, setStudentScores] = useState({
-    nonCurricularScore: 0,
-    coreSubjectScore: 0,
-    industryScore: 0,
-    total: 0
-  });
-
-  // 🔥 학생 점수 로드
-  useEffect(() => {
-    const loadStudentScores = async () => {
-      if (!currentUser?.id) return;
-
-      console.log('=== 학생 점수 로드 시작 ===');
-      console.log('현재 사용자 ID:', currentUser.id);
-
-      try {
-        const { data, error } = await supabase
-          .from('users_2025_11_27_07_17')
-          .select('non_curricular_score, core_subject_score, industry_score')
-          .eq('id', currentUser.id)
-          .single();
-
-        if (error) {
-          console.error('점수 로드 실패:', error);
-          return;
-        }
-
-        console.log('로드된 점수 데이터:', data);
-
-        const scores = {
-          nonCurricularScore: data?.non_curricular_score || 0,
-          coreSubjectScore: data?.core_subject_score || 0,
-          industryScore: data?.industry_score || 0,
-          total: (data?.non_curricular_score || 0) + 
-                 (data?.core_subject_score || 0) + 
-                 (data?.industry_score || 0)
-        };
-
-        console.log('계산된 점수:', scores);
-        setStudentScores(scores);
-
-      } catch (error) {
-        console.error('점수 로드 중 오류:', error);
-      }
-    };
-
-    loadStudentScores();
-  }, [currentUser?.id]);
 
   // 로그인 시 팝업 공지사항 확인
   useEffect(() => {
@@ -180,86 +131,7 @@ function StudentPage() {
     }
   };
 
-  const renderInfoTab = () => (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">기본 정보</h2>
-        
-        <div className="grid grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">학번</label>
-            <div className="bg-gray-50 px-4 py-3 rounded-lg text-gray-800">
-              {currentUser?.studentId || currentUser?.username}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">이름</label>
-            <div className="bg-gray-50 px-4 py-3 rounded-lg text-gray-800">
-              {currentUser?.name}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">학과</label>
-            <div className="bg-gray-50 px-4 py-3 rounded-lg text-gray-800">
-              {currentUser?.department}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">분야</label>
-            <div className="bg-gray-50 px-4 py-3 rounded-lg">
-              <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                currentUser?.field === '바이오' ? 'bg-green-100 text-green-800' :
-                currentUser?.field === '반도체' ? 'bg-blue-100 text-blue-800' :
-                'bg-purple-100 text-purple-800'
-              }`}>
-                {currentUser?.field}
-              </span>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">이메일</label>
-            <div className="bg-gray-50 px-4 py-3 rounded-lg text-gray-800">
-              {currentUser?.email || '미등록'}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg shadow-lg p-8 text-white">
-        <h2 className="text-2xl font-bold mb-6">학생성공지수</h2>
-        
-        <div className="text-center mb-8">
-          <div className="text-6xl font-bold mb-2">{studentScores.total}</div>
-          <div className="text-blue-100 text-lg">총점</div>
-          <div className="text-blue-200 text-sm mt-2">/ 100점</div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-6">
-          <div className="bg-white bg-opacity-20 rounded-lg p-6 text-center backdrop-blur-sm">
-            <div className="text-3xl font-bold mb-2">{studentScores.nonCurricularScore}</div>
-            <div className="text-sm text-blue-100">취업 비교과 참여</div>
-            <div className="text-xs text-blue-200 mt-1">/ 20점</div>
-          </div>
-
-          <div className="bg-white bg-opacity-20 rounded-lg p-6 text-center backdrop-blur-sm">
-            <div className="text-3xl font-bold mb-2">{studentScores.coreSubjectScore}</div>
-            <div className="text-sm text-blue-100">전략산업 교과목 이수</div>
-            <div className="text-xs text-blue-200 mt-1">/ 50점</div>
-          </div>
-
-          <div className="bg-white bg-opacity-20 rounded-lg p-6 text-center backdrop-blur-sm">
-            <div className="text-3xl font-bold mb-2">{studentScores.industryScore}</div>
-            <div className="text-sm text-blue-100">산학협력 프로그램 참여</div>
-            <div className="text-xs text-blue-200 mt-1">/ 30점</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  const renderInfoTab = () => <MyInfo />;
 
   const renderProgramsTab = () => (
     <div className="space-y-6">

@@ -1,9 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
+import { supabase } from '../../lib/supabase';
 
 function MyInfo() {
   const { currentUser } = useAppContext();
   const [showModal, setShowModal] = useState(false);
+  const [studentScores, setStudentScores] = useState({
+    nonCurricularScore: 0,
+    coreSubjectScore: 0,
+    industryScore: 0,
+    total: 0
+  });
+
+  // 학생 점수 로드
+  useEffect(() => {
+    const loadStudentScores = async () => {
+      if (!currentUser?.id) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('users_2025_11_27_07_17')
+          .select('non_curricular_score, core_subject_score, industry_score')
+          .eq('id', currentUser.id)
+          .single();
+
+        if (error) {
+          console.error('점수 로드 실패:', error);
+          return;
+        }
+
+        const scores = {
+          nonCurricularScore: data?.non_curricular_score || 0,
+          coreSubjectScore: data?.core_subject_score || 0,
+          industryScore: data?.industry_score || 0,
+          total: (data?.non_curricular_score || 0) +
+                 (data?.core_subject_score || 0) +
+                 (data?.industry_score || 0)
+        };
+
+        setStudentScores(scores);
+      } catch (error) {
+        console.error('점수 로드 중 오류:', error);
+      }
+    };
+
+    loadStudentScores();
+  }, [currentUser?.id]);
 
   if (!currentUser) return <div>로딩 중...</div>;
 
@@ -15,7 +57,7 @@ function MyInfo() {
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-3">
             <h3 className="text-xl font-bold">기본 정보</h3>
-            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">v3.2</span>
+            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">v3.3</span>
           </div>
           <button
             onClick={() => setShowModal(true)}
@@ -50,13 +92,32 @@ function MyInfo() {
       </div>
 
       {/* 학생성공지수 */}
-      <div className="bg-white rounded-xl shadow-md p-8">
-        <h3 className="text-xl font-bold mb-6">학생성공지수</h3>
-        <div className="grid grid-cols-4 gap-4">
-          <div className="bg-blue-50 p-6 rounded-lg text-center">
-            <p className="text-sm text-gray-600 mb-2">총점</p>
-            <p className="text-4xl font-bold text-blue-600">10</p>
-            <p className="text-xs text-gray-500 mt-1">/ 100점</p>
+      <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg p-8 text-white">
+        <h3 className="text-2xl font-bold mb-6">학생성공지수</h3>
+
+        <div className="text-center mb-8">
+          <div className="text-6xl font-bold mb-2">{studentScores.total}</div>
+          <div className="text-blue-100 text-lg">총점</div>
+          <div className="text-blue-200 text-sm mt-2">/ 100점</div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-6">
+          <div className="bg-white bg-opacity-20 rounded-lg p-6 text-center backdrop-blur-sm">
+            <div className="text-3xl font-bold mb-2">{studentScores.nonCurricularScore}</div>
+            <div className="text-sm text-blue-100">취업 비교과 참여</div>
+            <div className="text-xs text-blue-200 mt-1">/ 20점</div>
+          </div>
+
+          <div className="bg-white bg-opacity-20 rounded-lg p-6 text-center backdrop-blur-sm">
+            <div className="text-3xl font-bold mb-2">{studentScores.coreSubjectScore}</div>
+            <div className="text-sm text-blue-100">전략산업 교과목 이수</div>
+            <div className="text-xs text-blue-200 mt-1">/ 50점</div>
+          </div>
+
+          <div className="bg-white bg-opacity-20 rounded-lg p-6 text-center backdrop-blur-sm">
+            <div className="text-3xl font-bold mb-2">{studentScores.industryScore}</div>
+            <div className="text-sm text-blue-100">산학협력 프로그램 참여</div>
+            <div className="text-xs text-blue-200 mt-1">/ 30점</div>
           </div>
         </div>
       </div>

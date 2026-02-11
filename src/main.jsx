@@ -8,5 +8,5 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <App />
   </React.StrictMode>,
 )
-// v3.2 - MyInfo modal fixed
-// Build timestamp: 2026-02-11 17:00:00
+// v3.3 - CRITICAL FIX: MyInfo component now actually used!
+// Build timestamp: 2026-02-11 17:30:00
