@@ -197,10 +197,26 @@ function NonCurricularProgramsSettingPage() {
         let failCount = 0;
 
         for (const row of jsonData) {
+          // 엑셀 데이터에서 분야 추출 (필수)
+          const excelField = row['분야'];
+          if (!excelField) {
+            console.warn('분야 정보가 없는 행 건너뜀:', row);
+            failCount++;
+            continue;
+          }
+
+          // 엑셀 데이터에서 전공 추출 (필수)
+          const excelDepartment = row['전공'];
+          if (!excelDepartment) {
+            console.warn('전공 정보가 없는 행 건너뜀:', row);
+            failCount++;
+            continue;
+          }
+
           const programData = {
             programName: row['프로그램명'],
-            field: row['분야'] || selectedField,
-            department: row['전공'] || (selectedDepartment !== '전체' ? selectedDepartment : FIELD_DEPARTMENTS[selectedField][0]),
+            field: excelField,  // 엑셀의 분야 값 사용
+            department: excelDepartment,  // 엑셀의 전공 값 사용
             category: row['카테고리'] || '취업역량',
             score: parseInt(row['점수']) || 10,
             description: row['설명'] || ''
