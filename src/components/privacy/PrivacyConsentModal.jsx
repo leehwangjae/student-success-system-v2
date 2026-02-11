@@ -43,7 +43,10 @@ function PrivacyConsentModal({ isOpen, onClose, onAgree }) {
 
   const handleAgree = () => {
     if (agreedToAll && hasSigned) {
-      onAgree();
+      // 서명 이미지를 Base64로 변환하여 전달
+      const canvas = canvasRef.current;
+      const signatureImage = canvas.toDataURL('image/png');
+      onAgree(signatureImage);
     }
   };
 

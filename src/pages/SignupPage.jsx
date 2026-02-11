@@ -10,6 +10,7 @@ function SignupPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [privacyConsented, setPrivacyConsented] = useState(false);
+  const [signatureImage, setSignatureImage] = useState(null);
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -146,6 +147,7 @@ function SignupPage() {
         userData.industry_history = [];
         userData.privacy_consented = true; // 개인정보 동의 여부
         userData.privacy_consented_at = new Date().toISOString(); // 동의 시각
+        userData.privacy_signature = signatureImage; // 서명 이미지 (Base64)
       }
 
       console.log('전송할 데이터:', userData);
@@ -187,8 +189,9 @@ function SignupPage() {
     navigate('/login');
   };
 
-  const handlePrivacyAgree = async () => {
+  const handlePrivacyAgree = async (signature) => {
     setPrivacyConsented(true);
+    setSignatureImage(signature);
     setShowPrivacyModal(false);
     // 동의 후 자동으로 회원가입 진행
     await processSignup();

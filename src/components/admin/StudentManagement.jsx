@@ -4,6 +4,8 @@ import { downloadExcel, downloadStudentTemplate } from '../../utils/helpers';
 import { getDepartmentField } from '../../utils/constants';
 import StudentModal from '../modals/StudentModal';
 import StudentDetailModal from '../modals/StudentDetailModal';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 function StudentManagement() {
   const { students, setStudents, deleteStudent } = useAppContext();
@@ -13,6 +15,7 @@ function StudentManagement() {
   const [showStudentDetail, setShowStudentDetail] = useState(null);
   const [showExcelUploadModal, setShowExcelUploadModal] = useState(false);
   const [excelPreviewData, setExcelPreviewData] = useState([]);
+  const [selectedStudents, setSelectedStudents] = useState([]);
 
   const getFilteredStudents = () => {
     if (filter === '전체') return students;
@@ -98,11 +101,124 @@ function StudentManagement() {
       coreSubjectHistory: [],
       industryHistory: []
     }));
-    
+
     setStudents([...students, ...newStudents]);
     alert(`${newStudents.length}명의 학생이 추가되었습니다!`);
     setShowExcelUploadModal(false);
     setExcelPreviewData([]);
+  };
+
+  // 체크박스 전체 선택/해제
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      const allStudentIds = getFilteredStudents()
+        .filter(s => s.privacy_consented) // 동의한 학생만
+        .map(s => s.id);
+      setSelectedStudents(allStudentIds);
+    } else {
+      setSelectedStudents([]);
+    }
+  };
+
+  // 개별 체크박스 선택/해제
+  const handleSelectStudent = (studentId) => {
+    setSelectedStudents(prev =>
+      prev.includes(studentId)
+        ? prev.filter(id => id !== studentId)
+        : [...prev, studentId]
+    );
+  };
+
+  // PDF 다운로드 함수
+  const downloadPrivacyConsentPDF = async (student) => {
+    try {
+      const doc = new jsPDF();
+
+      // 한글 폰트 설정 (기본 폰트 사용)
+      doc.setFont('helvetica');
+
+      // 제목
+      doc.setFontSize(18);
+      doc.text('Privacy Consent Agreement', 105, 20, { align: 'center' });
+      doc.text('(Gaeingjeongbo Sujib Mit Iyong Donguiseo)', 105, 28, { align: 'center' });
+
+      // 학생 정보
+      doc.setFontSize(12);
+      doc.text('Student Information', 20, 45);
+      doc.setFontSize(10);
+      doc.text(`Name: ${student.name}`, 20, 55);
+      doc.text(`Student ID: ${student.studentId || student.student_id}`, 20, 62);
+      doc.text(`Department: ${student.department}`, 20, 69);
+      doc.text(`Field: ${student.field}`, 20, 76);
+      doc.text(`Email: ${student.email || 'N/A'}`, 20, 83);
+      doc.text(`Phone: ${student.phone || 'N/A'}`, 20, 90);
+
+      // 동의 정보
+      doc.setFontSize(12);
+      doc.text('Consent Information', 20, 105);
+      doc.setFontSize(10);
+      doc.text(`Consent Status: ${student.privacy_consented ? 'Agreed' : 'Not Agreed'}`, 20, 115);
+      doc.text(`Consent Date: ${student.privacy_consented_at ? new Date(student.privacy_consented_at).toLocaleString('ko-KR') : 'N/A'}`, 20, 122);
+
+      // 서명 이미지 추가
+      if (student.privacy_signature) {
+        doc.setFontSize(12);
+        doc.text('Signature', 20, 137);
+        try {
+          doc.addImage(student.privacy_signature, 'PNG', 20, 145, 80, 30);
+        } catch (error) {
+          console.error('서명 이미지 추가 실패:', error);
+          doc.setFontSize(10);
+          doc.text('(Signature image not available)', 20, 155);
+        }
+      }
+
+      // 동의 내용 요약
+      doc.setFontSize(12);
+      doc.text('Consent Summary', 20, 190);
+      doc.setFontSize(9);
+      const consentItems = [
+        '- Personal information collection and use',
+        '- Collection and use of unique identification information (SSN)',
+        '- Provision of personal information to third parties'
+      ];
+
+      let yPos = 200;
+      consentItems.forEach(item => {
+        doc.text(item, 20, yPos);
+        yPos += 7;
+      });
+
+      // 하단 정보
+      doc.setFontSize(8);
+      doc.text(`Generated on: ${new Date().toLocaleString('ko-KR')}`, 20, 280);
+      doc.text('INU RISE Student Success Index Management System', 105, 285, { align: 'center' });
+
+      // 파일 저장
+      doc.save(`privacy_consent_${student.studentId || student.student_id}_${student.name}.pdf`);
+    } catch (error) {
+      console.error('PDF 생성 오류:', error);
+      alert('PDF 생성 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 선택된 학생들의 개인정보 동의서 일괄 다운로드
+  const downloadSelectedConsentPDFs = async () => {
+    if (selectedStudents.length === 0) {
+      alert('다운로드할 학생을 선택해주세요.');
+      return;
+    }
+
+    const studentsToDownload = students.filter(s => selectedStudents.includes(s.id));
+
+    for (const student of studentsToDownload) {
+      await downloadPrivacyConsentPDF(student);
+      // 각 PDF 생성 사이에 약간의 딜레이 추가
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+
+    alert(`${studentsToDownload.length}명의 개인정보 동의서가 다운로드되었습니다.`);
+    setSelectedStudents([]);
   };
 
   return (
@@ -123,6 +239,17 @@ function StudentManagement() {
           </select>
         </div>
         <div className="flex space-x-2">
+          <button
+            onClick={downloadSelectedConsentPDFs}
+            disabled={selectedStudents.length === 0}
+            className={`px-4 py-2 rounded-lg ${
+              selectedStudents.length > 0
+                ? 'bg-purple-600 text-white hover:bg-purple-700'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+          >
+            📄 동의서 PDF ({selectedStudents.length})
+          </button>
           <button
             onClick={() => downloadExcel(getFilteredStudents(), filter)}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
@@ -161,10 +288,19 @@ function StudentManagement() {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
+                <th className="px-3 py-4 text-center text-sm font-semibold text-gray-700">
+                  <input
+                    type="checkbox"
+                    onChange={handleSelectAll}
+                    checked={selectedStudents.length > 0 && selectedStudents.length === getFilteredStudents().filter(s => s.privacy_consented).length}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                </th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">학번</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">이름</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">학과</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">분야</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">개인정보동의</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">이메일</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">전화번호</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">주민번호</th>
@@ -178,13 +314,44 @@ function StudentManagement() {
             <tbody className="divide-y divide-gray-200">
               {getFilteredStudents().map(student => (
                 <tr key={student.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">{student.studentId}</td>
+                  <td className="px-3 py-4 text-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedStudents.includes(student.id)}
+                      onChange={() => handleSelectStudent(student.id)}
+                      disabled={!student.privacy_consented}
+                      className="w-4 h-4 text-blue-600 rounded disabled:opacity-30"
+                    />
+                  </td>
+                  <td className="px-6 py-4">{student.studentId || student.student_id}</td>
                   <td className="px-6 py-4 font-medium">{student.name}</td>
                   <td className="px-6 py-4 text-gray-600">{student.department}</td>
                   <td className="px-6 py-4">
                     <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
                       {student.field}
                     </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    {student.privacy_consented ? (
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded inline-block w-fit">
+                          ✓ 동의완료
+                        </span>
+                        <button
+                          onClick={() => downloadPrivacyConsentPDF(student)}
+                          className="text-xs text-blue-600 hover:text-blue-800 underline w-fit"
+                        >
+                          PDF 다운로드
+                        </button>
+                        {student.privacy_consented_at && (
+                          <span className="text-xs text-gray-500">
+                            {new Date(student.privacy_consented_at).toLocaleDateString('ko-KR')}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">미동의</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-gray-600">{student.email}</td>
                   <td className="px-6 py-4 text-gray-600">{student.phone}</td>
