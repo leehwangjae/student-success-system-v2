@@ -31,13 +31,28 @@ function NonCurricularProgramsSettingPage() {
 
   // 필터링된 프로그램
   const filteredPrograms = useMemo(() => {
-    return (nonCurricularPrograms || []).filter(program => {
+    const filtered = (nonCurricularPrograms || []).filter(program => {
       const matchesField = program.field === selectedField;
       const matchesDepartment = selectedDepartment === '전체' || program.department === selectedDepartment;
       const matchesCategory = selectedCategory === '전체' || program.category === selectedCategory;
       const matchesSearch = program.program_name.toLowerCase().includes(searchTerm.toLowerCase());
+
+      // 디버깅: 반도체 분야 프로그램 출력
+      if (program.field === '반도체') {
+        console.log('🔍 반도체 프로그램:', {
+          이름: program.program_name,
+          분야: program.field,
+          전공: program.department,
+          '전공매칭': matchesDepartment,
+          '선택된전공': selectedDepartment
+        });
+      }
+
       return matchesField && matchesDepartment && matchesCategory && matchesSearch;
     });
+
+    console.log(`📊 필터 결과: 분야=${selectedField}, 전공=${selectedDepartment}, 총 ${filtered.length}개`);
+    return filtered;
   }, [nonCurricularPrograms, selectedField, selectedDepartment, selectedCategory, searchTerm]);
 
   // 정렬된 프로그램
@@ -272,15 +287,19 @@ function NonCurricularProgramsSettingPage() {
             description: row['설명'] || ''
           };
 
+          console.log('📊 업로드할 프로그램 데이터:', programData);
+
           if (!programData.programName) {
             failCount++;
             continue;
           }
 
           try {
-            await addNonCurricularProgram(programData);
+            const result = await addNonCurricularProgram(programData);
+            console.log('✅ 업로드 성공:', programData.programName, '- 분야:', programData.field, '전공:', programData.department);
             successCount++;
           } catch (error) {
+            console.error('❌ 업로드 실패:', programData.programName, error);
             failCount++;
           }
         }
