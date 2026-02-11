@@ -12,6 +12,7 @@ import CoreCoursesSettingPage from './admin/CoreCoursesSettingPage';
 import CoreCoursesReviewPage from './admin/CoreCoursesReviewPage';
 import NonCurricularProgramsSettingPage from './admin/NonCurricularProgramsSettingPage';
 import NonCurricularProgramsReviewPage from './admin/NonCurricularProgramsReviewPage';
+import StudentManagement from '../components/admin/StudentManagement';
 
 function AdminPage() {
   const {
@@ -452,7 +453,9 @@ function AdminPage() {
     }
   };
 
-  const renderStudentsTab = () => (
+  const renderStudentsTab = () => <StudentManagement />;
+
+  const renderStudentsTabOld = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-800">학생 관리</h2>
