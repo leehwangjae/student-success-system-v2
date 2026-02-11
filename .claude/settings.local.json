@@ -18,7 +18,8 @@
       "Bash(npm run build:*)",
       "Bash(where:*)",
       "Bash(git ls-tree:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(npm version:*)"
     ]
   }
 }
