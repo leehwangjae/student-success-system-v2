@@ -62,6 +62,11 @@ export const AppProvider = ({ children }) => {
           accountNumber: user.account_number || '',
           accountHolder: user.account_holder || '',
 
+          // 개인정보 동의
+          privacy_consented: user.privacy_consented || false,
+          privacy_consented_at: user.privacy_consented_at || null,
+          privacy_signature: user.privacy_signature || null,
+
           nonCurricularScore: user.non_curricular_score || 0,
           coreSubjectScore: user.core_subject_score || user.core_courses_score || 0,
           coreCoursesScore: user.core_courses_score || 0,
