@@ -15,6 +15,9 @@ function NonCurricularProgramsSettingPage() {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const fileInputRef = useRef(null);
 
+  // 체크박스 관련 상태
+  const [selectedPrograms, setSelectedPrograms] = useState([]);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProgram, setEditingProgram] = useState(null);
   const [modalData, setModalData] = useState({
@@ -138,6 +141,53 @@ function NonCurricularProgramsSettingPage() {
       } catch (error) {
         showAlert('삭제 실패: ' + error.message);
       }
+    }
+  };
+
+  // 체크박스 전체 선택/해제
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedPrograms(sortedPrograms.map(p => p.id));
+    } else {
+      setSelectedPrograms([]);
+    }
+  };
+
+  // 개별 체크박스 토글
+  const handleSelectProgram = (programId) => {
+    setSelectedPrograms(prev =>
+      prev.includes(programId)
+        ? prev.filter(id => id !== programId)
+        : [...prev, programId]
+    );
+  };
+
+  // 선택된 항목 일괄 삭제
+  const handleDeleteSelected = async () => {
+    if (selectedPrograms.length === 0) {
+      showAlert('삭제할 프로그램을 선택해주세요.');
+      return;
+    }
+
+    const confirmed = await showConfirm(
+      `선택한 ${selectedPrograms.length}개의 프로그램을 삭제하시겠습니까?\n\n해당 프로그램들의 학생 제출 데이터도 함께 삭제됩니다.`
+    );
+
+    if (confirmed) {
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const programId of selectedPrograms) {
+        try {
+          await deleteNonCurricularProgram(programId);
+          successCount++;
+        } catch (error) {
+          failCount++;
+        }
+      }
+
+      showAlert(`삭제 완료\n성공: ${successCount}개, 실패: ${failCount}개`);
+      setSelectedPrograms([]);
     }
   };
 
@@ -351,50 +401,63 @@ function NonCurricularProgramsSettingPage() {
 
         {/* 액션 버튼 */}
         <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
-          <div className="flex gap-3">
-            <button
-              onClick={handleAddProgram}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              프로그램 추가
-            </button>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              엑셀 업로드
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleExcelUpload}
-              className="hidden"
-            />
-            <button
-              onClick={handleDownloadTemplate}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              템플릿 다운로드
-            </button>
-            <button
-              onClick={handleExcelDownload}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              현재 목록 다운로드
-            </button>
+          <div className="flex justify-between items-center">
+            <div className="flex gap-3">
+              <button
+                onClick={handleAddProgram}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                프로그램 추가
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                엑셀 업로드
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleExcelUpload}
+                className="hidden"
+              />
+              <button
+                onClick={handleDownloadTemplate}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                템플릿 다운로드
+              </button>
+              <button
+                onClick={handleExcelDownload}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                현재 목록 다운로드
+              </button>
+            </div>
+            {selectedPrograms.length > 0 && (
+              <button
+                onClick={handleDeleteSelected}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                선택 삭제 ({selectedPrograms.length})
+              </button>
+            )}
           </div>
         </div>
 
@@ -416,6 +479,14 @@ function NonCurricularProgramsSettingPage() {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b">
                   <tr>
+                    <th className="px-4 py-3 text-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedPrograms.length === sortedPrograms.length && sortedPrograms.length > 0}
+                        onChange={handleSelectAll}
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                      />
+                    </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       #
                     </th>
@@ -451,6 +522,14 @@ function NonCurricularProgramsSettingPage() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {sortedPrograms.map((program, index) => (
                     <tr key={program.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-4 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedPrograms.includes(program.id)}
+                          onChange={() => handleSelectProgram(program.id)}
+                          className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                        />
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {index + 1}
                       </td>
