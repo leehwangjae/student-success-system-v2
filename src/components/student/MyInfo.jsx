@@ -1,20 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
+import { supabase } from '../../lib/supabase';
 import PaymentInfoModal from '../modals/PaymentInfoModal';
 
 function MyInfo() {
   const { currentUser, students, updateStudentInfo } = useAppContext();
   const [isEditing, setIsEditing] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [student, setStudent] = useState(null);
   const [editData, setEditData] = useState({
-    email: currentUser?.email || '',
-    phone: currentUser?.phone || ''
+    email: '',
+    phone: ''
   });
 
-  // 실시간으로 students에서 현재 사용자 정보 가져오기
-  const student = students.find(s => s.id === currentUser?.id) || currentUser;
+  // Supabase에서 직접 최신 학생 정보 로드
+  useEffect(() => {
+    const loadStudentData = async () => {
+      if (!currentUser?.id) return;
 
-  if (!student) return null;
+      try {
+        const { data, error } = await supabase
+          .from('users_2025_11_27_07_17')
+          .select('*')
+          .eq('id', currentUser.id)
+          .single();
+
+        if (error) throw error;
+
+        // camelCase로 변환
+        const studentData = {
+          id: data.id,
+          studentId: data.student_id,
+          name: data.name,
+          department: data.department,
+          field: data.field,
+          email: data.email || '',
+          phone: data.phone || '',
+          ssn: data.ssn || '',
+          bankName: data.bank_name || '',
+          accountNumber: data.account_number || '',
+          accountHolder: data.account_holder || '',
+          nonCurricularScore: data.non_curricular_score || 0,
+          coreSubjectScore: data.core_subject_score || data.core_courses_score || 0,
+          industryScore: data.industry_score || 0,
+          total: (data.non_curricular_score || 0) +
+                 (data.core_subject_score || data.core_courses_score || 0) +
+                 (data.industry_score || 0),
+          nonCurricularHistory: data.non_curricular_history || [],
+          coreSubjectHistory: data.core_subject_history || [],
+          industryHistory: data.industry_history || []
+        };
+
+        setStudent(studentData);
+        setEditData({
+          email: studentData.email,
+          phone: studentData.phone
+        });
+      } catch (error) {
+        console.error('학생 정보 로드 실패:', error);
+      }
+    };
+
+    loadStudentData();
+  }, [currentUser?.id]);
+
+  if (!student) return <div className="p-6">로딩 중...</div>;
 
   const handleEdit = () => {
     setEditData({
