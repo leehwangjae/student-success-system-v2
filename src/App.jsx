@@ -1,8 +1,8 @@
 /**
  * 학생성공지수 관리 시스템
- * @version 3.4.0
+ * @version 3.4.1
  * @date 2026-02-12
- * @changelog 지급 정보 입력 필드 추가 (CoreCoursesCheckPage)
+ * @changelog 캐시 무효화 및 강제 재배포, 버전 일관성 유지
  */
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -19,7 +19,7 @@ import MasterApprovalPage from './pages/MasterApprovalPage';
 import ConfirmModal from './components/modals/ConfirmModal';
 import AlertModal from './components/modals/AlertModal';
 
-console.log('🎯 App.jsx v3.4.0 로드됨');
+console.log('🎯 App.jsx v3.4.1 로드됨');
 
 // 🔥 GlobalModals 수정!
 function GlobalModals() {
