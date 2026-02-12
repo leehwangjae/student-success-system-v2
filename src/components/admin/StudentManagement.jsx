@@ -580,7 +580,7 @@ function StudentManagement() {
                     )}
                   </td>
                   <td className="px-6 py-4 text-center">
-                    {student.bank_name && student.account_number && student.account_holder ? (
+                    {student.bankName && student.accountNumber && student.accountHolder ? (
                       <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">✓ 등록</span>
                     ) : (
                       <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">미등록</span>

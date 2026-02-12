@@ -230,20 +230,20 @@ function StudentDetailModal({ isOpen, onClose, student, readOnly = true }) {
         <div className="grid grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">은행명</label>
-            <p className="px-4 py-2 bg-gray-50 rounded-lg">{student.bank_name || '-'}</p>
+            <p className="px-4 py-2 bg-gray-50 rounded-lg">{student.bankName || '-'}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">계좌번호</label>
-            <p className="px-4 py-2 bg-gray-50 rounded-lg">{student.account_number || '-'}</p>
+            <p className="px-4 py-2 bg-gray-50 rounded-lg">{student.accountNumber || '-'}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">예금주</label>
-            <p className="px-4 py-2 bg-gray-50 rounded-lg">{student.account_holder || '-'}</p>
+            <p className="px-4 py-2 bg-gray-50 rounded-lg">{student.accountHolder || '-'}</p>
           </div>
         </div>
         <div className="mt-3 flex items-center gap-2">
           <span className="text-sm text-gray-600">등록 상태:</span>
-          {student.bank_name && student.account_number && student.account_holder ? (
+          {student.bankName && student.accountNumber && student.accountHolder ? (
             <span className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full font-medium">✓ 등록</span>
           ) : (
             <span className="text-sm bg-gray-100 text-gray-600 px-3 py-1 rounded-full">미등록</span>
