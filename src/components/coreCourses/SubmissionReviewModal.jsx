@@ -7,25 +7,40 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
   const [rejectionReason, setRejectionReason] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [viewMode, setViewMode] = useState('split'); // split / list / document
+  const [selectedFileIndex, setSelectedFileIndex] = useState(0);
+  const [selectedFileType, setSelectedFileType] = useState('transcript'); // transcript / uploaded
 
   if (!isOpen || !submission || !student) return null;
 
   const completedCourses = submission.completedCourses || [];
+  const uploadedFiles = submission.uploadedFiles || submission.uploaded_files || [];
 
   // 파일 미리보기 URL 생성
   const previewUrl = useMemo(() => {
-    if (!submission.transcriptFile || !submission.transcriptFileName) return null;
+    let fileData, fileName;
 
-    const fileName = submission.transcriptFileName.toLowerCase();
+    if (selectedFileType === 'transcript') {
+      if (!submission.transcriptFile || !submission.transcriptFileName) return null;
+      fileData = submission.transcriptFile;
+      fileName = submission.transcriptFileName;
+    } else {
+      if (!uploadedFiles || uploadedFiles.length === 0 || selectedFileIndex >= uploadedFiles.length) return null;
+      const file = uploadedFiles[selectedFileIndex];
+      if (!file || !file.fileName || !file.fileData) return null;
+      fileData = file.fileData;
+      fileName = file.fileName;
+    }
+
+    const fileNameLower = fileName.toLowerCase();
     let mimeType = '';
 
-    if (fileName.endsWith('.pdf')) {
+    if (fileNameLower.endsWith('.pdf')) {
       mimeType = 'application/pdf';
-    } else if (fileName.endsWith('.png')) {
+    } else if (fileNameLower.endsWith('.png')) {
       mimeType = 'image/png';
-    } else if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
+    } else if (fileNameLower.endsWith('.jpg') || fileNameLower.endsWith('.jpeg')) {
       mimeType = 'image/jpeg';
-    } else if (fileName.endsWith('.gif')) {
+    } else if (fileNameLower.endsWith('.gif')) {
       mimeType = 'image/gif';
     } else {
       return null; // 지원하지 않는 형식
@@ -33,16 +48,16 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
 
     try {
       // base64 문자열에서 data URL prefix 제거
-      const base64Data = submission.transcriptFile.includes('base64,')
-        ? submission.transcriptFile.split('base64,')[1]
-        : submission.transcriptFile;
+      const base64Data = fileData.includes('base64,')
+        ? fileData.split('base64,')[1]
+        : fileData;
 
       return `data:${mimeType};base64,${base64Data}`;
     } catch (error) {
       console.error('Preview URL 생성 실패:', error);
       return null;
     }
-  }, [submission.transcriptFile, submission.transcriptFileName]);
+  }, [submission.transcriptFile, submission.transcriptFileName, uploadedFiles, selectedFileIndex, selectedFileType]);
 
   const handleSubmit = async () => {
     if (decision === 'reject' && !rejectionReason.trim()) {
@@ -66,9 +81,24 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
   };
 
   const handleDownload = () => {
-    if (submission.transcriptFile && submission.transcriptFileName) {
-      downloadBase64File(submission.transcriptFile, submission.transcriptFileName);
+    if (selectedFileType === 'transcript') {
+      if (submission.transcriptFile && submission.transcriptFileName) {
+        downloadBase64File(submission.transcriptFile, submission.transcriptFileName);
+      }
+    } else {
+      const file = uploadedFiles[selectedFileIndex];
+      if (file && file.fileData && file.fileName) {
+        downloadBase64File(file.fileData, file.fileName);
+      }
     }
+  };
+
+  const handleDownloadAllUploadedFiles = () => {
+    uploadedFiles.forEach(file => {
+      if (file && file.fileData && file.fileName) {
+        downloadBase64File(file.fileData, file.fileName);
+      }
+    });
   };
 
   return (
@@ -158,39 +188,121 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
               {/* 왼쪽: 증빙서류 뷰어 (2/3) */}
               <div className="w-2/3 border-r flex flex-col bg-gray-50">
                 <div className="px-4 py-3 bg-gray-100 border-b">
-                  <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                    📄 제출 증빙
-                    {submission.transcriptFileName && (
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                      📄 제출 증빙
+                      {uploadedFiles.length > 0 && selectedFileType === 'uploaded' && (
+                        <button
+                          onClick={handleDownloadAllUploadedFiles}
+                          className="ml-2 px-3 py-1 bg-green-600 text-white text-xs rounded-lg font-medium hover:bg-green-700"
+                        >
+                          📥 전체 다운로드
+                        </button>
+                      )}
+                    </h3>
+                    <button
+                      onClick={handleDownload}
+                      className="px-3 py-1 bg-blue-600 text-white text-xs rounded-lg font-medium hover:bg-blue-700"
+                    >
+                      📥 다운로드
+                    </button>
+                  </div>
+
+                  {/* 파일 타입 선택 탭 */}
+                  <div className="flex gap-2 mb-2">
+                    <button
+                      onClick={() => {
+                        setSelectedFileType('transcript');
+                        setSelectedFileIndex(0);
+                      }}
+                      className={`px-3 py-1 text-xs rounded-lg font-medium transition-colors ${
+                        selectedFileType === 'transcript'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      📋 성적증명서
+                    </button>
+                    {uploadedFiles.length > 0 && (
                       <button
-                        onClick={handleDownload}
-                        className="ml-auto px-3 py-1 bg-blue-600 text-white text-xs rounded-lg font-medium hover:bg-blue-700"
+                        onClick={() => {
+                          setSelectedFileType('uploaded');
+                          setSelectedFileIndex(0);
+                        }}
+                        className={`px-3 py-1 text-xs rounded-lg font-medium transition-colors ${
+                          selectedFileType === 'uploaded'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white text-gray-700 hover:bg-gray-50'
+                        }`}
                       >
-                        📥 다운로드
+                        📎 이수표 ({uploadedFiles.length}개)
                       </button>
                     )}
-                  </h3>
-                  {submission.transcriptFileName && (
-                    <p className="text-xs text-gray-600 mt-1">
+                  </div>
+
+                  {/* 업로드된 파일 탭 (여러 개일 경우) */}
+                  {selectedFileType === 'uploaded' && uploadedFiles.length > 1 && (
+                    <div className="flex gap-2 overflow-x-auto mt-2">
+                      {uploadedFiles.map((file, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setSelectedFileIndex(index)}
+                          className={`px-3 py-1 text-xs rounded-lg font-medium whitespace-nowrap transition-colors ${
+                            selectedFileIndex === index
+                              ? 'bg-purple-600 text-white'
+                              : 'bg-white text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          📄 파일 {index + 1}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 현재 파일 정보 */}
+                  {selectedFileType === 'transcript' && submission.transcriptFileName && (
+                    <p className="text-xs text-gray-600 mt-2">
                       {submission.transcriptFileName} ({formatFileSize(submission.transcriptFileSize)})
+                    </p>
+                  )}
+                  {selectedFileType === 'uploaded' && uploadedFiles[selectedFileIndex] && (
+                    <p className="text-xs text-gray-600 mt-2">
+                      {uploadedFiles[selectedFileIndex].fileName} ({formatFileSize(uploadedFiles[selectedFileIndex].fileSize)})
                     </p>
                   )}
                 </div>
                 <div className="flex-1 overflow-auto p-4">
                   {previewUrl ? (
-                    submission.transcriptFileName.toLowerCase().endsWith('.pdf') ? (
-                      <iframe
-                        src={previewUrl}
-                        className="w-full h-full border rounded-lg"
-                        title="PDF Viewer"
-                      />
-                    ) : (
-                      <img
-                        src={previewUrl}
-                        alt="성적증명서"
-                        className="w-full h-auto rounded-lg shadow-lg"
-                      />
-                    )
-                  ) : submission.transcriptFileName ? (
+                    (() => {
+                      const fileName = selectedFileType === 'transcript'
+                        ? submission.transcriptFileName
+                        : uploadedFiles[selectedFileIndex]?.fileName || '';
+                      return fileName.toLowerCase().endsWith('.pdf') ? (
+                        <iframe
+                          src={previewUrl}
+                          className="w-full h-full border rounded-lg"
+                          title="PDF Viewer"
+                        />
+                      ) : (
+                        <img
+                          src={previewUrl}
+                          alt="증빙서류"
+                          className="w-full h-auto rounded-lg shadow-lg"
+                        />
+                      );
+                    })()
+                  ) : selectedFileType === 'transcript' && submission.transcriptFileName ? (
+                    <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                      <div className="text-6xl mb-4">📄</div>
+                      <p className="text-sm mb-2">미리보기를 지원하지 않는 파일입니다.</p>
+                      <button
+                        onClick={handleDownload}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+                      >
+                        📥 파일 다운로드
+                      </button>
+                    </div>
+                  ) : selectedFileType === 'uploaded' && uploadedFiles[selectedFileIndex] ? (
                     <div className="flex flex-col items-center justify-center h-full text-gray-500">
                       <div className="text-6xl mb-4">📄</div>
                       <p className="text-sm mb-2">미리보기를 지원하지 않는 파일입니다.</p>

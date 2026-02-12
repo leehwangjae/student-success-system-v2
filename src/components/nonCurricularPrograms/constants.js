@@ -20,7 +20,7 @@ export const SUBMISSION_STATUS_LABEL = {
 // 파일 업로드 설정
 export const FILE_UPLOAD_CONFIG = {
   MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
-  MAX_FILES: 5, // 최대 5개 파일
+  MAX_FILES: 10, // 최대 10개 파일
   ALLOWED_TYPES: [
     'image/jpeg',
     'image/png',

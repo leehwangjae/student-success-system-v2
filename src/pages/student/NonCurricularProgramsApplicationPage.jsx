@@ -140,7 +140,7 @@ function NonCurricularProgramsApplicationPage() {
     }
 
     showConfirm(
-      `${selectedPrograms.length}개 프로그램 (${totalScore}점)을 제출하시겠습니까?\n\n제출 후에는 관리자 승인 전까지 수정할 수 없습니다.`,
+      `${selectedPrograms.length}개 프로그램 (${totalScore}점)을 제출하시겠습니까?`,
       async () => {
         setIsSubmitting(true);
 
@@ -175,7 +175,7 @@ function NonCurricularProgramsApplicationPage() {
   const isApproved = submission?.status === 'approved';
   const isPending = submission?.status === 'pending';
   const isRejected = submission?.status === 'rejected';
-  const canEdit = !isApproved && !isPending;
+  const canEdit = !isApproved; // 승인되지 않았으면 수정 가능 (pending 포함)
 
   if (!currentUser) {
     return <div className="p-6">로그인이 필요합니다.</div>;
@@ -414,31 +414,22 @@ function NonCurricularProgramsApplicationPage() {
           )}
         </div>
 
-        {/* 제출 버튼 */}
+        {/* 제출/수정/재제출 버튼 */}
         {canEdit && (
           <div className="bg-white rounded-xl shadow-sm p-6">
             <button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="w-full px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`w-full px-6 py-3 text-white rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed ${
+                isPending ? 'bg-blue-600 hover:bg-blue-700' :
+                isRejected ? 'bg-orange-600 hover:bg-orange-700' :
+                'bg-green-600 hover:bg-green-700'
+              }`}
             >
-              {isSubmitting ? '제출 중...' : '💾 제출하기'}
-            </button>
-
-            <div className="mt-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-              ℹ️ 제출 후에는 관리자 승인 전까지 수정할 수 없습니다.
-            </div>
-          </div>
-        )}
-
-        {isRejected && (
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="w-full px-6 py-3 bg-orange-600 text-white rounded-lg font-bold hover:bg-orange-700"
-            >
-              🔄 재제출하기
+              {isSubmitting ? '제출 중...' :
+               isPending ? '✏️ 수정하기' :
+               isRejected ? '🔄 재제출하기' :
+               '💾 제출하기'}
             </button>
           </div>
         )}
