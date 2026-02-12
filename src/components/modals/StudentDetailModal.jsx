@@ -224,6 +224,33 @@ function StudentDetailModal({ isOpen, onClose, student, readOnly = true }) {
         </div>
       </div>
 
+      {/* 지급 정보 */}
+      <div className="mt-6 pt-6 border-t border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">💰 지급 정보</h3>
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">은행명</label>
+            <p className="px-4 py-2 bg-gray-50 rounded-lg">{student.bank_name || '-'}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">계좌번호</label>
+            <p className="px-4 py-2 bg-gray-50 rounded-lg">{student.account_number || '-'}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">예금주</label>
+            <p className="px-4 py-2 bg-gray-50 rounded-lg">{student.account_holder || '-'}</p>
+          </div>
+        </div>
+        <div className="mt-3 flex items-center gap-2">
+          <span className="text-sm text-gray-600">등록 상태:</span>
+          {student.bank_name && student.account_number && student.account_holder ? (
+            <span className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full font-medium">✓ 등록</span>
+          ) : (
+            <span className="text-sm bg-gray-100 text-gray-600 px-3 py-1 rounded-full">미등록</span>
+          )}
+        </div>
+      </div>
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">메모</label>
         {isEditing ? (
