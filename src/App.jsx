@@ -1,3 +1,9 @@
+/**
+ * 학생성공지수 관리 시스템
+ * @version 3.4.0
+ * @date 2026-02-12
+ * @changelog 지급 정보 입력 필드 추가 (CoreCoursesCheckPage)
+ */
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider, useAppContext } from './context/AppContext';
@@ -12,6 +18,8 @@ import CoreCoursesCheckPage from './pages/student/CoreCoursesCheckPage';
 import MasterApprovalPage from './pages/MasterApprovalPage';
 import ConfirmModal from './components/modals/ConfirmModal';
 import AlertModal from './components/modals/AlertModal';
+
+console.log('🎯 App.jsx v3.4.0 로드됨');
 
 // 🔥 GlobalModals 수정!
 function GlobalModals() {
