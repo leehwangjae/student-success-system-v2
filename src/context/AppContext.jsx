@@ -245,7 +245,7 @@ export const AppProvider = ({ children }) => {
         account_type: data.account_type,
         status: data.status
       });
-      console.log('✅ 로그인 성공 - 생성된 user 객체:', user);
+      console.log('✅ 로그인 성공');
 
       setCurrentUser(user);
       localStorage.setItem('currentUser', JSON.stringify(user));

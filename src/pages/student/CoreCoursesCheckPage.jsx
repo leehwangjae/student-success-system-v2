@@ -187,7 +187,7 @@ function CoreCoursesCheckPage() {
     console.log('🔥 제출하기 버튼 클릭!');
     console.log('현재 사용자:', currentUser);
     console.log('완료된 과목:', completedCourses);
-    console.log('지급 정보:', paymentInfo);
+    console.log('지급 정보 유효성 검사 중...');
 
     // 검증
     const completedCount = completedCourses.filter(c => c.isCompleted).length;
@@ -231,7 +231,7 @@ function CoreCoursesCheckPage() {
             uploadedFiles,
             paymentInfo
           };
-          console.log('제출할 데이터:', submissionData);
+          console.log('제출 데이터 준비 완료');
 
           const result = await submitCoreCourses(submissionData);
 

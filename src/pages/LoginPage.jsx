@@ -31,7 +31,7 @@ function LoginPage() {
     }
 
     try {
-      console.log('🔑 로그인 시도:', formData.username);
+      console.log('🔑 로그인 시도');
 
       // Supabase에서 사용자 조회
       const { data: users, error: fetchError } = await supabase
@@ -45,7 +45,7 @@ function LoginPage() {
         throw fetchError;
       }
 
-      console.log('📊 조회 결과:', users);
+      console.log('📊 조회 결과 수:', users?.length || 0);
 
       if (!users || users.length === 0) {
         setError('아이디 또는 비밀번호가 일치하지 않습니다.');
@@ -60,7 +60,7 @@ function LoginPage() {
         return;
       }
 
-      console.log('✅ 로그인 성공:', user);
+      console.log('✅ 로그인 성공');
 
       // 사용자 정보 설정
       const userData = {
@@ -77,7 +77,7 @@ function LoginPage() {
       setCurrentUser(userData);
       localStorage.setItem('currentUser', JSON.stringify(userData));
 
-      console.log('👤 현재 사용자 설정 완료:', userData);
+      console.log('👤 현재 사용자 설정 완료');
       console.log('🎯 페이지 전환 시작...');
 
       // 역할에 따라 페이지 이동

@@ -151,7 +151,7 @@ function SignupPage() {
         userData.privacy_signature = signature || signatureImage; // 서명 이미지 (Base64) - 파라미터 우선 사용
       }
 
-      console.log('전송할 데이터:', userData);
+      console.log('회원가입 데이터 전송 중...');
 
       // 4. Supabase에 저장
       const { data, error } = await supabase

@@ -84,7 +84,7 @@ function MyInfo() {
           </div>
           <div className="bg-gray-50 p-4 rounded-lg">
             <p className="text-sm text-gray-600 mb-1">이메일</p>
-            <p className="font-semibold">{currentUser.email || 'thsgmdals@naver.net'}</p>
+            <p className="font-semibold">{currentUser.email || '-'}</p>
           </div>
           <div className="bg-gray-50 p-4 rounded-lg">
             <p className="text-sm text-gray-600 mb-1">지급정보</p>
