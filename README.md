@@ -2,6 +2,48 @@
 
 학생성공지수 관리 시스템
 
+인천대학교 LINC3.0 학생성공지수 관리를 위한 웹 애플리케이션입니다.
+
+## 🚀 시작하기
+
+### 환경변수 설정
+
+프로젝트 루트에 `.env` 파일을 생성하고 다음 환경변수를 설정하세요:
+
+```bash
+VITE_SUPABASE_URL=your-supabase-url
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
+
+`.env.example` 파일을 복사하여 시작할 수 있습니다:
+```bash
+cp .env.example .env
+```
+
+### Vercel 배포 시 환경변수 설정
+
+1. Vercel 프로젝트 대시보드 접속
+2. Settings → Environment Variables 메뉴
+3. 다음 환경변수 추가:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+4. Production, Preview, Development 모두 체크
+5. Save 클릭
+
+### 로컬 개발 환경
+
+```bash
+npm install
+npm run dev
+```
+
+## 📦 기술 스택
+
+- React 18
+- Vite
+- Supabase
+- TailwindCSS
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
