@@ -4,15 +4,15 @@ import { supabase } from '../../lib/supabase';
 
 function MyInfo() {
   const { currentUser } = useAppContext();
-  const [showModal, setShowModal] = useState(false);
   const [studentScores, setStudentScores] = useState({
     nonCurricularScore: 0,
     coreSubjectScore: 0,
     industryScore: 0,
     total: 0
   });
+  const [paymentInfoRegistered, setPaymentInfoRegistered] = useState(false);
 
-  // 학생 점수 로드
+  // 학생 점수 및 지급 정보 로드
   useEffect(() => {
     const loadStudentScores = async () => {
       if (!currentUser?.id) return;
@@ -20,7 +20,7 @@ function MyInfo() {
       try {
         const { data, error } = await supabase
           .from('users_2025_11_27_07_17')
-          .select('non_curricular_score, core_subject_score, industry_score')
+          .select('non_curricular_score, core_subject_score, industry_score, bank_name, account_number, account_holder')
           .eq('id', currentUser.id)
           .single();
 
@@ -39,6 +39,10 @@ function MyInfo() {
         };
 
         setStudentScores(scores);
+
+        // 지급 정보가 모두 입력되었는지 확인
+        const hasPaymentInfo = data?.bank_name && data?.account_number && data?.account_holder;
+        setPaymentInfoRegistered(!!hasPaymentInfo);
       } catch (error) {
         console.error('점수 로드 중 오류:', error);
       }
@@ -59,12 +63,6 @@ function MyInfo() {
             <h3 className="text-xl font-bold">기본 정보</h3>
             <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">v3.3</span>
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            📋 개인정보활용동의
-          </button>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -87,6 +85,12 @@ function MyInfo() {
           <div className="bg-gray-50 p-4 rounded-lg">
             <p className="text-sm text-gray-600 mb-1">이메일</p>
             <p className="font-semibold">{currentUser.email || 'thsgmdals@naver.net'}</p>
+          </div>
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <p className="text-sm text-gray-600 mb-1">지급정보</p>
+            <p className={`font-semibold ${paymentInfoRegistered ? 'text-green-600' : 'text-gray-400'}`}>
+              {paymentInfoRegistered ? '✓ 등록' : '미등록'}
+            </p>
           </div>
         </div>
       </div>
@@ -121,32 +125,6 @@ function MyInfo() {
           </div>
         </div>
       </div>
-
-      {/* 모달 */}
-      {showModal && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          onClick={() => setShowModal(false)}
-        >
-          <div
-            className="bg-white rounded-xl p-8 max-w-2xl w-full mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">개인정보활용동의</h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-gray-500 hover:text-gray-700 text-3xl"
-              >
-                ×
-              </button>
-            </div>
-            <div className="py-20 text-center">
-              <p className="text-gray-500 text-xl">모달 내용</p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
