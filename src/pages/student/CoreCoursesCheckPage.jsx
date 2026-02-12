@@ -609,42 +609,50 @@ function CoreCoursesCheckPage() {
           </div>
         </div>
 
-        {/* 제출 버튼 */}
+        {/* 제출/수정/재제출 버튼 */}
         {canEdit && (
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex gap-3">
+            {isPending ? (
+              // 검토 중일 때: 수정하기 버튼
               <button
                 onClick={() => {
-                  console.log('🎯 버튼 onClick 이벤트 발생!');
-                  console.log('canEdit:', canEdit);
-                  console.log('isSubmitting:', isSubmitting);
+                  console.log('🎯 수정하기 버튼 클릭!');
                   handleSubmit();
                 }}
                 disabled={isSubmitting}
-                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? '제출 중...' : isPending ? '✏️ 수정하기' : '💾 제출하기'}
+                {isSubmitting ? '제출 중...' : '✏️ 수정하기'}
               </button>
-              <button className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200">
-                👁️ 미리보기
+            ) : isRejected ? (
+              // 반려되었을 때: 재제출하기 버튼
+              <button
+                onClick={() => {
+                  console.log('🎯 재제출하기 버튼 클릭!');
+                  handleSubmit();
+                }}
+                disabled={isSubmitting}
+                className="w-full px-6 py-3 bg-orange-600 text-white rounded-lg font-bold hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? '제출 중...' : '🔄 재제출하기'}
               </button>
-            </div>
+            ) : (
+              // 미제출일 때: 제출하기 버튼
+              <button
+                onClick={() => {
+                  console.log('🎯 제출하기 버튼 클릭!');
+                  handleSubmit();
+                }}
+                disabled={isSubmitting}
+                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? '제출 중...' : '💾 제출하기'}
+              </button>
+            )}
 
             <div className="mt-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
               ℹ️ 제출 후에도 관리자 승인 전까지는 수정이 가능합니다.
             </div>
-          </div>
-        )}
-
-        {isRejected && (
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="w-full px-6 py-3 bg-orange-600 text-white rounded-lg font-bold hover:bg-orange-700"
-            >
-              🔄 재제출하기
-            </button>
           </div>
         )}
 
