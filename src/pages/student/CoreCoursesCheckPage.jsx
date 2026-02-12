@@ -1,3 +1,9 @@
+/**
+ * 핵심 교과목 이수 현황 페이지
+ * @version 3.2
+ * @description 지급 정보 입력 필드 추가 (은행명, 계좌번호, 예금주)
+ * @date 2026-02-12
+ */
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { 
@@ -259,9 +265,11 @@ function CoreCoursesCheckPage() {
   }
 
   // 🔍 디버그 정보 출력
-  console.log('=== CoreCoursesCheckPage 렌더링 ===');
+  console.log('=== CoreCoursesCheckPage v3.2 렌더링 ===');
+  console.log('📌 버전: v3.2 - 지급 정보 입력 필드 추가됨');
   console.log('currentUser:', currentUser);
   console.log('submission:', submission);
+  console.log('paymentInfo:', paymentInfo);
   console.log('isApproved:', isApproved);
   console.log('isPending:', isPending);
   console.log('isRejected:', isRejected);
@@ -495,12 +503,23 @@ function CoreCoursesCheckPage() {
         </div>
 
         {/* 지급 관련 정보 입력 */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border-2 border-blue-500">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-gray-900">
               💳 지급 관련 정보 입력 <span className="text-red-500">*</span>
             </h3>
-            <span className="text-xs text-gray-400">v3.2</span>
+            <span className="text-xs text-blue-600 font-bold">v3.2 NEW</span>
+          </div>
+
+          {/* 신규 필드 안내 */}
+          <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="flex gap-2">
+              <div className="text-blue-600">ℹ️</div>
+              <div className="text-sm text-blue-800">
+                <p className="font-semibold">새로 추가된 필수 입력 항목입니다</p>
+                <p className="text-xs mt-1">지급금 수령을 위해 아래 정보를 정확히 입력해주세요.</p>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-4">
