@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { FIELD_DEPARTMENTS } from '../components/coreCourses/constants';
 import PrivacyConsentModal from '../components/privacy/PrivacyConsentModal';
+import bcrypt from 'bcryptjs';
 
 function SignupPage() {
   const navigate = useNavigate();
@@ -123,10 +124,15 @@ function SignupPage() {
         roleValue = 'admin';
       }
 
-      // 3. 회원가입 데이터 준비
+      // 3. 비밀번호 해싱 (bcrypt, salt rounds: 10)
+      console.log('🔐 비밀번호 해싱 중...');
+      const hashedPassword = await bcrypt.hash(formData.password, 10);
+      console.log('✅ 비밀번호 해싱 완료');
+
+      // 4. 회원가입 데이터 준비
       const userData = {
         username: formData.username.trim(),
-        password: formData.password,
+        password: hashedPassword,  // 🔐 해싱된 비밀번호 저장
         name: formData.name.trim(),
         account_type: activeTab,
         role: roleValue,  // 🔥 매핑된 role 사용
@@ -153,7 +159,7 @@ function SignupPage() {
 
       console.log('회원가입 데이터 전송 중...');
 
-      // 4. Supabase에 저장
+      // 5. Supabase에 저장
       const { data, error } = await supabase
         .from('users_2025_11_27_07_17')
         .insert([userData])
@@ -176,7 +182,7 @@ function SignupPage() {
 
       console.log('✅ 회원가입 성공:', data);
 
-      // 5. 성공 메시지 및 페이지 이동
+      // 6. 성공 메시지 및 페이지 이동
       alert('회원가입이 완료되었습니다!\n관리자 승인 후 로그인 가능합니다.');
       navigate('/login');
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
+import bcrypt from 'bcryptjs';
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -33,12 +34,11 @@ function LoginPage() {
     try {
       console.log('🔑 로그인 시도');
 
-      // Supabase에서 사용자 조회
+      // 1. Supabase에서 사용자 조회 (username만으로)
       const { data: users, error: fetchError } = await supabase
         .from('users_2025_11_27_07_17')
         .select('*')
-        .eq('username', formData.username)
-        .eq('password', formData.password);
+        .eq('username', formData.username);
 
       if (fetchError) {
         console.error('❌ 조회 실패:', fetchError);
@@ -54,7 +54,58 @@ function LoginPage() {
 
       const user = users[0];
 
-      // 승인되지 않은 사용자 체크
+      // 2. 비밀번호 검증 (해시 비교 또는 평문 비교)
+      console.log('🔐 비밀번호 검증 중...');
+      let isPasswordValid = false;
+      let needsMigration = false;
+
+      // 2-1. 먼저 해시 비교 시도
+      try {
+        isPasswordValid = await bcrypt.compare(formData.password, user.password);
+      } catch (error) {
+        // bcrypt 비교 실패 = 평문 비밀번호일 가능성
+        console.log('🔄 기존 사용자 감지 (평문 비밀번호)');
+        needsMigration = true;
+      }
+
+      // 2-2. 해시 비교 실패 시 평문 비교 (기존 사용자 마이그레이션용)
+      if (!isPasswordValid && user.password === formData.password) {
+        console.log('✅ 평문 비밀번호 일치 (마이그레이션 필요)');
+        isPasswordValid = true;
+        needsMigration = true;
+      }
+
+      if (!isPasswordValid) {
+        console.log('❌ 비밀번호 불일치');
+        setError('아이디 또는 비밀번호가 일치하지 않습니다.');
+        return;
+      }
+
+      console.log('✅ 비밀번호 검증 완료');
+
+      // 2-3. 평문 비밀번호 사용자의 경우 자동으로 해시로 마이그레이션
+      if (needsMigration) {
+        console.log('🔄 비밀번호 마이그레이션 시작...');
+        try {
+          const hashedPassword = await bcrypt.hash(formData.password, 10);
+          const { error: updateError } = await supabase
+            .from('users_2025_11_27_07_17')
+            .update({ password: hashedPassword })
+            .eq('id', user.id);
+
+          if (updateError) {
+            console.error('⚠️ 비밀번호 마이그레이션 실패:', updateError);
+            // 마이그레이션 실패해도 로그인은 계속 진행
+          } else {
+            console.log('✅ 비밀번호 마이그레이션 완료 (다음 로그인부터 해시 사용)');
+          }
+        } catch (migrationError) {
+          console.error('⚠️ 비밀번호 마이그레이션 오류:', migrationError);
+          // 마이그레이션 실패해도 로그인은 계속 진행
+        }
+      }
+
+      // 3. 승인되지 않은 사용자 체크
       if (user.status !== 'approved') {
         setError('승인 대기중인 계정입니다. 관리자의 승인을 기다려주세요.');
         return;
