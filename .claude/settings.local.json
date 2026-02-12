@@ -24,7 +24,8 @@
       "Bash(git stash:*)",
       "Bash(npm install:*)",
       "Bash(cmd /c npm install jspdf jspdf-autotable)",
-      "Bash(powershell -Command \"cd ''C:\\\\Users\\\\지량\\\\Desktop\\\\학생성공지수 관리시스템\\\\student-success-system-v3''; npm install jspdf jspdf-autotable\")"
+      "Bash(powershell -Command \"cd ''C:\\\\Users\\\\지량\\\\Desktop\\\\학생성공지수 관리시스템\\\\student-success-system-v3''; npm install jspdf jspdf-autotable\")",
+      "Bash(powershell -Command \"npm run build 2>&1\")"
     ]
   }
 }
