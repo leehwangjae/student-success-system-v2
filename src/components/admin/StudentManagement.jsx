@@ -262,8 +262,9 @@ function StudentManagement() {
           <!-- 서명 -->
           <div style="margin-bottom: 8px; text-align: center;">
             <p style="font-size: 10px; font-weight: bold; margin-bottom: 5px;">■ 동의자 서명</p>
-            <div id="signature-container" style="border: 2px solid #d1d5db; border-radius: 4px; padding: 10px; min-height: 70px; background: #fafafa; text-align: center;">
-              <img id="signature-img" src="" style="max-width: 100%; max-height: 60px; vertical-align: middle;" />
+            <div id="signature-container" style="border: 2px solid #d1d5db; border-radius: 4px; padding: 10px; min-height: 70px; background: #fafafa; text-align: center; display: flex; align-items: center; justify-content: center;">
+              <img id="signature-img" src="" style="display: none; max-width: 180px; max-height: 60px;" />
+              <span id="signature-placeholder" style="color: #9ca3af; font-size: 9px;">서명 없음</span>
             </div>
           </div>
 
@@ -286,8 +287,15 @@ function StudentManagement() {
 
       if (student.privacy_signature) {
         const signatureImg = container.querySelector('#signature-img');
+        const signaturePlaceholder = container.querySelector('#signature-placeholder');
+
         if (signatureImg) {
           console.log('서명 이미지 요소 찾음');
+
+          // 플레이스홀더 숨기기
+          if (signaturePlaceholder) {
+            signaturePlaceholder.style.display = 'none';
+          }
 
           // 이미지를 먼저 설정하고 표시
           signatureImg.src = student.privacy_signature;
@@ -311,27 +319,33 @@ function StudentManagement() {
             signatureImg.onerror = (e) => {
               if (!resolved) {
                 console.error('❌ 서명 이미지 로드 실패:', e);
+                // 로드 실패시 플레이스홀더 다시 표시
+                signatureImg.style.display = 'none';
+                if (signaturePlaceholder) {
+                  signaturePlaceholder.style.display = 'block';
+                  signaturePlaceholder.textContent = '서명 로드 실패';
+                }
                 resolved = true;
                 resolve();
               }
             };
 
             // 이미 로드되었을 경우 대비
-            if (signatureImg.complete) {
+            if (signatureImg.complete && signatureImg.naturalWidth > 0) {
               console.log('✅ 서명 이미지 이미 로드됨');
               console.log('이미지 크기:', signatureImg.naturalWidth, 'x', signatureImg.naturalHeight);
               resolved = true;
               resolve();
             }
 
-            // 3초 타임아웃
+            // 5초 타임아웃 (더 길게 설정)
             setTimeout(() => {
               if (!resolved) {
                 console.warn('⚠️ 서명 이미지 로드 타임아웃');
                 resolved = true;
                 resolve();
               }
-            }, 3000);
+            }, 5000);
           });
 
           console.log('이미지 최종 상태 - display:', signatureImg.style.display, 'src 길이:', signatureImg.src.length);
@@ -342,9 +356,9 @@ function StudentManagement() {
         console.warn('⚠️ 학생에게 서명 데이터 없음');
       }
 
-      // 렌더링 완료 대기
+      // 렌더링 완료 대기 (이미지 완전 로드를 위해 시간 증가)
       console.log('렌더링 대기 중...');
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       console.log('html2canvas 변환 시작...');
       // HTML을 캔버스로 변환
@@ -353,7 +367,20 @@ function StudentManagement() {
         useCORS: true,
         allowTaint: true,
         logging: true,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        imageTimeout: 15000,  // 이미지 로드 타임아웃 증가
+        onclone: (clonedDoc) => {
+          // 복제된 문서에서 서명 이미지 확인
+          const clonedImg = clonedDoc.querySelector('#signature-img');
+          if (clonedImg) {
+            console.log('복제된 서명 이미지 상태:', {
+              display: clonedImg.style.display,
+              src: clonedImg.src ? clonedImg.src.substring(0, 50) + '...' : 'none',
+              width: clonedImg.naturalWidth,
+              height: clonedImg.naturalHeight
+            });
+          }
+        }
       });
 
       console.log('✅ 캔버스 변환 완료, 크기:', canvas.width, 'x', canvas.height);
