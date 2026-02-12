@@ -954,8 +954,30 @@ export const AppProvider = ({ children }) => {
         throw result.error;
       }
 
+      // 지급 정보가 있으면 users 테이블도 업데이트
+      if (submissionData.paymentInfo && submissionData.paymentInfo.bankName &&
+          submissionData.paymentInfo.accountNumber && submissionData.paymentInfo.accountHolder) {
+        console.log('💳 users 테이블에 지급 정보 업데이트 중...');
+        const { error: userUpdateError } = await supabase
+          .from('users_2025_11_27_07_17')
+          .update({
+            bank_name: submissionData.paymentInfo.bankName,
+            account_number: submissionData.paymentInfo.accountNumber,
+            account_holder: submissionData.paymentInfo.accountHolder
+          })
+          .eq('id', submissionData.studentId);
+
+        if (userUpdateError) {
+          console.error('⚠️ users 테이블 업데이트 실패:', userUpdateError);
+          // 에러는 로그만 하고 계속 진행 (제출은 성공했으므로)
+        } else {
+          console.log('✅ users 테이블 업데이트 성공');
+        }
+      }
+
       console.log('✅ 제출 성공');
       await loadCoreCoursesSubmissionsFromSupabase();
+      await loadStudentsFromSupabase(); // 학생 정보도 다시 로드
       return { success: true };
     } catch (error) {
       console.error('❌ submitCoreCourses 오류:', error);
