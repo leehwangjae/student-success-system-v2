@@ -1,6 +1,6 @@
 // 엑셀 다운로드 함수
 export const downloadExcel = (students, filterName) => {
-  const header = ['학번', '이름', '학과', '분야', '이메일', '전화번호', '비교과', '핵심교과', '산학협력', '총점', '비고'];
+  const header = ['학번', '이름', '학과', '분야', '이메일', '전화번호', '비교과', '핵심교과', '산학협력', '총점', '개인정보동의', '동의일자', '은행명', '계좌번호', '예금주', '비고'];
   const rows = students.map(s => [
     s.studentId,
     s.name,
@@ -12,6 +12,11 @@ export const downloadExcel = (students, filterName) => {
     s.coreSubjectScore,
     s.industryScore,
     s.total,
+    s.privacy_consented ? '동의완료' : '미동의',
+    s.privacy_consented_at ? new Date(s.privacy_consented_at).toLocaleDateString('ko-KR') : '',
+    s.bankName || '',
+    s.accountNumber || '',
+    s.accountHolder || '',
     s.memo || ''
   ]);
 

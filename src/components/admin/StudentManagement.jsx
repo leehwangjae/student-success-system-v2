@@ -17,17 +17,68 @@ function StudentManagement() {
   const [showExcelUploadModal, setShowExcelUploadModal] = useState(false);
   const [excelPreviewData, setExcelPreviewData] = useState([]);
   const [selectedStudents, setSelectedStudents] = useState([]);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
   const getFilteredStudents = () => {
-    if (filter === '전체') return students;
-    if (filter === '기타') return students.filter(s => s.field === '기타' || !['바이오', '반도체', '물류', '바이오 분야', '반도체 분야', '물류 분야'].includes(s.field));
+    let filtered = students;
 
-    // 필터 값 정규화 ('바이오 분야' -> '바이오')
-    const normalizedFilter = filter.replace(' 분야', '');
-    return students.filter(s => {
-      const normalizedField = (s.field || '').replace(' 분야', '');
-      return normalizedField === normalizedFilter;
-    });
+    if (filter === '전체') {
+      filtered = students;
+    } else if (filter === '기타') {
+      filtered = students.filter(s => s.field === '기타' || !['바이오', '반도체', '물류', '바이오 분야', '반도체 분야', '물류 분야'].includes(s.field));
+    } else {
+      // 필터 값 정규화 ('바이오 분야' -> '바이오')
+      const normalizedFilter = filter.replace(' 분야', '');
+      filtered = students.filter(s => {
+        const normalizedField = (s.field || '').replace(' 분야', '');
+        return normalizedField === normalizedFilter;
+      });
+    }
+
+    // 정렬 적용
+    if (sortConfig.key) {
+      filtered = [...filtered].sort((a, b) => {
+        let aValue = a[sortConfig.key];
+        let bValue = b[sortConfig.key];
+
+        // 학번의 경우 studentId 필드 사용
+        if (sortConfig.key === 'studentId') {
+          aValue = a.studentId || a.student_id || '';
+          bValue = b.studentId || b.student_id || '';
+        }
+
+        // 문자열 비교
+        if (typeof aValue === 'string') {
+          aValue = aValue.toLowerCase();
+          bValue = bValue.toLowerCase();
+        }
+
+        if (aValue < bValue) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
+    return filtered;
+  };
+
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (key) => {
+    if (sortConfig.key !== key) {
+      return '⇅';
+    }
+    return sortConfig.direction === 'asc' ? '↑' : '↓';
   };
 
   const handleExcelUpload = (e) => {
@@ -520,10 +571,30 @@ function StudentManagement() {
                     className="w-4 h-4 text-blue-600 rounded"
                   />
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">분야</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">학과</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">학번</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">이름</th>
+                <th
+                  className="px-6 py-4 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none"
+                  onClick={() => handleSort('field')}
+                >
+                  분야 <span className="text-xs">{getSortIcon('field')}</span>
+                </th>
+                <th
+                  className="px-6 py-4 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none"
+                  onClick={() => handleSort('department')}
+                >
+                  학과 <span className="text-xs">{getSortIcon('department')}</span>
+                </th>
+                <th
+                  className="px-6 py-4 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none"
+                  onClick={() => handleSort('studentId')}
+                >
+                  학번 <span className="text-xs">{getSortIcon('studentId')}</span>
+                </th>
+                <th
+                  className="px-6 py-4 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none"
+                  onClick={() => handleSort('name')}
+                >
+                  이름 <span className="text-xs">{getSortIcon('name')}</span>
+                </th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">이메일</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">전화번호</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">총점</th>
