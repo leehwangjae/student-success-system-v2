@@ -91,10 +91,11 @@ function SignupPage() {
     await processSignup();
   };
 
-  const processSignup = async () => {
+  const processSignup = async (signature = null) => {
     try {
       console.log('=== 회원가입 시작 ===');
       console.log('계정 유형:', activeTab);
+      console.log('서명 데이터:', signature ? '있음 (' + signature.length + ' bytes)' : '없음');
 
       // 1. 중복 아이디 체크
       const { data: existingUser, error: checkError } = await supabase
@@ -147,7 +148,7 @@ function SignupPage() {
         userData.industry_history = [];
         userData.privacy_consented = true; // 개인정보 동의 여부
         userData.privacy_consented_at = new Date().toISOString(); // 동의 시각
-        userData.privacy_signature = signatureImage; // 서명 이미지 (Base64)
+        userData.privacy_signature = signature || signatureImage; // 서명 이미지 (Base64) - 파라미터 우선 사용
       }
 
       console.log('전송할 데이터:', userData);
@@ -193,8 +194,8 @@ function SignupPage() {
     setPrivacyConsented(true);
     setSignatureImage(signature);
     setShowPrivacyModal(false);
-    // 동의 후 자동으로 회원가입 진행
-    await processSignup();
+    // 동의 후 자동으로 회원가입 진행 (서명 데이터 직접 전달)
+    await processSignup(signature);
   };
 
   return (
