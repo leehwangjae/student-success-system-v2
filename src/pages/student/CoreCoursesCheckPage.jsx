@@ -258,7 +258,7 @@ function CoreCoursesCheckPage() {
   const isApproved = submission?.status === 'approved';
   const isPending = submission?.status === 'pending';
   const isRejected = submission?.status === 'rejected';
-  const canEdit = !isApproved && !isPending;
+  const canEdit = !isApproved; // 승인된 경우에만 수정 불가
 
   if (!currentUser) {
     return <div className="p-6">로그인이 필요합니다.</div>;
@@ -363,6 +363,9 @@ function CoreCoursesCheckPage() {
                 {isPending && (
                   <div className="text-sm text-gray-600 mt-1">
                     관리자 검토 대기 중입니다...
+                    <div className="text-xs text-blue-600 mt-1">
+                      💡 승인 전까지 수정이 가능합니다.
+                    </div>
                   </div>
                 )}
                 {isApproved && (
@@ -620,7 +623,7 @@ function CoreCoursesCheckPage() {
                 disabled={isSubmitting}
                 className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? '제출 중...' : '💾 제출하기'}
+                {isSubmitting ? '제출 중...' : isPending ? '✏️ 수정하기' : '💾 제출하기'}
               </button>
               <button className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200">
                 👁️ 미리보기
