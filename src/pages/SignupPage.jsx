@@ -80,6 +80,25 @@ function SignupPage() {
       return false;
     }
 
+    // 이메일 검증
+    if (!formData.email.trim()) {
+      setErrorMessage('이메일을 입력해주세요.');
+      return false;
+    }
+
+    // 이메일 형식 검증
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setErrorMessage('올바른 이메일 형식을 입력해주세요.');
+      return false;
+    }
+
+    // 전화번호 검증
+    if (!formData.phone.trim()) {
+      setErrorMessage('전화번호를 입력해주세요.');
+      return false;
+    }
+
     if (activeTab === 'student') {
       if (!formData.studentId.trim()) {
         setErrorMessage('학번을 입력해주세요.');
@@ -158,8 +177,8 @@ function SignupPage() {
         account_type: activeTab,
         role: roleValue,  // 🔥 매핑된 role 사용
         status: 'pending',
-        email: formData.email.trim() || null,
-        phone: formData.phone.trim() || null
+        email: formData.email.trim(),  // 필수 항목
+        phone: formData.phone.trim()   // 필수 항목
       };
 
       // 학생인 경우 추가 필드
@@ -394,22 +413,11 @@ function SignupPage() {
               </>
             )}
 
-            {/* 전화번호 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">전화번호</label>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="010-0000-0000"
-              />
-            </div>
-
             {/* 이메일 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">이메일</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                이메일 <span className="text-red-500">*</span>
+              </label>
               <input
                 type="email"
                 name="email"
@@ -417,6 +425,23 @@ function SignupPage() {
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="example@email.com"
+                required
+              />
+            </div>
+
+            {/* 전화번호 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                전화번호 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="010-0000-0000"
+                required
               />
             </div>
 
