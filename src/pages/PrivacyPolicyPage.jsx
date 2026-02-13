@@ -44,7 +44,7 @@ function PrivacyPolicyPage() {
             <div className="bg-gray-50 p-4 rounded-lg">
               <p className="text-sm text-gray-700">
                 <strong>소속:</strong> 인천대학교 산학협력단 RISE 사업단<br />
-                <strong>문의:</strong> 개인정보 관련 문의사항은 관리자에게 문의하시기 바랍니다.
+                <strong>문의:</strong> 미래인재양성센터 032-835-9765
               </p>
             </div>
           </div>
