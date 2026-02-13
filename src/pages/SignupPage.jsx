@@ -176,7 +176,7 @@ function SignupPage() {
         name: formData.name.trim(),
         account_type: activeTab,
         role: roleValue,  // 🔥 매핑된 role 사용
-        status: 'pending',
+        status: 'approved',  // 즉시 승인 (관리자 승인 불필요)
         email: formData.email.trim(),  // 필수 항목
         phone: formData.phone.trim()   // 필수 항목
       };
@@ -223,7 +223,7 @@ function SignupPage() {
       console.log('✅ 회원가입 성공:', data);
 
       // 6. 성공 메시지 및 페이지 이동
-      alert('회원가입이 완료되었습니다!\n관리자 승인 후 로그인 가능합니다.');
+      alert('회원가입이 완료되었습니다!\n바로 로그인하실 수 있습니다.');
       navigate('/login');
 
     } catch (error) {
