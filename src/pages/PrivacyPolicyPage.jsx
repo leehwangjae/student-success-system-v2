@@ -49,25 +49,6 @@ function PrivacyPolicyPage() {
             </div>
           </div>
 
-          {/* 개인정보 권리 안내 */}
-          <div className="mt-8 pt-8 border-t border-gray-200">
-            <h3 className="text-lg font-bold mb-4">정보주체의 권리·의무 및 행사방법</h3>
-            <div className="space-y-3 text-sm text-gray-700">
-              <p>
-                정보주체는 다음과 같은 권리를 행사할 수 있습니다:
-              </p>
-              <ul className="list-disc list-inside space-y-2 ml-4">
-                <li>개인정보 열람 요구</li>
-                <li>개인정보 정정·삭제 요구</li>
-                <li>개인정보 처리정지 요구</li>
-                <li>동의 철회 (회원 탈퇴)</li>
-              </ul>
-              <p className="mt-4 text-blue-600 font-semibold">
-                권리 행사는 로그인 후 '내 정보' 페이지에서 직접 하실 수 있습니다.
-              </p>
-            </div>
-          </div>
-
           {/* 개인정보 침해 구제 */}
           <div className="mt-8 pt-8 border-t border-gray-200">
             <h3 className="text-lg font-bold mb-4">개인정보 침해에 대한 구제방법</h3>
