@@ -654,15 +654,26 @@ function StudentPage() {
                           <button
                             onClick={() => {
                               try {
-                                let base64Data = file.data;
+                                console.log('📥 파일 다운로드 시도:', file);
+                                console.log('파일 객체 키:', Object.keys(file));
+
+                                // 여러 가능한 필드명 시도
+                                let base64Data = file.data || file.fileData || file.file_data;
 
                                 if (typeof base64Data === 'object' && base64Data !== null) {
                                   if (base64Data.data) {
                                     base64Data = base64Data.data;
                                   } else {
+                                    console.error('파일 데이터 구조:', base64Data);
                                     alert('파일 데이터를 찾을 수 없습니다.');
                                     return;
                                   }
+                                }
+
+                                if (!base64Data) {
+                                  console.error('전체 파일 객체:', file);
+                                  alert('파일 데이터를 찾을 수 없습니다. 콘솔을 확인해주세요.');
+                                  return;
                                 }
 
                                 if (typeof base64Data !== 'string') {
