@@ -49,8 +49,29 @@ function SignupPage() {
       return false;
     }
 
-    if (formData.password.length < 6) {
-      setErrorMessage('비밀번호는 6자 이상이어야 합니다.');
+    // 비밀번호 길이 검증 (8자 이상)
+    if (formData.password.length < 8) {
+      setErrorMessage('비밀번호는 8자 이상이어야 합니다.');
+      return false;
+    }
+
+    // 비밀번호 복잡도 검증
+    const hasLetter = /[a-zA-Z]/.test(formData.password);
+    const hasNumber = /[0-9]/.test(formData.password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(formData.password);
+
+    if (!hasLetter) {
+      setErrorMessage('비밀번호에 영문자를 포함해야 합니다.');
+      return false;
+    }
+
+    if (!hasNumber) {
+      setErrorMessage('비밀번호에 숫자를 포함해야 합니다.');
+      return false;
+    }
+
+    if (!hasSpecialChar) {
+      setErrorMessage('비밀번호에 특수문자(!@#$%^&* 등)를 포함해야 합니다.');
       return false;
     }
 
@@ -410,9 +431,12 @@ function SignupPage() {
                 value={formData.password}
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="비밀번호 (6자 이상)"
+                placeholder="영문, 숫자, 특수문자 포함 8자 이상"
                 required
               />
+              <p className="mt-1 text-xs text-gray-500">
+                영문, 숫자, 특수문자(!@#$%^&* 등)를 모두 포함해야 합니다.
+              </p>
             </div>
 
             {/* 비밀번호 확인 */}
