@@ -371,7 +371,6 @@ function PrivacyPolicyContent() {
         <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded p-3">
           <p className="text-sm text-gray-700">
             <strong>※ 권리 행사 시 유의사항:</strong><br />
-            • 만 14세 미만 아동의 경우 법정대리인이 그 권리를 행사할 수 있습니다.<br />
             • 권리 행사는 서면, 전화, 이메일 등을 통하여 하실 수 있으며, RISE 사업단은 이에 대해 지체 없이 조치하겠습니다.<br />
             • 개인정보의 오류에 대한 정정을 요청하신 경우에는 정정을 완료하기 전까지 해당 개인정보를 이용 또는 제공하지 않습니다.
           </p>
