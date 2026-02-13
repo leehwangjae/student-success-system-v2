@@ -16,6 +16,7 @@ import CoreCoursesSettingPage from './pages/admin/CoreCoursesSettingPage';
 import CoreCoursesReviewPage from './pages/admin/CoreCoursesReviewPage';
 import CoreCoursesCheckPage from './pages/student/CoreCoursesCheckPage';
 import MasterApprovalPage from './pages/MasterApprovalPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import ConfirmModal from './components/modals/ConfirmModal';
 import AlertModal from './components/modals/AlertModal';
 
@@ -52,6 +53,7 @@ function App() {
         <Routes>
           <Route path="/" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
           <Route
             path="/admin"
             element={

@@ -493,6 +493,20 @@ function SignupPage() {
               </button>
             </div>
           )}
+
+          {/* Footer - 개인정보 처리방침 */}
+          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+            <button
+              type="button"
+              onClick={() => navigate('/privacy-policy')}
+              className="text-xs text-gray-500 hover:text-gray-700 underline"
+            >
+              개인정보 처리방침
+            </button>
+            <p className="text-xs text-gray-400 mt-2">
+              © 2024 인천대학교 RISE 사업단
+            </p>
+          </div>
         </div>
       </div>
     </>

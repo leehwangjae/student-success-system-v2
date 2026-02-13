@@ -30,7 +30,8 @@
       "WebFetch(domain:inussis.kr)",
       "Bash(test:*)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "Bash(vercel ls:*)"
+      "Bash(vercel ls:*)",
+      "Bash(cmd /c npm install bcryptjs)"
     ]
   }
 }

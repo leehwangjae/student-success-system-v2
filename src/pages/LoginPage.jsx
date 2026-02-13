@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
 import bcrypt from 'bcryptjs';
+import { logLoginSuccess, logLoginFailure } from '../utils/accessLogger';
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -48,6 +49,8 @@ function LoginPage() {
       console.log('📊 조회 결과 수:', users?.length || 0);
 
       if (!users || users.length === 0) {
+        // 로그인 실패 로그 기록
+        await logLoginFailure(formData.username, '사용자를 찾을 수 없음');
         setError('아이디 또는 비밀번호가 일치하지 않습니다.');
         return;
       }
@@ -78,6 +81,8 @@ function LoginPage() {
 
       if (!isPasswordValid) {
         console.log('❌ 비밀번호 불일치');
+        // 로그인 실패 로그 기록
+        await logLoginFailure(formData.username, '비밀번호 불일치');
         setError('아이디 또는 비밀번호가 일치하지 않습니다.');
         return;
       }
@@ -108,11 +113,16 @@ function LoginPage() {
 
       // 3. 승인되지 않은 사용자 체크
       if (user.status !== 'approved') {
+        // 로그인 실패 로그 기록
+        await logLoginFailure(formData.username, '미승인 계정');
         setError('승인 대기중인 계정입니다. 관리자의 승인을 기다려주세요.');
         return;
       }
 
       console.log('✅ 로그인 성공');
+
+      // 로그인 성공 로그 기록
+      await logLoginSuccess(user.id, user.username);
 
       // 사용자 정보 설정
       const userData = {
@@ -224,6 +234,19 @@ function LoginPage() {
             <Link to="/signup" className="text-blue-600 hover:text-blue-800 font-semibold">
               회원가입
             </Link>
+          </p>
+        </div>
+
+        {/* Footer - 개인정보 처리방침 */}
+        <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+          <Link
+            to="/privacy-policy"
+            className="text-xs text-gray-500 hover:text-gray-700 underline"
+          >
+            개인정보 처리방침
+          </Link>
+          <p className="text-xs text-gray-400 mt-2">
+            © 2024 인천대학교 RISE 사업단
           </p>
         </div>
       </div>
