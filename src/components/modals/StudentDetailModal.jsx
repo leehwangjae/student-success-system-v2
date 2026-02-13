@@ -429,7 +429,7 @@ function StudentDetailModal({ isOpen, onClose, student, readOnly = true }) {
             <p className="text-2xl font-bold text-purple-600">{student.nonCurricularScore}</p>
           </div>
           <div className="bg-white rounded-lg p-4 text-center shadow-sm">
-            <p className="text-sm text-gray-600 mb-1">핵심교과</p>
+            <p className="text-sm text-gray-600 mb-1">전략산업 교과</p>
             <p className="text-2xl font-bold text-blue-600">{student.coreSubjectScore}</p>
           </div>
           <div className="bg-white rounded-lg p-4 text-center shadow-sm">
@@ -472,7 +472,7 @@ function StudentDetailModal({ isOpen, onClose, student, readOnly = true }) {
                 : 'text-gray-600 hover:text-blue-600'
             }`}
           >
-            📚 핵심 교과
+            📚 전략산업 교과
           </button>
           <button
             onClick={() => setActiveTab('industry')}
@@ -490,7 +490,7 @@ function StudentDetailModal({ isOpen, onClose, student, readOnly = true }) {
         <div className="flex-1 overflow-y-auto p-6">
           {activeTab === 'info' && renderInfoTab()}
           {activeTab === 'nonCurricular' && renderHistoryTab('nonCurricularHistory', '비교과 활동', student.nonCurricularHistory)}
-          {activeTab === 'coreSubject' && renderHistoryTab('coreSubjectHistory', '핵심 교과', student.coreSubjectHistory)}
+          {activeTab === 'coreSubject' && renderHistoryTab('coreSubjectHistory', '전략산업 교과', student.coreSubjectHistory)}
           {activeTab === 'industry' && renderHistoryTab('industryHistory', '산학협력', student.industryHistory)}
         </div>
 
