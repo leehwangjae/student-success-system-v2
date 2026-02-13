@@ -58,7 +58,7 @@ function SignupPage() {
     // 비밀번호 복잡도 검증
     const hasLetter = /[a-zA-Z]/.test(formData.password);
     const hasNumber = /[0-9]/.test(formData.password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(formData.password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>_-]/.test(formData.password);
 
     if (!hasLetter) {
       setErrorMessage('비밀번호에 영문자를 포함해야 합니다.');
@@ -71,7 +71,7 @@ function SignupPage() {
     }
 
     if (!hasSpecialChar) {
-      setErrorMessage('비밀번호에 특수문자(!@#$%^&* 등)를 포함해야 합니다.');
+      setErrorMessage('비밀번호에 특수문자(!@#$%^&*_- 등)를 포함해야 합니다.');
       return false;
     }
 
@@ -435,7 +435,7 @@ function SignupPage() {
                 required
               />
               <p className="mt-1 text-xs text-gray-500">
-                최소 8자 이상으로 영문자와 숫자, 특수문자(!@#$%^&* 등)를 포함해야 합니다.
+                최소 8자 이상 / 영문자와 숫자, 특수문자(!@#$%^&*_- 등) 포함
               </p>
             </div>
 
