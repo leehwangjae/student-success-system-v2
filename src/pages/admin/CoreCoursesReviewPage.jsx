@@ -149,6 +149,7 @@ function CoreCoursesReviewPage() {
         '학번': student.studentId,
         '이름': student.name,
         '학과': student.department,
+        '재학년도': submission?.gradeAt2025Fall || '-',
         '이수과목수': submission?.totalCompletedCount || 0,
         '점수': submission?.totalScore || 0,
         '제출상태': submission ? SUBMISSION_STATUS_LABEL[submission.status] : '미제출',
@@ -164,6 +165,7 @@ function CoreCoursesReviewPage() {
         { wch: 12 }, // 학번
         { wch: 10 }, // 이름
         { wch: 20 }, // 학과
+        { wch: 12 }, // 재학년도
         { wch: 12 }, // 이수과목수
         { wch: 8 },  // 점수
         { wch: 12 }, // 제출상태
@@ -432,6 +434,9 @@ function CoreCoursesReviewPage() {
                       이름
                     </th>
                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      재학년도
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                       이수 과목
                     </th>
                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -456,6 +461,13 @@ function CoreCoursesReviewPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {student.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">
+                        {submission?.gradeAt2025Fall ? (
+                          <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full font-medium">
+                            {submission.gradeAt2025Fall}
+                          </span>
+                        ) : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">
                         {submission ? `${submission.totalCompletedCount}개` : '-'}

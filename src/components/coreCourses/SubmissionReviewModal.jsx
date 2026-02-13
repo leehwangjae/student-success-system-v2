@@ -163,6 +163,11 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
             </div>
             <div className="h-8 w-px bg-gray-300"></div>
             <div>
+              <div className="text-xs text-gray-600 mb-1">25년 2학기 재학년도</div>
+              <div className="text-2xl font-bold text-purple-600">{submission.gradeAt2025Fall || '2학년'}</div>
+            </div>
+            <div className="h-8 w-px bg-gray-300"></div>
+            <div>
               <div className="text-xs text-gray-600 mb-1">제출일</div>
               <div className="text-sm font-medium text-gray-900">{formatDate(submission.submittedAt)}</div>
             </div>
