@@ -675,9 +675,15 @@ function StudentManagement() {
                         수정
                       </button>
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           if (window.confirm(`${student.name} 학생을 삭제하시겠습니까?`)) {
-                            deleteStudent(student.id);
+                            try {
+                              await deleteStudent(student.id);
+                              alert(`${student.name} 학생이 삭제되었습니다.`);
+                            } catch (error) {
+                              console.error('삭제 오류:', error);
+                              alert('삭제 중 오류가 발생했습니다: ' + error.message);
+                            }
                           }
                         }}
                         className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
