@@ -435,7 +435,7 @@ function SignupPage() {
                 required
               />
               <p className="mt-1 text-xs text-gray-500">
-                영문, 숫자, 특수문자(!@#$%^&* 등)를 모두 포함해야 합니다.
+                최소 8자 이상으로 영문자와 숫자, 특수문자(!@#$%^&* 등)를 포함해야 합니다.
               </p>
             </div>
 
