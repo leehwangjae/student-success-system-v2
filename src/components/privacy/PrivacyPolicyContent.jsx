@@ -59,6 +59,7 @@ function PrivacyPolicyContent() {
               <tr>
                 <td className="border border-gray-300 px-4 py-3 font-semibold">지급 정보 (선택)</td>
                 <td className="border border-gray-300 px-4 py-3">
+                  • <span className="font-semibold text-red-600">주민등록번호</span><br />
                   • 은행명, 계좌번호, 예금주명
                 </td>
                 <td className="border border-gray-300 px-4 py-3">장학금 지급 시 직접 입력</td>
@@ -79,9 +80,17 @@ function PrivacyPolicyContent() {
           </table>
         </div>
 
-        <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-xs">
-          <strong>※ 주민등록번호 수집 금지:</strong> 본 시스템은 주민등록번호를 수집하지 않습니다.<br />
-          <strong>※ 만 14세 미만 아동:</strong> 본 서비스는 대학생을 대상으로 하며, 만 14세 미만 아동의 개인정보를 수집하지 않습니다.
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 text-xs space-y-2">
+          <p>
+            <strong className="text-red-600">※ 주민등록번호 수집 (선택 항목):</strong><br />
+            • 장학금 지급을 위한 소득세 원천징수 목적으로만 수집됩니다.<br />
+            • 「소득세법」 제127조, 「국세기본법」 제81조의13에 따른 법적 의무사항입니다.<br />
+            • 장학금 지급 완료 즉시 파기하며, 세법에 따라 보관이 필요한 경우에만 별도 분리 보관됩니다.<br />
+            • <strong>주민등록번호 제공을 거부할 권리가 있으며, 거부 시에도 서비스 이용에 제한이 없습니다.</strong>
+          </p>
+          <p>
+            <strong>※ 만 14세 미만 아동:</strong> 본 서비스는 대학생을 대상으로 하며, 만 14세 미만 아동의 개인정보를 수집하지 않습니다.
+          </p>
         </div>
       </section>
 
@@ -162,9 +171,23 @@ function PrivacyPolicyContent() {
                 <td className="border border-gray-300 px-4 py-3">공공기록물관리법</td>
               </tr>
               <tr>
-                <td className="border border-gray-300 px-4 py-3">장학금 지급 정보</td>
+                <td className="border border-gray-300 px-4 py-3">
+                  장학금 지급 정보<br />
+                  <span className="text-xs text-gray-600">(계좌번호, 지급내역 등)</span>
+                </td>
                 <td className="border border-gray-300 px-4 py-3">지급 완료 후 5년</td>
                 <td className="border border-gray-300 px-4 py-3">국세기본법, 회계서류 보관</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-300 px-4 py-3 font-semibold text-red-600">
+                  주민등록번호<br />
+                  <span className="text-xs text-gray-600">(장학금 지급 시)</span>
+                </td>
+                <td className="border border-gray-300 px-4 py-3 font-semibold text-red-600">
+                  지급 완료 즉시 파기<br />
+                  <span className="text-xs text-gray-600">(세법상 보관 필요 시 별도 분리 보관 후 5년)</span>
+                </td>
+                <td className="border border-gray-300 px-4 py-3">소득세법 제127조</td>
               </tr>
               <tr>
                 <td className="border border-gray-300 px-4 py-3">접근 로그 (IP, 접속시각 등)</td>
@@ -218,6 +241,24 @@ function PrivacyPolicyContent() {
               <li>회원 정보는 즉시 삭제 처리됩니다.</li>
               <li>법령에 따라 보관이 필요한 정보는 별도의 데이터베이스로 옮겨져 일정 기간 보관 후 파기됩니다.</li>
               <li>파기 시까지 해당 정보는 법률에 의한 경우 외에는 다른 목적으로 이용되지 않습니다.</li>
+            </ul>
+          </div>
+
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 mt-4">
+            <h4 className="font-semibold text-gray-900 mb-2">라. 주민등록번호 파기 (장학금 지급 시)</h4>
+            <p className="text-sm text-gray-700 mb-2">
+              장학금 지급을 위해 수집된 주민등록번호는 다음과 같이 처리됩니다:
+            </p>
+            <ul className="list-disc list-inside text-sm text-gray-700 space-y-1 ml-4">
+              <li><strong className="text-red-600">장학금 지급 완료 즉시 파기</strong>가 원칙입니다.</li>
+              <li>소득세법 및 국세기본법에 따라 세무 증빙 보관이 필요한 경우:
+                <ul className="list-circle list-inside ml-6 mt-1">
+                  <li>별도의 안전한 데이터베이스로 분리하여 암호화 보관</li>
+                  <li>접근 권한을 최소 인원으로 제한</li>
+                  <li>5년 보관 후 완전 파기</li>
+                </ul>
+              </li>
+              <li>파기 방법: 복구 불가능한 암호화 방식으로 완전 삭제</li>
             </ul>
           </div>
         </div>
