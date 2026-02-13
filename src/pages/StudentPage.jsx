@@ -643,15 +643,75 @@ function StudentPage() {
                   {notice.attachedFiles && notice.attachedFiles.length > 0 && (
                     <div className="mt-4 space-y-2">
                       {notice.attachedFiles.map((file, idx) => (
-                        <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-                          <span className="text-sm">📎</span>
-                          <a
-                            href={file.url}
-                            download={file.name}
-                            className="text-sm text-blue-600 hover:underline flex-1"
+                        <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="flex items-center gap-2 flex-1">
+                            <span className="text-xl">📎</span>
+                            <div>
+                              <p className="text-sm font-medium text-gray-800">{file.name || `파일 ${idx + 1}`}</p>
+                              <p className="text-xs text-gray-500">{file.type}</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              try {
+                                let base64Data = file.data;
+
+                                if (typeof base64Data === 'object' && base64Data !== null) {
+                                  if (base64Data.data) {
+                                    base64Data = base64Data.data;
+                                  } else {
+                                    alert('파일 데이터를 찾을 수 없습니다.');
+                                    return;
+                                  }
+                                }
+
+                                if (typeof base64Data !== 'string') {
+                                  alert('파일 데이터 형식이 올바르지 않습니다.');
+                                  return;
+                                }
+
+                                if (base64Data.startsWith('data:')) {
+                                  const link = document.createElement('a');
+                                  link.href = base64Data;
+                                  link.download = file.name;
+                                  link.style.display = 'none';
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  setTimeout(() => document.body.removeChild(link), 100);
+                                  return;
+                                }
+
+                                const base64Match = base64Data.match(/base64,(.+)/);
+                                const cleanBase64 = base64Match ? base64Match[1] : base64Data;
+                                const binaryString = atob(cleanBase64);
+                                const bytes = new Uint8Array(binaryString.length);
+
+                                for (let i = 0; i < binaryString.length; i++) {
+                                  bytes[i] = binaryString.charCodeAt(i);
+                                }
+
+                                const mimeType = file.type || 'application/octet-stream';
+                                const blob = new Blob([bytes], { type: mimeType });
+                                const link = document.createElement('a');
+                                const url = URL.createObjectURL(blob);
+                                link.href = url;
+                                link.download = file.name;
+                                link.style.display = 'none';
+                                document.body.appendChild(link);
+                                link.click();
+                                setTimeout(() => {
+                                  document.body.removeChild(link);
+                                  URL.revokeObjectURL(url);
+                                }, 100);
+                              } catch (error) {
+                                console.error('파일 다운로드 실패:', error);
+                                alert('파일 다운로드에 실패했습니다: ' + error.message);
+                              }
+                            }}
+                            className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg font-medium hover:bg-blue-700 transition-colors"
                           >
-                            {file.name}
-                          </a>
+                            다운로드
+                          </button>
                         </div>
                       ))}
                     </div>
