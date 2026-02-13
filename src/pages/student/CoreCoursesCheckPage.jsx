@@ -87,8 +87,18 @@ function CoreCoursesCheckPage() {
       if (submission.status === 'approved') {
         showAlert('이미 승인된 제출입니다. 수정할 수 없습니다.');
       }
+    } else {
+      // 제출 데이터가 없을 경우 초기화
+      setSelectedGrade('2학년');
+      setCompletedCourses([]);
+      setUploadedFiles([]);
+      setPaymentInfo({
+        bankName: '',
+        accountNumber: '',
+        accountHolder: ''
+      });
     }
-  }, [currentUser]);
+  }, [currentUser, getStudentSubmission]);
 
   // 과목 체크 토글
   const handleCourseToggle = (course) => {

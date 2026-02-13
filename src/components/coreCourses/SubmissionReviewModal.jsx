@@ -8,7 +8,6 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
   const [isProcessing, setIsProcessing] = useState(false);
   const [viewMode, setViewMode] = useState('split'); // split / list / document
   const [selectedFileIndex, setSelectedFileIndex] = useState(0);
-  const [selectedFileType, setSelectedFileType] = useState('transcript'); // transcript / uploaded
 
   if (!isOpen || !submission || !student) return null;
 
@@ -17,19 +16,15 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
 
   // 파일 미리보기 URL 생성
   const previewUrl = useMemo(() => {
-    let fileData, fileName;
+    // 업로드된 파일만 처리
+    if (!uploadedFiles || uploadedFiles.length === 0 || selectedFileIndex >= uploadedFiles.length) return null;
+    const file = uploadedFiles[selectedFileIndex];
+    if (!file) return null;
 
-    if (selectedFileType === 'transcript') {
-      if (!submission.transcriptFile || !submission.transcriptFileName) return null;
-      fileData = submission.transcriptFile;
-      fileName = submission.transcriptFileName;
-    } else {
-      if (!uploadedFiles || uploadedFiles.length === 0 || selectedFileIndex >= uploadedFiles.length) return null;
-      const file = uploadedFiles[selectedFileIndex];
-      if (!file || !file.fileName || !file.fileData) return null;
-      fileData = file.fileData;
-      fileName = file.fileName;
-    }
+    const fileData = file.data || file.fileData;
+    const fileName = file.name || file.fileName;
+
+    if (!fileData || !fileName) return null;
 
     const fileNameLower = fileName.toLowerCase();
     let mimeType = '';
@@ -57,7 +52,7 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
       console.error('Preview URL 생성 실패:', error);
       return null;
     }
-  }, [submission.transcriptFile, submission.transcriptFileName, uploadedFiles, selectedFileIndex, selectedFileType]);
+  }, [uploadedFiles, selectedFileIndex]);
 
   const handleSubmit = async () => {
     if (decision === 'reject' && !rejectionReason.trim()) {
@@ -81,14 +76,12 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
   };
 
   const handleDownload = () => {
-    if (selectedFileType === 'transcript') {
-      if (submission.transcriptFile && submission.transcriptFileName) {
-        downloadBase64File(submission.transcriptFile, submission.transcriptFileName);
-      }
-    } else {
-      const file = uploadedFiles[selectedFileIndex];
-      if (file && file.fileData && file.fileName) {
-        downloadBase64File(file.fileData, file.fileName);
+    const file = uploadedFiles[selectedFileIndex];
+    if (file) {
+      const fileData = file.data || file.fileData;
+      const fileName = file.name || file.fileName;
+      if (fileData && fileName) {
+        downloadBase64File(fileData, fileName);
       }
     }
   };
@@ -190,8 +183,8 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
                 <div className="px-4 py-3 bg-gray-100 border-b">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                      📄 제출 증빙
-                      {uploadedFiles.length > 0 && selectedFileType === 'uploaded' && (
+                      📎 제출 증빙 ({uploadedFiles.length}개)
+                      {uploadedFiles.length > 0 && (
                         <button
                           onClick={handleDownloadAllUploadedFiles}
                           className="ml-2 px-3 py-1 bg-green-600 text-white text-xs rounded-lg font-medium hover:bg-green-700"
@@ -202,46 +195,15 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
                     </h3>
                     <button
                       onClick={handleDownload}
-                      className="px-3 py-1 bg-blue-600 text-white text-xs rounded-lg font-medium hover:bg-blue-700"
+                      disabled={uploadedFiles.length === 0}
+                      className="px-3 py-1 bg-blue-600 text-white text-xs rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                     >
                       📥 다운로드
                     </button>
                   </div>
 
-                  {/* 파일 타입 선택 탭 */}
-                  <div className="flex gap-2 mb-2">
-                    <button
-                      onClick={() => {
-                        setSelectedFileType('transcript');
-                        setSelectedFileIndex(0);
-                      }}
-                      className={`px-3 py-1 text-xs rounded-lg font-medium transition-colors ${
-                        selectedFileType === 'transcript'
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-white text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      📋 성적증명서
-                    </button>
-                    {uploadedFiles.length > 0 && (
-                      <button
-                        onClick={() => {
-                          setSelectedFileType('uploaded');
-                          setSelectedFileIndex(0);
-                        }}
-                        className={`px-3 py-1 text-xs rounded-lg font-medium transition-colors ${
-                          selectedFileType === 'uploaded'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-white text-gray-700 hover:bg-gray-50'
-                        }`}
-                      >
-                        📎 이수표 ({uploadedFiles.length}개)
-                      </button>
-                    )}
-                  </div>
-
                   {/* 업로드된 파일 탭 (여러 개일 경우) */}
-                  {selectedFileType === 'uploaded' && uploadedFiles.length > 1 && (
+                  {uploadedFiles.length > 1 && (
                     <div className="flex gap-2 overflow-x-auto mt-2">
                       {uploadedFiles.map((file, index) => (
                         <button
@@ -249,34 +211,31 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
                           onClick={() => setSelectedFileIndex(index)}
                           className={`px-3 py-1 text-xs rounded-lg font-medium whitespace-nowrap transition-colors ${
                             selectedFileIndex === index
-                              ? 'bg-purple-600 text-white'
+                              ? 'bg-blue-600 text-white'
                               : 'bg-white text-gray-700 hover:bg-gray-50'
                           }`}
                         >
-                          📄 파일 {index + 1}
+                          📄 {(file.name || file.fileName || `파일 ${index + 1}`).substring(0, 20)}
                         </button>
                       ))}
                     </div>
                   )}
 
                   {/* 현재 파일 정보 */}
-                  {selectedFileType === 'transcript' && submission.transcriptFileName && (
+                  {uploadedFiles[selectedFileIndex] && (
                     <p className="text-xs text-gray-600 mt-2">
-                      {submission.transcriptFileName} ({formatFileSize(submission.transcriptFileSize)})
-                    </p>
-                  )}
-                  {selectedFileType === 'uploaded' && uploadedFiles[selectedFileIndex] && (
-                    <p className="text-xs text-gray-600 mt-2">
-                      {uploadedFiles[selectedFileIndex].fileName} ({formatFileSize(uploadedFiles[selectedFileIndex].fileSize)})
+                      {(uploadedFiles[selectedFileIndex].name || uploadedFiles[selectedFileIndex].fileName)}
+                      {uploadedFiles[selectedFileIndex].size || uploadedFiles[selectedFileIndex].fileSize ?
+                        ` (${formatFileSize(uploadedFiles[selectedFileIndex].size || uploadedFiles[selectedFileIndex].fileSize)})` :
+                        ''
+                      }
                     </p>
                   )}
                 </div>
                 <div className="flex-1 overflow-auto p-4">
                   {previewUrl ? (
                     (() => {
-                      const fileName = selectedFileType === 'transcript'
-                        ? submission.transcriptFileName
-                        : uploadedFiles[selectedFileIndex]?.fileName || '';
+                      const fileName = uploadedFiles[selectedFileIndex]?.fileName || uploadedFiles[selectedFileIndex]?.name || '';
                       return fileName.toLowerCase().endsWith('.pdf') ? (
                         <iframe
                           src={previewUrl}
@@ -291,18 +250,7 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
                         />
                       );
                     })()
-                  ) : selectedFileType === 'transcript' && submission.transcriptFileName ? (
-                    <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                      <div className="text-6xl mb-4">📄</div>
-                      <p className="text-sm mb-2">미리보기를 지원하지 않는 파일입니다.</p>
-                      <button
-                        onClick={handleDownload}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
-                      >
-                        📥 파일 다운로드
-                      </button>
-                    </div>
-                  ) : selectedFileType === 'uploaded' && uploadedFiles[selectedFileIndex] ? (
+                  ) : uploadedFiles[selectedFileIndex] ? (
                     <div className="flex flex-col items-center justify-center h-full text-gray-500">
                       <div className="text-6xl mb-4">📄</div>
                       <p className="text-sm mb-2">미리보기를 지원하지 않는 파일입니다.</p>
@@ -443,41 +391,76 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
               <div className="px-6 py-3 bg-gray-100 border-b">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-bold text-gray-900">📄 제출 증빙</h3>
-                    {submission.transcriptFileName && (
+                    <h3 className="font-bold text-gray-900">📎 제출 증빙 ({uploadedFiles.length}개)</h3>
+                    {uploadedFiles[selectedFileIndex] && (
                       <p className="text-xs text-gray-600 mt-1">
-                        {submission.transcriptFileName} ({formatFileSize(submission.transcriptFileSize)})
+                        {(uploadedFiles[selectedFileIndex].name || uploadedFiles[selectedFileIndex].fileName)}
+                        {uploadedFiles[selectedFileIndex].size || uploadedFiles[selectedFileIndex].fileSize ?
+                          ` (${formatFileSize(uploadedFiles[selectedFileIndex].size || uploadedFiles[selectedFileIndex].fileSize)})` :
+                          ''
+                        }
                       </p>
                     )}
                   </div>
-                  {submission.transcriptFileName && (
-                    <button
-                      onClick={handleDownload}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
-                    >
-                      📥 다운로드
-                    </button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {uploadedFiles.length > 0 && (
+                      <>
+                        <button
+                          onClick={handleDownloadAllUploadedFiles}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
+                        >
+                          📥 전체 다운로드
+                        </button>
+                        <button
+                          onClick={handleDownload}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+                        >
+                          📥 다운로드
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
+                {/* 파일 탭 (여러 개일 경우) */}
+                {uploadedFiles.length > 1 && (
+                  <div className="flex gap-2 overflow-x-auto mt-3">
+                    {uploadedFiles.map((file, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedFileIndex(index)}
+                        className={`px-3 py-2 text-sm rounded-lg font-medium whitespace-nowrap transition-colors ${
+                          selectedFileIndex === index
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        📄 {(file.name || file.fileName || `파일 ${index + 1}`).substring(0, 30)}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="flex-1 overflow-auto p-6">
                 {previewUrl ? (
-                  submission.transcriptFileName.toLowerCase().endsWith('.pdf') ? (
-                    <iframe
-                      src={previewUrl}
-                      className="w-full h-full border rounded-lg"
-                      title="PDF Viewer"
-                    />
-                  ) : (
-                    <div className="flex justify-center">
-                      <img
+                  (() => {
+                    const fileName = uploadedFiles[selectedFileIndex]?.fileName || uploadedFiles[selectedFileIndex]?.name || '';
+                    return fileName.toLowerCase().endsWith('.pdf') ? (
+                      <iframe
                         src={previewUrl}
-                        alt="성적증명서"
-                        className="max-w-full h-auto rounded-lg shadow-2xl"
+                        className="w-full h-full border rounded-lg"
+                        title="PDF Viewer"
                       />
-                    </div>
-                  )
-                ) : submission.transcriptFileName ? (
+                    ) : (
+                      <div className="flex justify-center">
+                        <img
+                          src={previewUrl}
+                          alt="증빙서류"
+                          className="max-w-full h-auto rounded-lg shadow-2xl"
+                        />
+                      </div>
+                    );
+                  })()
+                ) : uploadedFiles[selectedFileIndex] ? (
                   <div className="flex flex-col items-center justify-center h-full text-gray-500">
                     <div className="text-8xl mb-4">📄</div>
                     <p className="text-lg mb-4">미리보기를 지원하지 않는 파일입니다.</p>
@@ -523,20 +506,43 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
 
               {/* 제출 증빙 */}
               <div className="mb-6">
-                <h3 className="font-bold text-gray-900 mb-3">📎 제출 증빙</h3>
-                {submission.transcriptFileName ? (
-                  <div className="flex items-center gap-3 p-4 bg-gray-50 border border-gray-300 rounded-lg">
-                    <div className="text-3xl">📄</div>
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900">{submission.transcriptFileName}</div>
-                      <div className="text-sm text-gray-600">{formatFileSize(submission.transcriptFileSize)}</div>
-                    </div>
+                <h3 className="font-bold text-gray-900 mb-3 flex items-center justify-between">
+                  <span>📎 제출 증빙 ({uploadedFiles.length}개)</span>
+                  {uploadedFiles.length > 0 && (
                     <button
-                      onClick={handleDownload}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+                      onClick={handleDownloadAllUploadedFiles}
+                      className="px-3 py-1 bg-green-600 text-white text-sm rounded-lg font-medium hover:bg-green-700"
                     >
-                      📥 다운로드
+                      📥 전체 다운로드
                     </button>
+                  )}
+                </h3>
+                {uploadedFiles.length > 0 ? (
+                  <div className="space-y-2">
+                    {uploadedFiles.map((file, index) => (
+                      <div key={index} className="flex items-center gap-3 p-4 bg-gray-50 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div className="text-3xl">📄</div>
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900">{file.name || file.fileName}</div>
+                          <div className="text-sm text-gray-600">
+                            {file.size || file.fileSize ? formatFileSize(file.size || file.fileSize) : '파일 크기 정보 없음'}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setSelectedFileIndex(index);
+                            const fileData = file.data || file.fileData;
+                            const fileName = file.name || file.fileName;
+                            if (fileData && fileName) {
+                              downloadBase64File(fileData, fileName);
+                            }
+                          }}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+                        >
+                          📥 다운로드
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
