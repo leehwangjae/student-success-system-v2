@@ -59,20 +59,21 @@ function LoginPage() {
       let isPasswordValid = false;
       let needsMigration = false;
 
-      // 2-1. 먼저 해시 비교 시도
-      try {
-        isPasswordValid = await bcrypt.compare(formData.password, user.password);
-      } catch (error) {
-        // bcrypt 비교 실패 = 평문 비밀번호일 가능성
-        console.log('🔄 기존 사용자 감지 (평문 비밀번호)');
-        needsMigration = true;
-      }
+      // 2-1. bcrypt 해시 형식인지 확인 (bcrypt 해시는 $2a$, $2b$, $2y$로 시작)
+      const isBcryptHash = user.password && user.password.startsWith('$2');
 
-      // 2-2. 해시 비교 실패 시 평문 비교 (기존 사용자 마이그레이션용)
-      if (!isPasswordValid && user.password === formData.password) {
-        console.log('✅ 평문 비밀번호 일치 (마이그레이션 필요)');
-        isPasswordValid = true;
-        needsMigration = true;
+      if (isBcryptHash) {
+        // 2-2. 해시된 비밀번호 비교
+        console.log('🔐 해시 비밀번호 검증 중...');
+        isPasswordValid = await bcrypt.compare(formData.password, user.password);
+      } else {
+        // 2-3. 평문 비밀번호 비교 (기존 사용자)
+        console.log('🔄 평문 비밀번호 검증 중 (기존 사용자)...');
+        if (user.password === formData.password) {
+          isPasswordValid = true;
+          needsMigration = true;
+          console.log('✅ 평문 비밀번호 일치 (마이그레이션 예정)');
+        }
       }
 
       if (!isPasswordValid) {
