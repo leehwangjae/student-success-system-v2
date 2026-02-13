@@ -736,6 +736,7 @@ export const AppProvider = ({ children }) => {
         totalScore: sub.total_score,
         uploadedFiles: sub.uploaded_files || [],
         paymentInfo: sub.payment_info || null,
+        gradeAt2025Fall: sub.grade_at_2025_fall || '2학년',
         // 이전 필드 호환성 유지
         transcriptFile: sub.transcript_file,
         transcriptFileName: sub.transcript_file_name,
@@ -930,6 +931,7 @@ export const AppProvider = ({ children }) => {
         total_score: submissionData.totalScore,
         uploaded_files: submissionData.uploadedFiles || [],
         payment_info: submissionData.paymentInfo || null,
+        grade_at_2025_fall: submissionData.gradeAt2025Fall || '2학년',
         status: 'pending',
         updated_at: new Date().toISOString()
       };
