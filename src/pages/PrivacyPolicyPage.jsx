@@ -108,6 +108,23 @@ function PrivacyPolicyPage() {
               변경사항의 시행 7일 전부터 공지사항을 통하여 고지할 것입니다.
             </p>
           </div>
+
+          {/* 이메일주소 무단수집 거부 */}
+          <div className="mt-8 pt-8 border-t border-gray-200">
+            <h3 className="text-lg font-bold mb-4">이메일주소 무단수집 거부</h3>
+            <div className="bg-amber-50 border-l-4 border-amber-500 p-4">
+              <p className="text-sm text-gray-700 leading-relaxed">
+                본 웹사이트에 게시된 이메일 주소가 전자우편 수집 프로그램이나 그 밖의 기술적 장치를 이용하여
+                무단으로 수집되는 것을 거부하며, 이를 위반시 「정보통신망 이용촉진 및 정보보호 등에 관한 법률」
+                제50조의2 및 제65조에 의해 처벌받을 수 있습니다.
+              </p>
+              <div className="mt-3 pt-3 border-t border-amber-200">
+                <p className="text-xs text-gray-600">
+                  <strong>관련 법령:</strong> 정보통신망법 제50조의2 (전자적 전송매체를 이용한 영리목적의 광고성 정보 전송 제한)
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* 하단 버튼 */}
