@@ -467,9 +467,9 @@ function StudentPage() {
             <div className="flex items-center gap-4">
               {/* 로고 추가 */}
               <div className="bg-white p-2 rounded-lg">
-                <img 
-                  src="/image/INU_RISE_logo.png" 
-                  alt="RISE 사업단" 
+                <img
+                  src="/image/INU_RISE_logo.png"
+                  alt="RISE 사업단"
                   className="h-10 w-auto object-contain"
                 />
               </div>
@@ -480,13 +480,19 @@ function StudentPage() {
                 </p>
               </div>
             </div>
-            
-            <button
-              onClick={handleLogout}
-              className="px-6 py-2 bg-white text-blue-600 hover:bg-blue-50 rounded-lg font-semibold transition-colors"
-            >
-              로그아웃
-            </button>
+
+            <div className="flex items-center gap-4">
+              <div className="text-right text-white">
+                <div className="text-sm font-semibold">문의 : 인천대학교 RISE사업단 미래인재양성센터</div>
+                <div className="text-sm text-blue-100 mt-1">032-835-9834</div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="px-6 py-2 bg-white text-blue-600 hover:bg-blue-50 rounded-lg font-semibold transition-colors"
+              >
+                로그아웃
+              </button>
+            </div>
           </div>
         </div>
       </header>
