@@ -12,9 +12,9 @@ function ApplicantsModal({ program, onClose }) {
     completeProgram 
   } = useAppContext();
 
-  // 이수완료 상태 제외
+  // 모든 신청자 표시 (이수완료 포함)
   const applicants = programApplications.filter(
-    a => a.programId === program.id && a.status !== 'completed'
+    a => a.programId === program.id
   );
 
   return (
