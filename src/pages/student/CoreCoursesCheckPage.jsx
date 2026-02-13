@@ -38,6 +38,9 @@ function CoreCoursesCheckPage() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // 재학년도 선택 (기본값: 2학년)
+  const [selectedGrade, setSelectedGrade] = useState('2학년');
+
   // 지급 관련 정보
   const [paymentInfo, setPaymentInfo] = useState({
     bankName: '',
@@ -69,6 +72,11 @@ function CoreCoursesCheckPage() {
     if (submission) {
       setCompletedCourses(submission.completedCourses || []);
       setUploadedFiles(submission.uploadedFiles || []);
+
+      // 재학년도 로드
+      if (submission.gradeAt2025Fall) {
+        setSelectedGrade(submission.gradeAt2025Fall);
+      }
 
       // 지급 정보 로드
       if (submission.paymentInfo) {
@@ -229,7 +237,8 @@ function CoreCoursesCheckPage() {
             totalCompletedCount: scoreInfo.completedCount,
             totalScore: scoreInfo.score,
             uploadedFiles,
-            paymentInfo
+            paymentInfo,
+            gradeAt2025Fall: selectedGrade  // 25년 2학기 기준 재학년도
           };
           console.log('제출 데이터 준비 완료');
 
@@ -382,6 +391,36 @@ function CoreCoursesCheckPage() {
             </div>
           </div>
         )}
+
+        {/* 재학년도 선택 */}
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border-2 border-purple-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="text-2xl">📅</div>
+              <div>
+                <h3 className="font-bold text-gray-900">25년 2학기 기준 재학년도</h3>
+                <p className="text-sm text-gray-600 mt-1">현재 학년을 선택해주세요</p>
+              </div>
+            </div>
+            <div className="w-48">
+              <select
+                value={selectedGrade}
+                onChange={(e) => setSelectedGrade(e.target.value)}
+                disabled={!canEdit}
+                className="w-full px-4 py-3 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed font-semibold text-gray-900"
+              >
+                <option value="2학년">2학년</option>
+                <option value="3학년">3학년</option>
+                <option value="4학년">4학년</option>
+              </select>
+            </div>
+          </div>
+          <div className="mt-3 bg-purple-50 border border-purple-200 rounded-lg p-3">
+            <p className="text-sm text-purple-800">
+              💡 25년 2학기 기준으로 현재 재학 중인 학년을 선택해주세요.
+            </p>
+          </div>
+        </div>
 
         {/* 교과목 체크리스트 */}
         <div className="space-y-4 mb-6">
