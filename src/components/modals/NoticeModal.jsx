@@ -75,17 +75,35 @@ function NoticeModal({ isOpen, onClose, notice }) {
     }
   };
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
-    const newFiles = files.map(file => ({
-      id: Date.now() + Math.random(),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      data: file
-    }));
 
-    setUploadedFiles(prev => [...prev, ...newFiles]);
+    for (const file of files) {
+      try {
+        // File을 base64로 변환
+        const base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        const newFile = {
+          id: Date.now() + Math.random(),
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          data: base64  // base64 문자열로 저장
+        };
+
+        setUploadedFiles(prev => [...prev, newFile]);
+      } catch (error) {
+        console.error('파일 변환 실패:', file.name, error);
+        showAlert(`${file.name} 파일 업로드에 실패했습니다.`);
+      }
+    }
+
+    e.target.value = '';  // 파일 입력 초기화
   };
 
   const removeFile = (fileId) => {
