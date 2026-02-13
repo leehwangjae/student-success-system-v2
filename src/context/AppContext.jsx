@@ -598,9 +598,13 @@ export const AppProvider = ({ children }) => {
 
       const newScore = (student[scoreField.replace('_score', 'Score')] || 0) + program.score;
       const history = student[historyField.replace('_history', 'History')] || [];
+
+      // 고유 ID 생성 (타임스탬프 + 랜덤)
+      const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
       const newHistory = [...history, {
-        programId: program.id,
-        programTitle: program.title,
+        id: uniqueId,
+        program: program.title,  // StudentDetailModal에서 activity.program 사용
         score: program.score,
         date: new Date().toISOString().split('T')[0]
       }];
