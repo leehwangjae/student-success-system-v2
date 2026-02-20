@@ -27,6 +27,12 @@ export const AppProvider = ({ children }) => {
   const [nonCurricularPrograms, setNonCurricularPrograms] = useState([]);
   const [nonCurricularSubmissions, setNonCurricularSubmissions] = useState([]);
 
+  // 신청 기간 설정
+  const [applicationPeriods, setApplicationPeriods] = useState({
+    coreCourses: { startDate: null, endDate: null, isActive: false },
+    nonCurricular: { startDate: null, endDate: null, isActive: false }
+  });
+
   // Supabase에서 학생 데이터 로드
   const loadStudentsFromSupabase = async () => {
     try {
@@ -1177,6 +1183,89 @@ export const AppProvider = ({ children }) => {
     return nonCurricularSubmissions.find(s => s.studentId === studentId);
   };
 
+  // 신청 기간 로드
+  const loadApplicationPeriodsFromSupabase = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('application_periods')
+        .select('type, start_date, end_date, is_active')
+        .in('type', ['core_courses', 'non_curricular']);
+
+      if (error) {
+        // 테이블이 없는 경우 조용히 기본값 유지
+        return;
+      }
+
+      if (!data || data.length === 0) return;
+
+      const periods = { ...applicationPeriods };
+      data.forEach(row => {
+        if (row.type === 'core_courses') {
+          periods.coreCourses = {
+            startDate: row.start_date,
+            endDate: row.end_date,
+            isActive: row.is_active
+          };
+        } else if (row.type === 'non_curricular') {
+          periods.nonCurricular = {
+            startDate: row.start_date,
+            endDate: row.end_date,
+            isActive: row.is_active
+          };
+        }
+      });
+
+      setApplicationPeriods(periods);
+    } catch (error) {
+      // 테이블 미존재 등 오류 시 조용히 처리
+    }
+  };
+
+  // 신청 기간 저장 (관리자용)
+  const saveApplicationPeriod = async (type, periodData) => {
+    try {
+      const dbData = {
+        type: type,
+        start_date: periodData.startDate || null,
+        end_date: periodData.endDate || null,
+        is_active: periodData.isActive,
+        updated_at: new Date().toISOString()
+      };
+
+      // upsert: type을 기준으로 있으면 업데이트, 없으면 삽입
+      const { error } = await supabase
+        .from('application_periods')
+        .upsert([dbData], { onConflict: 'type' });
+
+      if (error) throw error;
+
+      await loadApplicationPeriodsFromSupabase();
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  // 신청 기간 내 여부 체크 (학생용)
+  const isWithinApplicationPeriod = (type) => {
+    const period = type === 'core_courses'
+      ? applicationPeriods.coreCourses
+      : applicationPeriods.nonCurricular;
+
+    // 기간 설정이 없으면 항상 허용
+    if (!period.isActive) return true;
+    if (!period.startDate || !period.endDate) return true;
+
+    const now = new Date();
+    const start = new Date(period.startDate);
+    const end = new Date(period.endDate);
+
+    // endDate는 날짜만 있으면 그 날 23:59:59까지 허용
+    end.setHours(23, 59, 59, 999);
+
+    return now >= start && now <= end;
+  };
+
   // 초기 데이터 로드 - 역할별 분리 + 순차 로드로 DB 부하 최소화
   useEffect(() => {
     if (!currentUser) return;
@@ -1189,6 +1278,7 @@ export const AppProvider = ({ children }) => {
       await loadNoticesFromSupabase();
       await loadCoreCoursesFromSupabase();
       await loadNonCurricularProgramsFromSupabase();
+      await loadApplicationPeriodsFromSupabase();
 
       if (isAdmin) {
         // 관리자: 전체 데이터 순차 로드
@@ -1251,7 +1341,10 @@ export const AppProvider = ({ children }) => {
       submitNonCurricularPrograms,
       approveNonCurricularPrograms,
       rejectNonCurricularPrograms,
-      getNonCurricularSubmission
+      getNonCurricularSubmission,
+      applicationPeriods,
+      saveApplicationPeriod,
+      isWithinApplicationPeriod
     }}>
       {children}
     </AppContext.Provider>

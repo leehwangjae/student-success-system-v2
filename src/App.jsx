@@ -15,6 +15,7 @@ import StudentPage from './pages/StudentPage';
 import CoreCoursesSettingPage from './pages/admin/CoreCoursesSettingPage';
 import CoreCoursesReviewPage from './pages/admin/CoreCoursesReviewPage';
 import CoreCoursesCheckPage from './pages/student/CoreCoursesCheckPage';
+import ApplicationPeriodSettingPage from './pages/admin/ApplicationPeriodSettingPage';
 import MasterApprovalPage from './pages/MasterApprovalPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import ConfirmModal from './components/modals/ConfirmModal';
@@ -75,6 +76,14 @@ function App() {
             element={
               <PrivateRoute allowedRoles={['admin', 'master']}>
                 <CoreCoursesReviewPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/application-period"
+            element={
+              <PrivateRoute allowedRoles={['admin', 'master']}>
+                <ApplicationPeriodSettingPage />
               </PrivateRoute>
             }
           />

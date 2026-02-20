@@ -29,7 +29,9 @@ function CoreCoursesCheckPage() {
     coreCourses,
     getCoreCoursesByDepartment,
     getStudentSubmission,
-    submitCoreCourses
+    submitCoreCourses,
+    applicationPeriods,
+    isWithinApplicationPeriod
   } = useAppContext();
 
   const { showAlert, showConfirm } = useModalStore();
@@ -255,7 +257,13 @@ function CoreCoursesCheckPage() {
   const isApproved = submission?.status === 'approved';
   const isPending = submission?.status === 'pending';
   const isRejected = submission?.status === 'rejected';
-  const canEdit = !isApproved; // 승인된 경우에만 수정 불가
+
+  // 신청 기간 체크
+  const withinPeriod = isWithinApplicationPeriod('core_courses');
+  const periodInfo = applicationPeriods?.coreCourses;
+  const periodActive = periodInfo?.isActive;
+
+  const canEdit = !isApproved && withinPeriod; // 승인됨 or 기간 외면 수정 불가
 
   if (!currentUser) {
     return <div className="p-6">로그인이 필요합니다.</div>;
@@ -286,6 +294,38 @@ function CoreCoursesCheckPage() {
           <h1 className="text-2xl font-bold mb-2">📚 핵심 교과목 이수 현황</h1>
           <p className="text-blue-100">{currentUser.department} · {currentUser.grade}학년</p>
         </div>
+
+        {/* 신청 기간 안내 배너 */}
+        {periodActive && (
+          <div className={`rounded-xl shadow-sm p-4 mb-4 ${
+            withinPeriod
+              ? 'bg-green-50 border border-green-200'
+              : 'bg-red-50 border border-red-200'
+          }`}>
+            <div className="flex items-center gap-3">
+              <div className="text-2xl">{withinPeriod ? '🟢' : '🔴'}</div>
+              <div className="flex-1">
+                <div className={`font-semibold ${withinPeriod ? 'text-green-800' : 'text-red-800'}`}>
+                  {withinPeriod ? '신청 기간 중' : '신청 기간이 아닙니다'}
+                </div>
+                <div className={`text-sm mt-1 ${withinPeriod ? 'text-green-700' : 'text-red-700'}`}>
+                  {periodInfo.startDate && periodInfo.endDate ? (
+                    <>
+                      신청 기간: {new Date(periodInfo.startDate).toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      {' ~ '}
+                      {new Date(periodInfo.endDate).toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    </>
+                  ) : '기간 미설정'}
+                </div>
+                {!withinPeriod && (
+                  <div className="text-sm text-red-600 font-medium mt-1">
+                    ⚠️ 신청 기간이 아니므로 제출 및 수정이 불가합니다.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 점수 카드 - Sticky */}
         <div className="sticky top-4 z-10 bg-white rounded-xl shadow-lg p-6 mb-6 border-2 border-blue-100">
@@ -623,6 +663,19 @@ function CoreCoursesCheckPage() {
             </div>
           </div>
         </div>
+
+        {/* 신청 기간 외 안내 (승인 전이지만 기간이 끝난 경우) */}
+        {!isApproved && !withinPeriod && periodActive && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
+            <div className="flex gap-3">
+              <div className="text-red-600 text-xl">🔒</div>
+              <div className="text-sm text-red-800">
+                <p className="font-semibold">신청 기간이 아닙니다</p>
+                <p className="mt-1">신청 기간이 종료되어 제출 및 수정이 불가합니다.</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 제출/수정/재제출 버튼 */}
         {canEdit && (

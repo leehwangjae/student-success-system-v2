@@ -12,6 +12,7 @@ import CoreCoursesSettingPage from './admin/CoreCoursesSettingPage';
 import CoreCoursesReviewPage from './admin/CoreCoursesReviewPage';
 import NonCurricularProgramsSettingPage from './admin/NonCurricularProgramsSettingPage';
 import NonCurricularProgramsReviewPage from './admin/NonCurricularProgramsReviewPage';
+import ApplicationPeriodSettingPage from './admin/ApplicationPeriodSettingPage';
 import StudentManagement from '../components/admin/StudentManagement';
 
 function AdminPage() {
@@ -997,6 +998,16 @@ function AdminPage() {
             >
               🎯 비교과 프로그램 검토
             </button>
+            <button
+              onClick={() => setActiveTab('applicationPeriod')}
+              className={`flex-1 px-4 py-3 font-semibold text-sm ${
+                activeTab === 'applicationPeriod'
+                  ? 'text-indigo-600 border-b-2 border-indigo-600 bg-white'
+                  : 'text-gray-600 hover:text-indigo-600'
+              }`}
+            >
+              ⏰ 신청 기간 설정
+            </button>
           </div>
         </div>
 
@@ -1033,6 +1044,7 @@ function AdminPage() {
           {activeTab === 'coreCoursesReview' && <CoreCoursesReviewPage />}
           {activeTab === 'nonCurricularSettings' && <NonCurricularProgramsSettingPage />}
           {activeTab === 'nonCurricularReview' && <NonCurricularProgramsReviewPage />}
+          {activeTab === 'applicationPeriod' && <ApplicationPeriodSettingPage />}
         </div>
       </div>
 
