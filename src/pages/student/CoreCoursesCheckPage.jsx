@@ -202,45 +202,28 @@ function CoreCoursesCheckPage() {
 
   // 제출
   const handleSubmit = () => {
-    console.log('🔥 제출하기 버튼 클릭!');
-    console.log('현재 사용자:', currentUser);
-    console.log('완료된 과목:', completedCourses);
-    console.log('지급 정보 유효성 검사 중...');
-
-    // 검증
     const completedCount = completedCourses.filter(c => c.isCompleted).length;
-    console.log('체크된 과목 수:', completedCount);
 
     if (completedCount === 0) {
-      console.log('❌ 과목 미선택');
       showAlert('이수한 과목을 최소 1개 이상 선택해주세요.');
       return;
     }
 
     if (uploadedFiles.length === 0) {
-      console.log('❌ 파일 미업로드');
-      showAlert('교과과정 이수표 및 개인정보제공동의서를 업로드해주세요.');
+      showAlert('교과과정 이수표를 업로드해주세요.');
       return;
     }
 
-    // 지급 정보 검증
     if (!paymentInfo.bankName || !paymentInfo.accountNumber || !paymentInfo.accountHolder) {
-      console.log('❌ 지급 정보 미입력');
       showAlert('지급 관련 정보를 모두 입력해주세요.\n(은행명, 계좌번호, 예금주)');
       return;
     }
 
-    console.log('✅ 검증 통과 - 확인 모달 표시');
-    console.log('점수 정보:', scoreInfo);
-
     showConfirm(
       `${scoreInfo.completedCount}개 과목 (${scoreInfo.score}점)을 제출하시겠습니까?\n\n제출 후에는 관리자 승인 전까지 수정할 수 있습니다.`,
       async () => {
-        console.log('✅ 사용자가 확인 버튼 클릭!');
         setIsSubmitting(true);
-
         try {
-          console.log('📤 submitCoreCourses 호출 시작...');
           const submissionData = {
             studentId: currentUser.id,
             completedCourses: completedCourses.filter(c => c.isCompleted),
@@ -248,13 +231,10 @@ function CoreCoursesCheckPage() {
             totalScore: scoreInfo.score,
             uploadedFiles,
             paymentInfo,
-            gradeAt2025Fall: selectedGrade  // 25년 2학기 기준 재학년도
+            gradeAt2025Fall: selectedGrade
           };
-          console.log('제출 데이터 준비 완료');
 
           const result = await submitCoreCourses(submissionData);
-
-          console.log('📥 제출 결과:', result);
 
           if (result.success) {
             showAlert('✅ 제출이 완료되었습니다!\n관리자 검토 후 점수가 반영됩니다.');
@@ -262,11 +242,9 @@ function CoreCoursesCheckPage() {
             showAlert(`제출 실패: ${result.error}`);
           }
         } catch (error) {
-          console.error('❌ 제출 중 예외 발생:', error);
           showAlert('제출 중 오류가 발생했습니다.');
         } finally {
           setIsSubmitting(false);
-          console.log('제출 프로세스 완료');
         }
       }
     );
@@ -282,18 +260,6 @@ function CoreCoursesCheckPage() {
   if (!currentUser) {
     return <div className="p-6">로그인이 필요합니다.</div>;
   }
-
-  // 🔍 디버그 정보 출력
-  console.log('=== CoreCoursesCheckPage v3.2 렌더링 ===');
-  console.log('📌 버전: v3.2 - 지급 정보 입력 필드 추가됨');
-  console.log('currentUser:', currentUser);
-  console.log('submission:', submission);
-  console.log('paymentInfo:', paymentInfo);
-  console.log('isApproved:', isApproved);
-  console.log('isPending:', isPending);
-  console.log('isRejected:', isRejected);
-  console.log('canEdit:', canEdit);
-  console.log('completedCourses:', completedCourses);
 
   if (departmentCourses.length === 0) {
     return (
@@ -664,34 +630,23 @@ function CoreCoursesCheckPage() {
             {isPending ? (
               // 검토 중일 때: 수정하기 버튼
               <button
-                onClick={() => {
-                  console.log('🎯 수정하기 버튼 클릭!');
-                  handleSubmit();
-                }}
+                onClick={handleSubmit}
                 disabled={isSubmitting}
                 className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? '제출 중...' : '✏️ 수정하기'}
               </button>
             ) : isRejected ? (
-              // 반려되었을 때: 재제출하기 버튼
               <button
-                onClick={() => {
-                  console.log('🎯 재제출하기 버튼 클릭!');
-                  handleSubmit();
-                }}
+                onClick={handleSubmit}
                 disabled={isSubmitting}
                 className="w-full px-6 py-3 bg-orange-600 text-white rounded-lg font-bold hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? '제출 중...' : '🔄 재제출하기'}
               </button>
             ) : (
-              // 미제출일 때: 제출하기 버튼
               <button
-                onClick={() => {
-                  console.log('🎯 제출하기 버튼 클릭!');
-                  handleSubmit();
-                }}
+                onClick={handleSubmit}
                 disabled={isSubmitting}
                 className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >

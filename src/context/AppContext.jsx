@@ -30,63 +30,42 @@ export const AppProvider = ({ children }) => {
   // Supabase에서 학생 데이터 로드
   const loadStudentsFromSupabase = async () => {
     try {
-      console.log('📚 학생 데이터 로드 시작...');
-      
       const { data, error } = await supabase
         .from('users_2025_11_27_07_17')
-        .select('*')
+        .select('id, student_id, username, name, department, field, grade, email, phone, role, memo, status, account_type, ssn, bank_name, account_number, account_holder, privacy_consented, privacy_consented_at, non_curricular_score, core_subject_score, core_courses_score, industry_score, created_at')
         .eq('account_type', 'student')
         .eq('status', 'approved');
 
       if (error) throw error;
 
-      console.log('📊 Supabase에서 가져온 데이터:', data.length, '명');
+      const formattedStudents = data.map(user => ({
+        id: user.id,
+        studentId: user.student_id || user.username,
+        name: user.name,
+        department: user.department,
+        field: user.field || '바이오',
+        grade: user.grade || 4,
+        email: user.email,
+        phone: user.phone,
+        password: user.password,
+        role: 'student',
+        memo: user.memo || '',
+        ssn: user.ssn || '',
+        bankName: user.bank_name || '',
+        accountNumber: user.account_number || '',
+        accountHolder: user.account_holder || '',
+        privacy_consented: user.privacy_consented || false,
+        privacy_consented_at: user.privacy_consented_at || null,
+        nonCurricularScore: user.non_curricular_score || 0,
+        coreSubjectScore: user.core_subject_score || user.core_courses_score || 0,
+        coreCoursesScore: user.core_courses_score || 0,
+        industryScore: user.industry_score || 0,
+        total: (user.non_curricular_score || 0) +
+               (user.core_subject_score || user.core_courses_score || 0) +
+               (user.industry_score || 0),
+      }));
 
-      const formattedStudents = data.map(user => {
-        const student = {
-          id: user.id,
-          studentId: user.student_id || user.username,
-          name: user.name,
-          department: user.department,
-          field: user.field || '바이오',
-          grade: user.grade || 4,
-          email: user.email,
-          phone: user.phone,
-          password: user.password,
-          role: 'student',
-          memo: user.memo || '',
-
-          // 민감정보
-          ssn: user.ssn || '',
-          bankName: user.bank_name || '',
-          accountNumber: user.account_number || '',
-          accountHolder: user.account_holder || '',
-
-          // 개인정보 동의
-          privacy_consented: user.privacy_consented || false,
-          privacy_consented_at: user.privacy_consented_at || null,
-          privacy_signature: user.privacy_signature || null,
-
-          nonCurricularScore: user.non_curricular_score || 0,
-          coreSubjectScore: user.core_subject_score || user.core_courses_score || 0,
-          coreCoursesScore: user.core_courses_score || 0,
-          industryScore: user.industry_score || 0,
-
-          total: (user.non_curricular_score || 0) +
-                 (user.core_subject_score || user.core_courses_score || 0) +
-                 (user.industry_score || 0),
-
-          nonCurricularHistory: user.non_curricular_history || [],
-          coreSubjectHistory: user.core_subject_history || [],
-          industryHistory: user.industry_history || []
-        };
-
-        return student;
-      });
-
-      console.log('✅ 학생 데이터 로드 완료:', formattedStudents.length, '명');
       setStudents(formattedStudents);
-      
     } catch (error) {
       console.error('❌ 학생 데이터 로드 실패:', error);
     }
@@ -118,7 +97,6 @@ export const AppProvider = ({ children }) => {
         attachedFiles: program.attached_files || []
       }));
 
-      console.log('✅ 프로그램 데이터 로드 완료:', formattedPrograms.length);
       setPrograms(formattedPrograms);
     } catch (error) {
       console.error('프로그램 데이터 로드 실패:', error);
@@ -148,7 +126,6 @@ export const AppProvider = ({ children }) => {
         isPopup: notice.is_popup || false
       }));
 
-      console.log('✅ 공지사항 데이터 로드 완료:', formattedNotices.length);
       setNotices(formattedNotices);
     } catch (error) {
       console.error('공지사항 데이터 로드 실패:', error);
@@ -175,7 +152,6 @@ export const AppProvider = ({ children }) => {
         attachedFiles: app.attached_files || []
       }));
 
-      console.log('✅ 프로그램 신청 데이터 로드 완료:', formattedApplications.length);
       setProgramApplications(formattedApplications);
     } catch (error) {
       console.error('프로그램 신청 데이터 로드 실패:', error);
@@ -187,13 +163,11 @@ export const AppProvider = ({ children }) => {
     try {
       const { data, error } = await supabase
         .from('users_2025_11_27_07_17')
-        .select('*')
+        .select('id, student_id, username, name, department, field, grade, email, phone, account_type, status, created_at')
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-
-      console.log('✅ Pending 사용자 로드:', data?.length || 0);
       setPendingUsers(data || []);
     } catch (error) {
       console.error('Pending 사용자 로드 실패:', error);
@@ -682,8 +656,6 @@ export const AppProvider = ({ children }) => {
         return;
       }
 
-      console.log('📚 로드된 교과목 데이터:', data);
-
       const formattedCourses = data.map(course => ({
         id: course.id,
         field: course.field || '미지정',
@@ -698,7 +670,6 @@ export const AppProvider = ({ children }) => {
         createdAt: course.created_at
       }));
 
-      console.log('✅ 포맷팅된 교과목:', formattedCourses);
       setCoreCourses(formattedCourses);
     } catch (error) {
       console.error('핵심 교과목 로드 실패:', error);
@@ -710,7 +681,7 @@ export const AppProvider = ({ children }) => {
     try {
       const { data, error } = await supabase
         .from('core_courses_submissions_2025_11_27_07_17')
-        .select('*');
+        .select('id, student_id, field, department, completed_courses, total_completed_count, total_score, payment_info, grade_at_2025_fall, status, rejection_reason, submitted_at, reviewed_at, reviewed_by, created_at, updated_at');
 
       if (error) {
         // 테이블이 없거나 권한이 없는 경우 조용히 빈 배열 설정
@@ -795,53 +766,30 @@ export const AppProvider = ({ children }) => {
     try {
       const { data, error } = await supabase
         .from('non_curricular_submissions_2025_11_27_07_17')
-        .select('*');
+        .select('id, student_id, completed_programs, certificate_files, total_program_count, total_score, status, rejection_reason, submitted_at, reviewed_at, created_at, updated_at');
 
       if (error) {
-        console.error('Supabase 로드 에러:', error);
         setNonCurricularSubmissions([]);
         return;
       }
 
-      console.log('Supabase에서 가져온 원본 데이터:', data);
+      const formattedSubmissions = (data || []).map(sub => ({
+        id: sub.id,
+        studentId: sub.student_id,
+        completedPrograms: sub.completed_programs || [],
+        certificateFiles: sub.certificate_files || [],
+        totalProgramCount: sub.total_program_count || 0,
+        totalScore: sub.total_score || 0,
+        status: sub.status,
+        rejectionReason: sub.rejection_reason,
+        submittedAt: sub.submitted_at,
+        reviewedAt: sub.reviewed_at,
+        createdAt: sub.created_at,
+        updatedAt: sub.updated_at
+      }));
 
-      const formattedSubmissions = (data || []).map(sub => {
-        console.log('변환 전:', {
-          total_program_count: sub.total_program_count,
-          total_score: sub.total_score,
-          completed_programs: sub.completed_programs,
-          certificate_files: sub.certificate_files
-        });
-
-        const formatted = {
-          id: sub.id,
-          studentId: sub.student_id,
-          completedPrograms: sub.completed_programs || [],
-          certificateFiles: sub.certificate_files || [],
-          totalProgramCount: sub.total_program_count || 0,
-          totalScore: sub.total_score || 0,
-          status: sub.status,
-          rejectionReason: sub.rejection_reason,
-          submittedAt: sub.submitted_at,
-          reviewedAt: sub.reviewed_at,
-          createdAt: sub.created_at,
-          updatedAt: sub.updated_at
-        };
-
-        console.log('변환 후:', {
-          totalProgramCount: formatted.totalProgramCount,
-          totalScore: formatted.totalScore,
-          completedPrograms: formatted.completedPrograms,
-          certificateFiles: formatted.certificateFiles
-        });
-
-        return formatted;
-      });
-
-      console.log('최종 formattedSubmissions:', formattedSubmissions);
       setNonCurricularSubmissions(formattedSubmissions);
     } catch (error) {
-      console.error('로드 중 예외 발생:', error);
       setNonCurricularSubmissions([]);
     }
   };
@@ -914,9 +862,6 @@ export const AppProvider = ({ children }) => {
       const student = students.find(s => s.id === submissionData.studentId);
       if (!student) throw new Error('학생 정보를 찾을 수 없습니다.');
 
-      console.log('📤 submitCoreCourses 함수 실행');
-      console.log('전달받은 데이터:', submissionData);
-
       const { data: existing } = await supabase
         .from('core_courses_submissions_2025_11_27_07_17')
         .select('id')
@@ -938,7 +883,6 @@ export const AppProvider = ({ children }) => {
 
       let result;
       if (existing) {
-        console.log('✏️ 기존 제출 업데이트');
         submissionPayload.submitted_at = new Date().toISOString();
 
         result = await supabase
@@ -946,7 +890,6 @@ export const AppProvider = ({ children }) => {
           .update(submissionPayload)
           .eq('student_id', submissionData.studentId);
       } else {
-        console.log('➕ 새로운 제출 생성');
         submissionPayload.student_id = submissionData.studentId;
         submissionPayload.submitted_at = new Date().toISOString();
 
@@ -963,8 +906,7 @@ export const AppProvider = ({ children }) => {
       // 지급 정보가 있으면 users 테이블도 업데이트
       if (submissionData.paymentInfo && submissionData.paymentInfo.bankName &&
           submissionData.paymentInfo.accountNumber && submissionData.paymentInfo.accountHolder) {
-        console.log('💳 users 테이블에 지급 정보 업데이트 중...');
-        const { error: userUpdateError } = await supabase
+        await supabase
           .from('users_2025_11_27_07_17')
           .update({
             bank_name: submissionData.paymentInfo.bankName,
@@ -972,16 +914,7 @@ export const AppProvider = ({ children }) => {
             account_holder: submissionData.paymentInfo.accountHolder
           })
           .eq('id', submissionData.studentId);
-
-        if (userUpdateError) {
-          console.error('⚠️ users 테이블 업데이트 실패:', userUpdateError);
-          // 에러는 로그만 하고 계속 진행 (제출은 성공했으므로)
-        } else {
-          console.log('✅ users 테이블 업데이트 성공');
-        }
       }
-
-      console.log('✅ 제출 성공');
       await loadCoreCoursesSubmissionsFromSupabase();
       await loadStudentsFromSupabase(); // 학생 정보도 다시 로드
       return { success: true };
