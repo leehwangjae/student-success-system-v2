@@ -710,7 +710,7 @@ export const AppProvider = ({ children }) => {
     try {
       const { data, error } = await supabase
         .from('core_courses_submissions_2025_11_27_07_17')
-        .select('id, student_id, field, department, completed_courses, uploaded_files, total_completed_count, total_score, payment_info, grade_at_2025_fall, status, rejection_reason, submitted_at, reviewed_at, reviewed_by, created_at, updated_at');
+        .select('id, student_id, field, department, completed_courses, total_completed_count, total_score, payment_info, grade_at_2025_fall, status, rejection_reason, submitted_at, reviewed_at, reviewed_by, created_at, updated_at');
 
       if (error) {
         // 테이블이 없거나 권한이 없는 경우 조용히 빈 배열 설정
@@ -734,7 +734,8 @@ export const AppProvider = ({ children }) => {
         completedCourses: sub.completed_courses || [],
         totalCompletedCount: sub.total_completed_count,
         totalScore: sub.total_score,
-        uploadedFiles: sub.uploaded_files || [],
+        uploadedFiles: [],
+        hasUploadedFiles: !!sub.submitted_at,
         paymentInfo: sub.payment_info || null,
         gradeAt2025Fall: sub.grade_at_2025_fall || '2학년',
         // 이전 필드 호환성 유지
@@ -795,7 +796,7 @@ export const AppProvider = ({ children }) => {
     try {
       const { data, error } = await supabase
         .from('non_curricular_submissions_2025_11_27_07_17')
-        .select('id, student_id, completed_programs, certificate_files, total_program_count, total_score, status, rejection_reason, submitted_at, reviewed_at, created_at, updated_at');
+        .select('id, student_id, completed_programs, total_program_count, total_score, status, rejection_reason, submitted_at, reviewed_at, created_at, updated_at');
 
       if (error) {
         setNonCurricularSubmissions([]);
@@ -806,7 +807,8 @@ export const AppProvider = ({ children }) => {
         id: sub.id,
         studentId: sub.student_id,
         completedPrograms: sub.completed_programs || [],
-        certificateFiles: sub.certificate_files || [],
+        certificateFiles: [],
+        hasCertificateFiles: !!sub.submitted_at,
         totalProgramCount: sub.total_program_count || 0,
         totalScore: sub.total_score || 0,
         status: sub.status,
@@ -1516,6 +1518,61 @@ export const AppProvider = ({ children }) => {
     loadData();
   }, [currentUser]);
 
+  // 비교과 제출 단건 상세 조회 (파일 데이터 포함)
+  const fetchNonCurricularSubmissionDetail = async (submissionId) => {
+    const { data, error } = await supabase
+      .from('non_curricular_submissions_2025_11_27_07_17')
+      .select('id, student_id, completed_programs, certificate_files, total_program_count, total_score, status, rejection_reason, submitted_at, reviewed_at, created_at, updated_at')
+      .eq('id', submissionId)
+      .single();
+    if (error || !data) return null;
+    return {
+      id: data.id,
+      studentId: data.student_id,
+      completedPrograms: data.completed_programs || [],
+      certificateFiles: data.certificate_files || [],
+      hasCertificateFiles: (data.certificate_files || []).length > 0,
+      totalProgramCount: data.total_program_count || 0,
+      totalScore: data.total_score || 0,
+      status: data.status,
+      rejectionReason: data.rejection_reason,
+      submittedAt: data.submitted_at,
+      reviewedAt: data.reviewed_at,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+    };
+  };
+
+  // 핵심 교과목 제출 단건 상세 조회 (파일 데이터 포함)
+  const fetchCoreCoursesSubmissionDetail = async (submissionId) => {
+    const { data, error } = await supabase
+      .from('core_courses_submissions_2025_11_27_07_17')
+      .select('id, student_id, field, department, completed_courses, uploaded_files, total_completed_count, total_score, payment_info, grade_at_2025_fall, status, rejection_reason, submitted_at, reviewed_at, reviewed_by, created_at, updated_at')
+      .eq('id', submissionId)
+      .single();
+    if (error || !data) return null;
+    return {
+      id: data.id,
+      studentId: data.student_id,
+      field: data.field,
+      department: data.department,
+      completedCourses: data.completed_courses || [],
+      totalCompletedCount: data.total_completed_count,
+      totalScore: data.total_score,
+      uploadedFiles: data.uploaded_files || [],
+      hasUploadedFiles: (data.uploaded_files || []).length > 0,
+      paymentInfo: data.payment_info || null,
+      gradeAt2025Fall: data.grade_at_2025_fall || '2학년',
+      status: data.status,
+      rejectionReason: data.rejection_reason,
+      submittedAt: data.submitted_at,
+      reviewedAt: data.reviewed_at,
+      reviewedBy: data.reviewed_by,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+    };
+  };
+
   return (
     <AppContext.Provider value={{
       currentUser,
@@ -1559,6 +1616,8 @@ export const AppProvider = ({ children }) => {
       approveNonCurricularPrograms,
       rejectNonCurricularPrograms,
       getNonCurricularSubmission,
+      fetchNonCurricularSubmissionDetail,
+      fetchCoreCoursesSubmissionDetail,
       applicationPeriods,
       saveApplicationPeriod,
       isWithinApplicationPeriod,

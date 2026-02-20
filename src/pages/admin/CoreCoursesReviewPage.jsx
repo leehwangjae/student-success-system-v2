@@ -12,7 +12,8 @@ function CoreCoursesReviewPage() {
     coreCourses,
     coreCoursesSubmissions,
     approveCoreCourses,
-    rejectCoreCourses
+    rejectCoreCourses,
+    fetchCoreCoursesSubmissionDetail,
   } = useAppContext();
 
   const { showAlert } = useModalStore();
@@ -22,6 +23,7 @@ function CoreCoursesReviewPage() {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [reviewingSubmission, setReviewingSubmission] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
   const [showCourseStats, setShowCourseStats] = useState(false);
 
   // 필터링된 학생 목록 (4학년 + 선택한 학과)
@@ -120,8 +122,11 @@ function CoreCoursesReviewPage() {
     setSelectedDepartment('전체');
   };
 
-  const handleReview = (submission, student) => {
-    setReviewingSubmission({ submission, student });
+  const handleReview = async (submission, student) => {
+    setReviewLoading(true);
+    const detail = await fetchCoreCoursesSubmissionDetail(submission.id);
+    setReviewLoading(false);
+    setReviewingSubmission({ submission: detail || submission, student });
   };
 
   const handleApprove = async (submissionId) => {
@@ -476,10 +481,8 @@ function CoreCoursesReviewPage() {
                         {submission ? `${submission.totalScore}점` : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
-                        {(submission?.uploadedFiles?.length > 0 || submission?.transcriptFileName) ? (
-                          <span className="text-green-600" title={`${submission?.uploadedFiles?.length || 1}개 파일`}>
-                            📄 {submission?.uploadedFiles?.length > 1 ? `${submission.uploadedFiles.length}개` : ''}
-                          </span>
+                        {(submission?.hasUploadedFiles || submission?.transcriptFileName) ? (
+                          <span className="text-green-600">📄 있음</span>
                         ) : (
                           <span className="text-red-600">❌</span>
                         )}
@@ -491,9 +494,10 @@ function CoreCoursesReviewPage() {
                         {submission ? (
                           <button
                             onClick={() => handleReview(submission, student)}
-                            className="text-blue-600 hover:text-blue-900"
+                            disabled={reviewLoading}
+                            className="text-blue-600 hover:text-blue-900 disabled:text-gray-400 disabled:cursor-wait"
                           >
-                            {submission.status === 'pending' ? '검토' : '보기'}
+                            {reviewLoading ? '로딩...' : (submission.status === 'pending' ? '검토' : '보기')}
                           </button>
                         ) : (
                           <button className="text-gray-400 cursor-not-allowed">
