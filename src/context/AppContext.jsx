@@ -32,7 +32,7 @@ export const AppProvider = ({ children }) => {
     try {
       const { data, error } = await supabase
         .from('users_2025_11_27_07_17')
-        .select('id, student_id, username, name, department, field, grade, email, phone, role, memo, status, account_type, ssn, bank_name, account_number, account_holder, privacy_consented, privacy_consented_at, non_curricular_score, core_subject_score, core_courses_score, industry_score, created_at')
+        .select('*')
         .eq('account_type', 'student')
         .eq('status', 'approved');
 
@@ -163,7 +163,7 @@ export const AppProvider = ({ children }) => {
     try {
       const { data, error } = await supabase
         .from('users_2025_11_27_07_17')
-        .select('id, student_id, username, name, department, field, grade, email, phone, account_type, status, created_at')
+        .select('*')
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
