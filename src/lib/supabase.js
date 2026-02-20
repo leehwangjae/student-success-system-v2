@@ -12,8 +12,27 @@ if (!supabaseUrl || !supabaseKey) {
     '- VITE_SUPABASE_URL\n' +
     '- VITE_SUPABASE_ANON_KEY\n\n' +
     'Vercel: 프로젝트 설정 → Environment Variables에서 설정\n' +
-    '로컬: .env 파일에 설정'
+    '로컬: .env.local 파일에 설정'
   );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+  },
+  global: {
+    // 요청 타임아웃: 30초 (기본값보다 넉넉하게)
+    fetch: (url, options = {}) => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      return fetch(url, { ...options, signal: controller.signal }).finally(() =>
+        clearTimeout(timeoutId)
+      );
+    },
+  },
+  db: {
+    schema: 'public',
+  },
+});
