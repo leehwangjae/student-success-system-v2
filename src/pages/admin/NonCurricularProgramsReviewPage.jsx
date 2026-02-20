@@ -23,9 +23,9 @@ function NonCurricularProgramsReviewPage() {
   const [reviewingSubmission, setReviewingSubmission] = useState(null);
   const [showProgramStats, setShowProgramStats] = useState(false);
 
-  // 필터링된 학생 목록 (4학년 + 선택한 분야)
+  // 필터링된 학생 목록 (선택한 분야)
   const filteredStudents = useMemo(() => {
-    return students.filter(s => s.grade === 4 && s.field === selectedField);
+    return students.filter(s => s.field === selectedField);
   }, [students, selectedField]);
 
   // 학생별 제출 데이터와 조합
