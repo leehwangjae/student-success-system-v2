@@ -170,11 +170,14 @@ function SignupPage() {
       console.log('✅ 비밀번호 해싱 완료');
 
       // 4. 회원가입 데이터 준비
+      // account_type 매핑: 'staff'는 DB에 'admin'으로 저장 (CHECK constraint 대응)
+      const accountTypeValue = activeTab === 'staff' ? 'admin' : activeTab;
+
       const userData = {
         username: formData.username.trim(),
         password: hashedPassword,  // 🔐 해싱된 비밀번호 저장
         name: formData.name.trim(),
-        account_type: activeTab,
+        account_type: accountTypeValue,
         role: roleValue,  // 🔥 매핑된 role 사용
         status: 'approved',  // 즉시 승인 (관리자 승인 불필요)
         email: formData.email.trim(),  // 필수 항목
