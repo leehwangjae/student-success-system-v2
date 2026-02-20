@@ -503,73 +503,73 @@ function StudentPage() {
           <div className="flex border-b">
             <button
               onClick={() => setActiveTab('info')}
-              className={`flex-1 px-6 py-4 font-semibold ${
+              className={`flex-1 px-3 py-4 font-semibold text-center leading-tight text-sm ${
                 activeTab === 'info'
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-600 hover:text-blue-600'
               }`}
             >
-              📋 내 정보
+              📋<br />내 정보
             </button>
             <button
               onClick={() => setActiveTab('programs')}
-              className={`flex-1 px-6 py-4 font-semibold ${
+              className={`flex-1 px-3 py-4 font-semibold text-center leading-tight text-sm ${
                 activeTab === 'programs'
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-600 hover:text-blue-600'
               }`}
             >
-              📚 프로그램
+              📚<br />프로그램
             </button>
             <button
               onClick={() => setActiveTab('history')}
-              className={`flex-1 px-6 py-4 font-semibold ${
+              className={`flex-1 px-3 py-4 font-semibold text-center leading-tight text-sm ${
                 activeTab === 'history'
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-600 hover:text-blue-600'
               }`}
             >
-              📝 신청 내역
+              📝<br />신청 내역
             </button>
             <button
               onClick={() => setActiveTab('notices')}
-              className={`flex-1 px-6 py-4 font-semibold ${
+              className={`flex-1 px-3 py-4 font-semibold text-center leading-tight text-sm ${
                 activeTab === 'notices'
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-600 hover:text-blue-600'
               }`}
             >
-              📢 공지사항
+              📢<br />공지사항
             </button>
             <button
               onClick={() => setActiveTab('coreCourses')}
-              className={`flex-1 px-6 py-4 font-semibold ${
+              className={`flex-1 px-3 py-4 font-semibold text-center leading-tight text-sm ${
                 activeTab === 'coreCourses'
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-600 hover:text-blue-600'
               }`}
             >
-              🎓 전략산업 교과목 신청
+              🎓<br />전략산업 교과목 신청
             </button>
             <button
               onClick={() => setActiveTab('nonCurricular')}
-              className={`flex-1 px-6 py-4 font-semibold ${
+              className={`flex-1 px-3 py-4 font-semibold text-center leading-tight text-sm ${
                 activeTab === 'nonCurricular'
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-600 hover:text-blue-600'
               }`}
             >
-              🎯 비교과 프로그램 신청
+              🎯<br />비교과 프로그램 신청
             </button>
             <button
               onClick={() => setActiveTab('questionBoard')}
-              className={`flex-1 px-6 py-4 font-semibold ${
+              className={`flex-1 px-3 py-4 font-semibold text-center leading-tight text-sm ${
                 activeTab === 'questionBoard'
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-600 hover:text-blue-600'
               }`}
             >
-              💬 질문게시판
+              💬<br />질문게시판
             </button>
           </div>
         </div>
