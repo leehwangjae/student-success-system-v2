@@ -1244,26 +1244,36 @@ export const AppProvider = ({ children }) => {
     return nonCurricularSubmissions.find(s => s.studentId === studentId);
   };
 
-  // 초기 데이터 로드
+  // 초기 데이터 로드 - 역할별 분리 + 순차 로드로 DB 부하 최소화
   useEffect(() => {
-    if (currentUser) {
-      loadStudentsFromSupabase();
-      loadProgramsFromSupabase();
-      loadNoticesFromSupabase();
-      loadProgramApplicationsFromSupabase();
-      loadCoreCoursesFromSupabase();
-      loadCoreCoursesSubmissionsFromSupabase();
+    if (!currentUser) return;
 
-      // admin과 master 모두 승인 관리 가능
-      if (currentUser.role === 'admin' || currentUser.role === 'master' ||
-          currentUser.accountType === 'admin' || currentUser.accountType === 'master') {
-        loadPendingUsersFromSupabase();
+    const isAdmin = currentUser.role === 'admin' || currentUser.role === 'master' ||
+                    currentUser.accountType === 'admin' || currentUser.accountType === 'master';
+
+    const loadData = async () => {
+      // 공통: 공지사항, 비교과/핵심교과 프로그램 목록은 모두 필요
+      await loadNoticesFromSupabase();
+      await loadCoreCoursesFromSupabase();
+      await loadNonCurricularProgramsFromSupabase();
+
+      if (isAdmin) {
+        // 관리자: 전체 데이터 순차 로드
+        await loadStudentsFromSupabase();
+        await loadProgramsFromSupabase();
+        await loadProgramApplicationsFromSupabase();
+        await loadPendingUsersFromSupabase();
+        await loadCoreCoursesSubmissionsFromSupabase();
+        await loadNonCurricularSubmissionsFromSupabase();
+      } else {
+        // 학생: 본인 관련 데이터만 로드
+        await loadCoreCoursesSubmissionsFromSupabase();
+        await loadNonCurricularSubmissionsFromSupabase();
+        await loadProgramApplicationsFromSupabase();
       }
+    };
 
-      // 비교과 프로그램 데이터 로드
-      loadNonCurricularProgramsFromSupabase();
-      loadNonCurricularSubmissionsFromSupabase();
-    }
+    loadData();
   }, [currentUser]);
 
   return (
