@@ -28,27 +28,42 @@ function ApplicationPeriodSettingPage() {
   const [isSavingCore, setIsSavingCore] = useState(false);
   const [isSavingNon, setIsSavingNon] = useState(false);
 
+  // ISO 문자열을 로컬 datetime-local input 형식(YYYY-MM-DDTHH:mm)으로 변환
+  const toLocalDatetimeInput = (isoString) => {
+    if (!isoString) return '';
+    const d = new Date(isoString);
+    // 로컬 시각 기준으로 변환
+    const yyyy = d.getFullYear();
+    const MM = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${yyyy}-${MM}-${dd}T${hh}:${mm}`;
+  };
+
+  // datetime-local 입력값(로컬 시각)을 ISO 문자열로 변환 (UTC 변환 없이 로컬 기준)
+  const toLocalISOString = (localDatetimeStr) => {
+    if (!localDatetimeStr) return null;
+    // "2026-02-22T23:59" 형식을 로컬 시각 그대로 ISO처럼 저장 (+09:00 추가)
+    const d = new Date(localDatetimeStr);
+    const offsetMs = d.getTimezoneOffset() * 60 * 1000;
+    const localMs = d.getTime() - offsetMs;
+    return new Date(localMs).toISOString();
+  };
+
   // 기존 설정 로드
   useEffect(() => {
     if (applicationPeriods.coreCourses) {
       setCoreCoursesForm({
-        startDate: applicationPeriods.coreCourses.startDate
-          ? applicationPeriods.coreCourses.startDate.slice(0, 16)
-          : '',
-        endDate: applicationPeriods.coreCourses.endDate
-          ? applicationPeriods.coreCourses.endDate.slice(0, 16)
-          : '',
+        startDate: toLocalDatetimeInput(applicationPeriods.coreCourses.startDate),
+        endDate: toLocalDatetimeInput(applicationPeriods.coreCourses.endDate),
         isActive: applicationPeriods.coreCourses.isActive || false
       });
     }
     if (applicationPeriods.nonCurricular) {
       setNonCurricularForm({
-        startDate: applicationPeriods.nonCurricular.startDate
-          ? applicationPeriods.nonCurricular.startDate.slice(0, 16)
-          : '',
-        endDate: applicationPeriods.nonCurricular.endDate
-          ? applicationPeriods.nonCurricular.endDate.slice(0, 16)
-          : '',
+        startDate: toLocalDatetimeInput(applicationPeriods.nonCurricular.startDate),
+        endDate: toLocalDatetimeInput(applicationPeriods.nonCurricular.endDate),
         isActive: applicationPeriods.nonCurricular.isActive || false
       });
     }
@@ -87,8 +102,8 @@ function ApplicationPeriodSettingPage() {
     showConfirm('전략산업 교과목 신청 기간을 저장하시겠습니까?', async () => {
       setIsSavingCore(true);
       const result = await saveApplicationPeriod('core_courses', {
-        startDate: coreCoursesForm.startDate ? new Date(coreCoursesForm.startDate).toISOString() : null,
-        endDate: coreCoursesForm.endDate ? new Date(coreCoursesForm.endDate).toISOString() : null,
+        startDate: toLocalISOString(coreCoursesForm.startDate),
+        endDate: toLocalISOString(coreCoursesForm.endDate),
         isActive: coreCoursesForm.isActive
       });
       setIsSavingCore(false);
@@ -116,8 +131,8 @@ function ApplicationPeriodSettingPage() {
     showConfirm('비교과 프로그램 신청 기간을 저장하시겠습니까?', async () => {
       setIsSavingNon(true);
       const result = await saveApplicationPeriod('non_curricular', {
-        startDate: nonCurricularForm.startDate ? new Date(nonCurricularForm.startDate).toISOString() : null,
-        endDate: nonCurricularForm.endDate ? new Date(nonCurricularForm.endDate).toISOString() : null,
+        startDate: toLocalISOString(nonCurricularForm.startDate),
+        endDate: toLocalISOString(nonCurricularForm.endDate),
         isActive: nonCurricularForm.isActive
       });
       setIsSavingNon(false);
