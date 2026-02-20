@@ -21,6 +21,7 @@ import {
 } from '../utils/coreCoursesHelpers';
 import NonCurricularProgramsApplicationPage from './student/NonCurricularProgramsApplicationPage';
 import CoreCoursesCheckPage from './student/CoreCoursesCheckPage';
+import QuestionBoardPage from './student/QuestionBoardPage';
 import MyInfo from '../components/student/MyInfo';
 
 function StudentPage() {
@@ -560,6 +561,16 @@ function StudentPage() {
             >
               🎯 비교과 프로그램 신청
             </button>
+            <button
+              onClick={() => setActiveTab('questionBoard')}
+              className={`flex-1 px-6 py-4 font-semibold ${
+                activeTab === 'questionBoard'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-600 hover:text-blue-600'
+              }`}
+            >
+              💬 질문게시판
+            </button>
           </div>
         </div>
 
@@ -570,6 +581,7 @@ function StudentPage() {
           {activeTab === 'notices' && renderNoticesTab()}
           {activeTab === 'coreCourses' && <CoreCoursesCheckPage />}
           {activeTab === 'nonCurricular' && <NonCurricularProgramsApplicationPage />}
+          {activeTab === 'questionBoard' && <QuestionBoardPage />}
         </div>
       </div>
 

@@ -33,6 +33,9 @@ export const AppProvider = ({ children }) => {
     nonCurricular: { startDate: null, endDate: null, isActive: false }
   });
 
+  // 질문게시판
+  const [questionPosts, setQuestionPosts] = useState([]);
+
   // Supabase에서 학생 데이터 로드
   const loadStudentsFromSupabase = async () => {
     try {
@@ -1262,6 +1265,143 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  // ── 질문게시판 ──────────────────────────────────────────────────
+
+  const loadQuestionPostsFromSupabase = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('question_board')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formatted = (data || []).map(row => ({
+        id: row.id,
+        studentId: row.student_id,
+        studentName: row.student_name,
+        field: row.field,
+        department: row.department,
+        title: row.title,
+        content: row.content,
+        isSecret: row.is_secret,
+        status: row.status,          // 'pending' | 'answered'
+        answer: row.answer,
+        answeredBy: row.answered_by,
+        answeredAt: row.answered_at,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      }));
+
+      setQuestionPosts(formatted);
+    } catch (error) {
+      console.error('❌ 질문게시판 로드 실패:', error);
+    }
+  };
+
+  // 학생: 질문 등록
+  const createQuestionPost = async (postData) => {
+    try {
+      const { error } = await supabase
+        .from('question_board')
+        .insert([{
+          student_id: currentUser.id,
+          student_name: currentUser.name,
+          field: currentUser.field || '',
+          department: currentUser.department || '',
+          title: postData.title,
+          content: postData.content,
+          is_secret: postData.isSecret || false,
+          status: 'pending',
+        }]);
+
+      if (error) throw error;
+      await loadQuestionPostsFromSupabase();
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  // 학생: 본인 질문 수정
+  const updateQuestionPost = async (postId, postData) => {
+    try {
+      const { error } = await supabase
+        .from('question_board')
+        .update({
+          title: postData.title,
+          content: postData.content,
+          is_secret: postData.isSecret || false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', postId)
+        .eq('student_id', currentUser.id); // 본인 글만 수정 가능
+
+      if (error) throw error;
+      await loadQuestionPostsFromSupabase();
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  // 학생: 본인 질문 삭제
+  const deleteQuestionPost = async (postId) => {
+    try {
+      const { error } = await supabase
+        .from('question_board')
+        .delete()
+        .eq('id', postId)
+        .eq('student_id', currentUser.id);
+
+      if (error) throw error;
+      await loadQuestionPostsFromSupabase();
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  // 관리자: 답변 등록/수정
+  const answerQuestionPost = async (postId, answerText) => {
+    try {
+      const { error } = await supabase
+        .from('question_board')
+        .update({
+          answer: answerText,
+          answered_by: currentUser.name,
+          answered_at: new Date().toISOString(),
+          status: 'answered',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', postId);
+
+      if (error) throw error;
+      await loadQuestionPostsFromSupabase();
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  // 관리자: 질문 삭제
+  const adminDeleteQuestionPost = async (postId) => {
+    try {
+      const { error } = await supabase
+        .from('question_board')
+        .delete()
+        .eq('id', postId);
+
+      if (error) throw error;
+      await loadQuestionPostsFromSupabase();
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  // ────────────────────────────────────────────────────────────────
+
   // 신청 기간 내 여부 체크 (학생용)
   const isWithinApplicationPeriod = (type) => {
     const period = type === 'core_courses'
@@ -1295,6 +1435,7 @@ export const AppProvider = ({ children }) => {
       await loadCoreCoursesFromSupabase();
       await loadNonCurricularProgramsFromSupabase();
       await loadApplicationPeriodsFromSupabase();
+      await loadQuestionPostsFromSupabase();
 
       if (isAdmin) {
         // 관리자: 전체 데이터 순차 로드
@@ -1360,7 +1501,14 @@ export const AppProvider = ({ children }) => {
       getNonCurricularSubmission,
       applicationPeriods,
       saveApplicationPeriod,
-      isWithinApplicationPeriod
+      isWithinApplicationPeriod,
+      questionPosts,
+      loadQuestionPostsFromSupabase,
+      createQuestionPost,
+      updateQuestionPost,
+      deleteQuestionPost,
+      answerQuestionPost,
+      adminDeleteQuestionPost,
     }}>
       {children}
     </AppContext.Provider>
