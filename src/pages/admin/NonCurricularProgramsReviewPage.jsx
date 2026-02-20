@@ -12,7 +12,8 @@ function NonCurricularProgramsReviewPage() {
     nonCurricularPrograms,
     nonCurricularSubmissions,
     approveNonCurricularPrograms,
-    rejectNonCurricularPrograms
+    rejectNonCurricularPrograms,
+    fetchNonCurricularSubmissionDetail,
   } = useAppContext();
 
   const { showAlert } = useModalStore();
@@ -21,6 +22,7 @@ function NonCurricularProgramsReviewPage() {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [reviewingSubmission, setReviewingSubmission] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
   const [showProgramStats, setShowProgramStats] = useState(false);
 
   // 필터링된 학생 목록 (선택한 분야)
@@ -100,8 +102,11 @@ function NonCurricularProgramsReviewPage() {
     }).sort((a, b) => b.completedCount - a.completedCount);
   }, [nonCurricularPrograms, selectedField, studentSubmissions, filteredStudents]);
 
-  const handleReview = (submission, student) => {
-    setReviewingSubmission({ submission, student });
+  const handleReview = async (submission, student) => {
+    setReviewLoading(true);
+    const detail = await fetchNonCurricularSubmissionDetail(submission.id);
+    setReviewLoading(false);
+    setReviewingSubmission({ submission: detail || submission, student });
   };
 
   const handleApprove = async (submissionId) => {
@@ -431,8 +436,8 @@ function NonCurricularProgramsReviewPage() {
                         {submission ? `${submission.totalScore}점` : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
-                        {submission?.certificateFiles && submission.certificateFiles.length > 0 ? (
-                          <span className="text-green-600">📄 {submission.certificateFiles.length}개</span>
+                        {submission?.hasCertificateFiles ? (
+                          <span className="text-green-600">📄 있음</span>
                         ) : (
                           <span className="text-red-600">❌</span>
                         )}
@@ -444,9 +449,10 @@ function NonCurricularProgramsReviewPage() {
                         {submission ? (
                           <button
                             onClick={() => handleReview(submission, student)}
-                            className="text-blue-600 hover:text-blue-900"
+                            disabled={reviewLoading}
+                            className="text-blue-600 hover:text-blue-900 disabled:text-gray-400 disabled:cursor-wait"
                           >
-                            {submission.status === 'pending' ? '검토' : '보기'}
+                            {reviewLoading ? '로딩...' : (submission.status === 'pending' ? '검토' : '보기')}
                           </button>
                         ) : (
                           <button className="text-gray-400 cursor-not-allowed">
