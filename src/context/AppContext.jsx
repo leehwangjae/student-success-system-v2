@@ -558,8 +558,27 @@ export const AppProvider = ({ children }) => {
       const program = programs.find(p => p.id === application.programId);
       if (!program) throw new Error('프로그램을 찾을 수 없습니다.');
 
-      const student = students.find(s => s.id === application.studentId);
-      if (!student) throw new Error('학생을 찾을 수 없습니다.');
+      // students 배열에 없을 경우 DB에서 직접 조회
+      let student = students.find(s => s.id === application.studentId);
+      if (!student) {
+        const { data: userData, error: userFetchErr } = await supabase
+          .from('users_2025_11_27_07_17')
+          .select('id, name, non_curricular_score, core_subject_score, industry_score, non_curricular_history, core_subject_history, industry_history')
+          .eq('id', application.studentId)
+          .single();
+        if (userFetchErr || !userData) throw new Error('학생을 찾을 수 없습니다.');
+        // DB 필드명을 camelCase로 매핑
+        student = {
+          id: userData.id,
+          name: userData.name,
+          nonCurricularScore: userData.non_curricular_score || 0,
+          coreSubjectScore: userData.core_subject_score || 0,
+          industryScore: userData.industry_score || 0,
+          nonCurricularHistory: userData.non_curricular_history || [],
+          coreSubjectHistory: userData.core_subject_history || [],
+          industryHistory: userData.industry_history || [],
+        };
+      }
 
       const { error: appError } = await supabase
         .from('program_applications_2025_11_27_07_17')
@@ -951,11 +970,33 @@ export const AppProvider = ({ children }) => {
 
   const approveCoreCourses = async (submissionId) => {
     try {
-      const submission = coreCoursesSubmissions.find(s => s.id === submissionId);
-      if (!submission) throw new Error('제출 데이터를 찾을 수 없습니다.');
+      // coreCoursesSubmissions 배열 또는 DB에서 직접 제출 데이터 조회
+      let submission = coreCoursesSubmissions.find(s => s.id === submissionId);
+      if (!submission) {
+        // 배열에 없으면 DB에서 직접 조회
+        const { data: subData, error: subFetchErr } = await supabase
+          .from('core_courses_submissions_2025_11_27_07_17')
+          .select('id, student_id, total_score')
+          .eq('id', submissionId)
+          .single();
+        if (subFetchErr || !subData) throw new Error('제출 데이터를 찾을 수 없습니다.');
+        submission = {
+          id: subData.id,
+          studentId: subData.student_id,
+          totalScore: subData.total_score,
+        };
+      }
 
-      const student = students.find(s => s.id === submission.studentId);
-      if (!student) throw new Error('학생 정보를 찾을 수 없습니다.');
+      // 학생 이름: students 배열 우선, 없으면 DB에서 조회
+      let studentName = students.find(s => s.id === submission.studentId)?.name;
+      if (!studentName) {
+        const { data: userData } = await supabase
+          .from('users_2025_11_27_07_17')
+          .select('name')
+          .eq('id', submission.studentId)
+          .single();
+        studentName = userData?.name || '학생';
+      }
 
       const { error: userError } = await supabase
         .from('users_2025_11_27_07_17')
@@ -981,9 +1022,9 @@ export const AppProvider = ({ children }) => {
         loadStudentsFromSupabase()
       ]);
 
-      return { 
+      return {
         success: true,
-        message: `${student.name} 학생의 핵심교과목 ${submission.totalScore}점이 승인되었습니다.`
+        message: `${studentName} 학생의 핵심교과목 ${submission.totalScore}점이 승인되었습니다.`
       };
     } catch (error) {
       return { success: false, error: error.message };
@@ -1142,8 +1183,21 @@ export const AppProvider = ({ children }) => {
   // 비교과 프로그램 승인
   const approveNonCurricularPrograms = async (submissionId) => {
     try {
-      const submission = nonCurricularSubmissions.find(s => s.id === submissionId);
-      if (!submission) throw new Error('제출 데이터를 찾을 수 없습니다.');
+      // nonCurricularSubmissions 배열 또는 DB에서 직접 조회
+      let submission = nonCurricularSubmissions.find(s => s.id === submissionId);
+      if (!submission) {
+        const { data: subData, error: subFetchErr } = await supabase
+          .from('non_curricular_submissions_2025_11_27_07_17')
+          .select('id, student_id, total_score')
+          .eq('id', submissionId)
+          .single();
+        if (subFetchErr || !subData) throw new Error('제출 데이터를 찾을 수 없습니다.');
+        submission = {
+          id: subData.id,
+          studentId: subData.student_id,
+          totalScore: subData.total_score,
+        };
+      }
 
       // 학생 점수 업데이트
       const { error: userError } = await supabase
