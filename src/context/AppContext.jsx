@@ -687,7 +687,7 @@ export const AppProvider = ({ children }) => {
     try {
       const { data, error } = await supabase
         .from('core_courses_submissions_2025_11_27_07_17')
-        .select('id, student_id, field, department, completed_courses, total_completed_count, total_score, payment_info, grade_at_2025_fall, status, rejection_reason, submitted_at, reviewed_at, reviewed_by, created_at, updated_at');
+        .select('id, student_id, field, department, completed_courses, uploaded_files, total_completed_count, total_score, payment_info, grade_at_2025_fall, status, rejection_reason, submitted_at, reviewed_at, reviewed_by, created_at, updated_at');
 
       if (error) {
         // 테이블이 없거나 권한이 없는 경우 조용히 빈 배열 설정

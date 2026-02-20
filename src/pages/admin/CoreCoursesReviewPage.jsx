@@ -476,8 +476,10 @@ function CoreCoursesReviewPage() {
                         {submission ? `${submission.totalScore}점` : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
-                        {submission?.transcriptFileName ? (
-                          <span className="text-green-600">📄</span>
+                        {(submission?.uploadedFiles?.length > 0 || submission?.transcriptFileName) ? (
+                          <span className="text-green-600" title={`${submission?.uploadedFiles?.length || 1}개 파일`}>
+                            📄 {submission?.uploadedFiles?.length > 1 ? `${submission.uploadedFiles.length}개` : ''}
+                          </span>
                         ) : (
                           <span className="text-red-600">❌</span>
                         )}
