@@ -41,7 +41,7 @@ export const AppProvider = ({ children }) => {
     try {
       const { data, error } = await supabase
         .from('users_2025_11_27_07_17')
-        .select('id, student_id, username, name, department, field, grade, email, phone, password, role, account_type, status, memo, ssn, bank_name, account_number, account_holder, privacy_consented, privacy_consented_at, non_curricular_score, core_subject_score, core_courses_score, industry_score, non_curricular_history, core_subject_history, industry_history')
+        .select('*')
         .eq('account_type', 'student')
         .eq('status', 'approved');
 
@@ -1327,7 +1327,7 @@ export const AppProvider = ({ children }) => {
     try {
       const { data, error } = await supabase
         .from('question_board')
-        .select('id, student_id, student_name, field, department, title, content, is_secret, status, answer, answered_by, answered_at, created_at, updated_at')
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
