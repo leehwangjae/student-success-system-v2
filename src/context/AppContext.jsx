@@ -41,7 +41,7 @@ export const AppProvider = ({ children }) => {
     try {
       const { data, error } = await supabase
         .from('users_2025_11_27_07_17')
-        .select('*')
+        .select('id, student_id, username, name, department, field, grade, email, phone, password, role, account_type, status, memo, ssn, bank_name, account_number, account_holder, privacy_consented, privacy_consented_at, non_curricular_score, core_subject_score, core_courses_score, industry_score, non_curricular_history, core_subject_history, industry_history')
         .eq('account_type', 'student')
         .eq('status', 'approved');
 
@@ -85,7 +85,7 @@ export const AppProvider = ({ children }) => {
     try {
       const { data, error } = await supabase
         .from('programs_2025_11_27_07_17')
-        .select('*')
+        .select('id, title, category, field, start_date, end_date, status, max_participants, requires_file, score, description, image_url, attached_files')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -117,7 +117,7 @@ export const AppProvider = ({ children }) => {
     try {
       const { data, error } = await supabase
         .from('notices_2025_11_27_07_17')
-        .select('*')
+        .select('id, title, field, content, author, date, views, image_url, attached_files, is_popup')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -670,7 +670,7 @@ export const AppProvider = ({ children }) => {
     try {
       const { data, error } = await supabase
         .from('core_courses_2025_11_27_07_17')
-        .select('*')
+        .select('id, field, name, course_code, credits, category, semester, target_departments, target_grades, created_at')
         .order('id', { ascending: true });
 
       if (error) {
@@ -763,7 +763,7 @@ export const AppProvider = ({ children }) => {
     try {
       const { data, error } = await supabase
         .from('non_curricular_programs_2025_11_27_07_17')
-        .select('*')
+        .select('id, program_name, category, field, department, score, description, created_at, updated_at')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -1325,7 +1325,7 @@ export const AppProvider = ({ children }) => {
     try {
       const { data, error } = await supabase
         .from('question_board')
-        .select('*')
+        .select('id, student_id, student_name, field, department, title, content, is_secret, status, answer, answered_by, answered_at, created_at, updated_at')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -1484,26 +1484,32 @@ export const AppProvider = ({ children }) => {
                     currentUser.accountType === 'admin' || currentUser.accountType === 'master';
 
     const loadData = async () => {
-      // 공통: 공지사항, 비교과/핵심교과 프로그램 목록은 모두 필요
-      await loadNoticesFromSupabase();
-      await loadCoreCoursesFromSupabase();
-      await loadNonCurricularProgramsFromSupabase();
-      await loadApplicationPeriodsFromSupabase();
-      await loadQuestionPostsFromSupabase();
+      // 공통 데이터 + 역할별 데이터를 병렬 로드
+      const commonLoads = [
+        loadNoticesFromSupabase(),
+        loadCoreCoursesFromSupabase(),
+        loadNonCurricularProgramsFromSupabase(),
+        loadApplicationPeriodsFromSupabase(),
+        loadQuestionPostsFromSupabase(),
+      ];
 
       if (isAdmin) {
-        // 관리자: 전체 데이터 순차 로드
-        await loadStudentsFromSupabase();
-        await loadProgramsFromSupabase();
-        await loadProgramApplicationsFromSupabase();
-        await loadPendingUsersFromSupabase();
-        await loadCoreCoursesSubmissionsFromSupabase();
-        await loadNonCurricularSubmissionsFromSupabase();
+        await Promise.all([
+          ...commonLoads,
+          loadStudentsFromSupabase(),
+          loadProgramsFromSupabase(),
+          loadProgramApplicationsFromSupabase(),
+          loadPendingUsersFromSupabase(),
+          loadCoreCoursesSubmissionsFromSupabase(),
+          loadNonCurricularSubmissionsFromSupabase(),
+        ]);
       } else {
-        // 학생: 본인 관련 데이터만 로드
-        await loadCoreCoursesSubmissionsFromSupabase();
-        await loadNonCurricularSubmissionsFromSupabase();
-        await loadProgramApplicationsFromSupabase();
+        await Promise.all([
+          ...commonLoads,
+          loadCoreCoursesSubmissionsFromSupabase(),
+          loadNonCurricularSubmissionsFromSupabase(),
+          loadProgramApplicationsFromSupabase(),
+        ]);
       }
     };
 
