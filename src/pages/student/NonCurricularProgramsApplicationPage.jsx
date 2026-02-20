@@ -242,7 +242,7 @@ function NonCurricularProgramsApplicationPage() {
                 </div>
                 {isPending && (
                   <div className="text-sm text-gray-600 mt-1">
-                    관리자 검토 대기 중입니다...
+                    관리자 검토 대기 중입니다. 승인 전까지 수정 가능합니다.
                   </div>
                 )}
                 {isApproved && (
@@ -252,11 +252,65 @@ function NonCurricularProgramsApplicationPage() {
                 )}
                 {isRejected && (
                   <div className="text-sm text-red-700 mt-1">
-                    반려 사유: {submission.rejection_reason}
+                    반려 사유: {submission.rejectionReason || submission.rejection_reason}
                   </div>
                 )}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* 제출 현황 - 제출 내역이 있을 때 표시 */}
+        {submission && selectedPrograms.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h3 className="font-bold text-gray-900 mb-4">📋 제출 현황</h3>
+            <div className="space-y-2">
+              {selectedPrograms.map((program, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                      program.category === '취업역량' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
+                    }`}>{program.category}</span>
+                    <span className="text-sm font-medium text-gray-900">{program.programName}</span>
+                  </div>
+                  <span className="font-bold text-green-600">{program.score}점</span>
+                </div>
+              ))}
+              <div className="flex justify-between items-center pt-3 border-t border-gray-200 mt-2">
+                <span className="font-bold text-gray-700">합계</span>
+                <span className="font-bold text-green-600 text-lg">{totalScore}점 ({selectedPrograms.length}개)</span>
+              </div>
+            </div>
+
+            {/* 업로드된 파일 목록 (제출 현황에서도 확인) */}
+            {certificateFiles.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="text-sm font-semibold text-gray-700 mb-2">📎 업로드된 이수증</div>
+                <div className="space-y-1">
+                  {certificateFiles.map((file, index) => (
+                    <div key={index} className="flex items-center gap-2 text-sm text-gray-600">
+                      <span>📄</span>
+                      <span className="flex-1">{file.fileName || file.name}</span>
+                      {file.fileData && (
+                        <button
+                          onClick={() => {
+                            const link = document.createElement('a');
+                            link.href = file.fileData;
+                            link.download = file.fileName || file.name;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                          }}
+                          className="text-blue-600 hover:text-blue-700 text-xs underline"
+                        >
+                          다운로드
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
