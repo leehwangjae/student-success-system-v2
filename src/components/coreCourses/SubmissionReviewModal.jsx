@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { SUBMISSION_STATUS_LABEL, POINTS_PER_COURSE } from './constants';
-import { formatDate, formatFileSize, downloadBase64File } from '../../utils/coreCoursesHelpers';
+import { formatDate, formatFileSize } from '../../utils/coreCoursesHelpers';
+import { getFilePreviewUrl, downloadFile } from '../../utils/storageHelpers';
 
 function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove, onReject }) {
   const [decision, setDecision] = useState('approve'); // approve / reject
@@ -14,44 +15,10 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
   const completedCourses = submission.completedCourses || [];
   const uploadedFiles = submission.uploadedFiles || submission.uploaded_files || [];
 
-  // 파일 미리보기 URL 생성
+  // 파일 미리보기 URL 생성 (Storage URL 및 기존 base64 모두 지원)
   const previewUrl = useMemo(() => {
-    // 업로드된 파일만 처리
     if (!uploadedFiles || uploadedFiles.length === 0 || selectedFileIndex >= uploadedFiles.length) return null;
-    const file = uploadedFiles[selectedFileIndex];
-    if (!file) return null;
-
-    const fileData = file.data || file.fileData;
-    const fileName = file.name || file.fileName;
-
-    if (!fileData || !fileName) return null;
-
-    const fileNameLower = fileName.toLowerCase();
-    let mimeType = '';
-
-    if (fileNameLower.endsWith('.pdf')) {
-      mimeType = 'application/pdf';
-    } else if (fileNameLower.endsWith('.png')) {
-      mimeType = 'image/png';
-    } else if (fileNameLower.endsWith('.jpg') || fileNameLower.endsWith('.jpeg')) {
-      mimeType = 'image/jpeg';
-    } else if (fileNameLower.endsWith('.gif')) {
-      mimeType = 'image/gif';
-    } else {
-      return null; // 지원하지 않는 형식
-    }
-
-    try {
-      // base64 문자열에서 data URL prefix 제거
-      const base64Data = fileData.includes('base64,')
-        ? fileData.split('base64,')[1]
-        : fileData;
-
-      return `data:${mimeType};base64,${base64Data}`;
-    } catch (error) {
-      console.error('Preview URL 생성 실패:', error);
-      return null;
-    }
+    return getFilePreviewUrl(uploadedFiles[selectedFileIndex]);
   }, [uploadedFiles, selectedFileIndex]);
 
   const handleSubmit = async () => {
@@ -77,20 +44,12 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
 
   const handleDownload = () => {
     const file = uploadedFiles[selectedFileIndex];
-    if (file) {
-      const fileData = file.data || file.fileData;
-      const fileName = file.name || file.fileName;
-      if (fileData && fileName) {
-        downloadBase64File(fileData, fileName);
-      }
-    }
+    if (file) downloadFile(file);
   };
 
   const handleDownloadAllUploadedFiles = () => {
     uploadedFiles.forEach(file => {
-      if (file && file.fileData && file.fileName) {
-        downloadBase64File(file.fileData, file.fileName);
-      }
+      if (file) downloadFile(file);
     });
   };
 
@@ -536,11 +495,7 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
                         <button
                           onClick={() => {
                             setSelectedFileIndex(index);
-                            const fileData = file.data || file.fileData;
-                            const fileName = file.name || file.fileName;
-                            if (fileData && fileName) {
-                              downloadBase64File(fileData, fileName);
-                            }
+                            downloadFile(file);
                           }}
                           className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
                         >
