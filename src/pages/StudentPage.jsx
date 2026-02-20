@@ -549,7 +549,7 @@ function StudentPage() {
                   : 'text-gray-600 hover:text-blue-600'
               }`}
             >
-              🎓<br />전략산업 교과목 신청
+              🎓<br />전략산업 교과목<br />신청
             </button>
             <button
               onClick={() => setActiveTab('nonCurricular')}
@@ -559,7 +559,7 @@ function StudentPage() {
                   : 'text-gray-600 hover:text-blue-600'
               }`}
             >
-              🎯<br />비교과 프로그램 신청
+              🎯<br />비교과 프로그램<br />신청
             </button>
             <button
               onClick={() => setActiveTab('questionBoard')}
