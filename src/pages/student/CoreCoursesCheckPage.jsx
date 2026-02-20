@@ -18,9 +18,9 @@ import {
   canAddMoreCourses,
   groupCoursesByType,
   validateFile,
-  fileToBase64,
   formatFileSize
 } from '../../utils/coreCoursesHelpers';
+import { uploadFileToStorage, deleteFileFromStorage, downloadFile } from '../../utils/storageHelpers';
 import { useModalStore } from '../../hooks/useModal';
 
 function CoreCoursesCheckPage() {
@@ -168,13 +168,17 @@ function CoreCoursesCheckPage() {
       }
 
       try {
-        const base64 = await fileToBase64(file);
+        const { storagePath, url } = await uploadFileToStorage(
+          file,
+          `core-courses/${currentUser.id}`
+        );
         setUploadedFiles(prev => [
           ...prev,
           {
             name: file.name,
             size: file.size,
-            data: base64,
+            storagePath,
+            url,
             uploadedAt: new Date().toISOString()
           }
         ]);
@@ -188,18 +192,17 @@ function CoreCoursesCheckPage() {
   };
 
   // 파일 삭제
-  const handleFileRemove = (index) => {
+  const handleFileRemove = async (index) => {
+    const file = uploadedFiles[index];
+    if (file?.storagePath) {
+      await deleteFileFromStorage(file.storagePath);
+    }
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   // 파일 다운로드
   const handleFileDownload = (file) => {
-    const link = document.createElement('a');
-    link.href = file.data;
-    link.download = file.name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadFile(file);
   };
 
   // 제출

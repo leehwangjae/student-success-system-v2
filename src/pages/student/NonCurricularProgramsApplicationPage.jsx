@@ -6,11 +6,11 @@ import {
 } from '../../components/nonCurricularPrograms/constants';
 import {
   validateFile,
-  fileToBase64,
   formatFileSize,
   calculateTotalScore,
   groupProgramsByCategory
 } from '../../utils/nonCurricularHelpers';
+import { uploadFileToStorage, deleteFileFromStorage, downloadFile } from '../../utils/storageHelpers';
 import { useModalStore } from '../../hooks/useModal';
 
 function NonCurricularProgramsApplicationPage() {
@@ -104,13 +104,17 @@ function NonCurricularProgramsApplicationPage() {
       }
 
       try {
-        const base64 = await fileToBase64(file);
+        const { storagePath, url } = await uploadFileToStorage(
+          file,
+          `non-curricular/${currentUser.id}`
+        );
         setCertificateFiles(prev => [
           ...prev,
           {
             fileName: file.name,
             fileSize: file.size,
-            fileData: base64
+            storagePath,
+            url
           }
         ]);
       } catch (error) {
@@ -123,7 +127,11 @@ function NonCurricularProgramsApplicationPage() {
   };
 
   // 파일 삭제
-  const handleFileRemove = (index) => {
+  const handleFileRemove = async (index) => {
+    const file = certificateFiles[index];
+    if (file?.storagePath) {
+      await deleteFileFromStorage(file.storagePath);
+    }
     setCertificateFiles(prev => prev.filter((_, i) => i !== index));
   };
 
@@ -331,16 +339,9 @@ function NonCurricularProgramsApplicationPage() {
                     <div key={index} className="flex items-center gap-2 text-sm text-gray-600">
                       <span>📄</span>
                       <span className="flex-1">{file.fileName || file.name}</span>
-                      {file.fileData && (
+                      {(file.url || file.fileData) && (
                         <button
-                          onClick={() => {
-                            const link = document.createElement('a');
-                            link.href = file.fileData;
-                            link.download = file.fileName || file.name;
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                          }}
+                          onClick={() => downloadFile(file)}
                           className="text-blue-600 hover:text-blue-700 text-xs underline"
                         >
                           다운로드

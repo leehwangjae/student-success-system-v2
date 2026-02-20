@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { SUBMISSION_STATUS_LABEL } from './constants';
-import { formatDate, formatFileSize, downloadBase64File, groupProgramsByCategory } from '../../utils/nonCurricularHelpers';
+import { formatDate, formatFileSize, groupProgramsByCategory } from '../../utils/nonCurricularHelpers';
+import { getFilePreviewUrl, downloadFile } from '../../utils/storageHelpers';
 
 function NonCurricularSubmissionReviewModal({ isOpen, onClose, submission, student, onApprove, onReject }) {
   const [decision, setDecision] = useState('approve'); // approve / reject
@@ -18,41 +19,10 @@ function NonCurricularSubmissionReviewModal({ isOpen, onClose, submission, stude
   console.log('Review Modal - submission:', submission);
   console.log('Review Modal - certificateFiles:', certificateFiles);
 
-  // 선택된 파일의 미리보기 URL 생성
+  // 선택된 파일의 미리보기 URL 생성 (Storage URL 및 기존 base64 모두 지원)
   const previewUrl = useMemo(() => {
-    if (!certificateFiles || certificateFiles.length === 0 || selectedFileIndex >= certificateFiles.length) {
-      return null;
-    }
-
-    const file = certificateFiles[selectedFileIndex];
-    if (!file || !file.fileName || !file.fileData) return null;
-
-    const fileName = file.fileName.toLowerCase();
-    let mimeType = '';
-
-    if (fileName.endsWith('.pdf')) {
-      mimeType = 'application/pdf';
-    } else if (fileName.endsWith('.png')) {
-      mimeType = 'image/png';
-    } else if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
-      mimeType = 'image/jpeg';
-    } else if (fileName.endsWith('.gif')) {
-      mimeType = 'image/gif';
-    } else {
-      return null; // 지원하지 않는 형식
-    }
-
-    try {
-      // base64 문자열에서 data URL prefix 제거
-      const base64Data = file.fileData.includes('base64,')
-        ? file.fileData.split('base64,')[1]
-        : file.fileData;
-
-      return `data:${mimeType};base64,${base64Data}`;
-    } catch (error) {
-      console.error('Preview URL 생성 실패:', error);
-      return null;
-    }
+    if (!certificateFiles || certificateFiles.length === 0 || selectedFileIndex >= certificateFiles.length) return null;
+    return getFilePreviewUrl(certificateFiles[selectedFileIndex]);
   }, [certificateFiles, selectedFileIndex]);
 
   const handleSubmit = async () => {
@@ -77,16 +47,12 @@ function NonCurricularSubmissionReviewModal({ isOpen, onClose, submission, stude
   };
 
   const handleDownload = (file) => {
-    if (file && file.fileData && file.fileName) {
-      downloadBase64File(file.fileData, file.fileName);
-    }
+    if (file) downloadFile(file);
   };
 
   const handleDownloadAll = () => {
     certificateFiles.forEach(file => {
-      if (file && file.fileData && file.fileName) {
-        downloadBase64File(file.fileData, file.fileName);
-      }
+      if (file) downloadFile(file);
     });
   };
 
