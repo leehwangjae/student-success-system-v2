@@ -210,7 +210,8 @@ export const AppProvider = ({ children }) => {
         accountType: data.account_type,
         studentId: data.student_id,
         department: data.department,
-        field: data.field,
+        field: data.field || '',
+        grade: data.grade || 4,
         email: data.email,
         phone: data.phone,
         // 민감정보
@@ -865,9 +866,23 @@ export const AppProvider = ({ children }) => {
 
   const submitCoreCourses = async (submissionData) => {
     try {
-      // students 배열은 관리자만 로드하므로, 먼저 students에서 찾고 없으면 currentUser 사용
-      const student = students.find(s => s.id === submissionData.studentId) || currentUser;
-      if (!student) throw new Error('학생 정보를 찾을 수 없습니다.');
+      // field, department는 currentUser에서 직접 가져옴
+      // (students 배열은 관리자만 로드하므로 학생 로그인 시엔 비어있음)
+      let field = currentUser?.field || '';
+      let department = currentUser?.department || '';
+
+      // currentUser에 field/department가 없는 경우(구버전 localStorage) DB에서 직접 조회
+      if (!field || !department) {
+        const { data: userData } = await supabase
+          .from('users_2025_11_27_07_17')
+          .select('field, department')
+          .eq('id', submissionData.studentId)
+          .single();
+        if (userData) {
+          field = userData.field || '';
+          department = userData.department || '';
+        }
+      }
 
       const { data: existing } = await supabase
         .from('core_courses_submissions_2025_11_27_07_17')
@@ -876,8 +891,8 @@ export const AppProvider = ({ children }) => {
         .maybeSingle();
 
       const submissionPayload = {
-        field: student.field,
-        department: student.department,
+        field: field,
+        department: department,
         completed_courses: submissionData.completedCourses,
         total_completed_count: submissionData.totalCompletedCount,
         total_score: submissionData.totalScore,
