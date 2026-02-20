@@ -865,7 +865,8 @@ export const AppProvider = ({ children }) => {
 
   const submitCoreCourses = async (submissionData) => {
     try {
-      const student = students.find(s => s.id === submissionData.studentId);
+      // students 배열은 관리자만 로드하므로, 먼저 students에서 찾고 없으면 currentUser 사용
+      const student = students.find(s => s.id === submissionData.studentId) || currentUser;
       if (!student) throw new Error('학생 정보를 찾을 수 없습니다.');
 
       const { data: existing } = await supabase
