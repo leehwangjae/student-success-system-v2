@@ -6,6 +6,7 @@
  */
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { AppProvider, useAppContext } from './context/AppContext';
 import { useModalStore } from './hooks/useModal';
 import LoginPage from './pages/LoginPage';
@@ -105,6 +106,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
         <GlobalModals />
+        <SpeedInsights />
       </BrowserRouter>
     </AppProvider>
   );
