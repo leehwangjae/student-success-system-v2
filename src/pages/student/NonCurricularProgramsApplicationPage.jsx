@@ -17,6 +17,7 @@ function NonCurricularProgramsApplicationPage() {
   const {
     currentUser,
     nonCurricularPrograms,
+    nonCurricularSubmissions,
     getNonCurricularSubmission,
     submitNonCurricularPrograms
   } = useAppContext();
@@ -45,21 +46,19 @@ function NonCurricularProgramsApplicationPage() {
     return calculateTotalScore(selectedPrograms);
   }, [selectedPrograms]);
 
-  // 기존 제출 데이터 로드
+  // 기존 제출 데이터 로드 - nonCurricularSubmissions가 로드된 후에도 반응
   useEffect(() => {
     if (!currentUser) return;
 
     const submission = getNonCurricularSubmission(currentUser.id);
     if (submission) {
-      setSelectedPrograms(submission.completed_programs || []);
-      setCertificateFiles(submission.certificate_files || []);
-
-      // 승인된 상태면 수정 불가
-      if (submission.status === 'approved') {
-        showAlert('이미 승인된 제출입니다. 수정할 수 없습니다.');
-      }
+      setSelectedPrograms(submission.completedPrograms || submission.completed_programs || []);
+      setCertificateFiles(submission.certificateFiles || submission.certificate_files || []);
+    } else {
+      setSelectedPrograms([]);
+      setCertificateFiles([]);
     }
-  }, [currentUser]);
+  }, [currentUser, nonCurricularSubmissions]);
 
   // 프로그램 선택 토글
   const handleProgramToggle = (program) => {
