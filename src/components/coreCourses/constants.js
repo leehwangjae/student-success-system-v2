@@ -65,6 +65,6 @@ export const FIELD_DEPARTMENTS = {
   // 파일 업로드 설정
   export const FILE_UPLOAD_CONFIG = {
     maxSize: 10 * 1024 * 1024, // 10MB
-    acceptedFormats: ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'],
+    acceptedFormats: ['application/pdf', 'image/jpeg', 'image/png'],
     acceptedExtensions: ['.pdf', '.jpg', '.jpeg', '.png']
   };
