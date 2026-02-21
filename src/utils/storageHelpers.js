@@ -19,10 +19,8 @@ const MIME_TYPE_MAP = {
 };
 
 export async function uploadFileToStorage(file, folder) {
-  const sanitizedName = file.name.replace(/[^a-zA-Z0-9가-힣._-]/g, '_');
-  const filePath = `${folder}/${Date.now()}_${sanitizedName}`;
-
   const ext = '.' + file.name.split('.').pop().toLowerCase();
+  const filePath = `${folder}/${Date.now()}${ext}`;
   const contentType = MIME_TYPE_MAP[ext] || file.type;
 
   const { error } = await supabase.storage
