@@ -8,13 +8,26 @@ const BUCKET = 'student-submissions';
  * @param {string} folder - 'core-courses/{userId}' 또는 'non-curricular/{userId}'
  * @returns {{ storagePath, url }}
  */
+const MIME_TYPE_MAP = {
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.gif': 'image/gif',
+  '.pdf': 'application/pdf',
+  '.doc': 'application/msword',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+};
+
 export async function uploadFileToStorage(file, folder) {
   const sanitizedName = file.name.replace(/[^a-zA-Z0-9가-힣._-]/g, '_');
   const filePath = `${folder}/${Date.now()}_${sanitizedName}`;
 
+  const ext = '.' + file.name.split('.').pop().toLowerCase();
+  const contentType = MIME_TYPE_MAP[ext] || file.type;
+
   const { error } = await supabase.storage
     .from(BUCKET)
-    .upload(filePath, file, { cacheControl: '3600', upsert: false });
+    .upload(filePath, file, { cacheControl: '3600', upsert: false, contentType });
 
   if (error) throw error;
 
