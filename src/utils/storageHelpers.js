@@ -29,7 +29,10 @@ export async function uploadFileToStorage(file, folder) {
     .from(BUCKET)
     .upload(filePath, file, { cacheControl: '3600', upsert: false, contentType });
 
-  if (error) throw error;
+  if (error) {
+    console.error('[Storage 업로드 오류]', JSON.stringify(error, null, 2));
+    throw error;
+  }
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
 
