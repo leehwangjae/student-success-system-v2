@@ -710,7 +710,7 @@ export const AppProvider = ({ children }) => {
     try {
       const { data, error } = await supabase
         .from('core_courses_submissions_2025_11_27_07_17')
-        .select('id, student_id, field, department, completed_courses, total_completed_count, total_score, payment_info, grade_at_2025_fall, status, rejection_reason, submitted_at, reviewed_at, created_at, updated_at');
+        .select('id, student_id, field, department, completed_courses, uploaded_files, total_completed_count, total_score, payment_info, grade_at_2025_fall, status, rejection_reason, submitted_at, reviewed_at, created_at, updated_at');
 
       if (error) {
         // 테이블이 없거나 권한이 없는 경우 조용히 빈 배열 설정
@@ -734,8 +734,8 @@ export const AppProvider = ({ children }) => {
         completedCourses: sub.completed_courses || [],
         totalCompletedCount: sub.total_completed_count,
         totalScore: sub.total_score,
-        uploadedFiles: [],
-        hasUploadedFiles: !!sub.submitted_at,
+        uploadedFiles: sub.uploaded_files || [],
+        hasUploadedFiles: (sub.uploaded_files || []).length > 0,
         paymentInfo: sub.payment_info || null,
         gradeAt2025Fall: sub.grade_at_2025_fall || '2학년',
         // 이전 필드 호환성 유지
@@ -796,7 +796,7 @@ export const AppProvider = ({ children }) => {
     try {
       const { data, error } = await supabase
         .from('non_curricular_submissions_2025_11_27_07_17')
-        .select('id, student_id, completed_programs, total_program_count, total_score, status, rejection_reason, submitted_at, reviewed_at, created_at, updated_at');
+        .select('id, student_id, completed_programs, certificate_files, total_program_count, total_score, status, rejection_reason, submitted_at, reviewed_at, created_at, updated_at');
 
       if (error) {
         setNonCurricularSubmissions([]);
@@ -807,8 +807,8 @@ export const AppProvider = ({ children }) => {
         id: sub.id,
         studentId: sub.student_id,
         completedPrograms: sub.completed_programs || [],
-        certificateFiles: [],
-        hasCertificateFiles: !!sub.submitted_at,
+        certificateFiles: sub.certificate_files || [],
+        hasCertificateFiles: (sub.certificate_files || []).length > 0,
         totalProgramCount: sub.total_program_count || 0,
         totalScore: sub.total_score || 0,
         status: sub.status,
