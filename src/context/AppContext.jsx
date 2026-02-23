@@ -710,7 +710,7 @@ export const AppProvider = ({ children }) => {
     try {
       const { data, error } = await supabase
         .from('core_courses_submissions_2025_11_27_07_17')
-        .select('id, student_id, field, department, completed_courses, uploaded_files, total_completed_count, total_score, payment_info, grade_at_2025_fall, status, rejection_reason, submitted_at, reviewed_at, created_at, updated_at');
+        .select('id, student_id, field, department, completed_courses, uploaded_files, total_completed_count, total_score, approved_score, admin_comment, payment_info, grade_at_2025_fall, status, rejection_reason, submitted_at, reviewed_at, created_at, updated_at');
 
       if (error) {
         // 테이블이 없거나 권한이 없는 경우 조용히 빈 배열 설정
@@ -734,6 +734,8 @@ export const AppProvider = ({ children }) => {
         completedCourses: sub.completed_courses || [],
         totalCompletedCount: sub.total_completed_count,
         totalScore: sub.total_score,
+        approvedScore: sub.approved_score ?? null,
+        adminComment: sub.admin_comment || '',
         uploadedFiles: sub.uploaded_files || [],
         hasUploadedFiles: (sub.uploaded_files || []).length > 0,
         paymentInfo: sub.payment_info || null,
@@ -1048,6 +1050,70 @@ export const AppProvider = ({ children }) => {
 
       await loadCoreCoursesSubmissionsFromSupabase();
       return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  // 핵심 교과목 일부 승인 (수동 점수 입력)
+  const partialApproveCoreCourses = async (submissionId, approvedScore, adminComment = '') => {
+    try {
+      let submission = coreCoursesSubmissions.find(s => s.id === submissionId);
+      if (!submission) {
+        const { data: subData, error: subFetchErr } = await supabase
+          .from('core_courses_submissions_2025_11_27_07_17')
+          .select('id, student_id, total_score')
+          .eq('id', submissionId)
+          .single();
+        if (subFetchErr || !subData) throw new Error('제출 데이터를 찾을 수 없습니다.');
+        submission = {
+          id: subData.id,
+          studentId: subData.student_id,
+          totalScore: subData.total_score,
+        };
+      }
+
+      // 학생 이름 조회
+      let studentName = students.find(s => s.id === submission.studentId)?.name;
+      if (!studentName) {
+        const { data: userData } = await supabase
+          .from('users_2025_11_27_07_17')
+          .select('name')
+          .eq('id', submission.studentId)
+          .single();
+        studentName = userData?.name || '학생';
+      }
+
+      // 학생 점수 업데이트 (수동 입력 점수 반영)
+      const { error: userError } = await supabase
+        .from('users_2025_11_27_07_17')
+        .update({ core_subject_score: approvedScore })
+        .eq('id', submission.studentId);
+
+      if (userError) throw userError;
+
+      // 제출 상태를 'partial'로 변경, 승인 점수와 코멘트 저장
+      const { error: submissionError } = await supabase
+        .from('core_courses_submissions_2025_11_27_07_17')
+        .update({
+          status: 'partial',
+          approved_score: approvedScore,
+          admin_comment: adminComment || null,
+          reviewed_at: new Date().toISOString()
+        })
+        .eq('id', submissionId);
+
+      if (submissionError) throw submissionError;
+
+      await Promise.all([
+        loadCoreCoursesSubmissionsFromSupabase(),
+        loadStudentsFromSupabase()
+      ]);
+
+      return {
+        success: true,
+        message: `${studentName} 학생의 핵심교과목 ${approvedScore}점이 일부 승인되었습니다.`
+      };
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -1547,7 +1613,7 @@ export const AppProvider = ({ children }) => {
   const fetchCoreCoursesSubmissionDetail = async (submissionId) => {
     const { data, error } = await supabase
       .from('core_courses_submissions_2025_11_27_07_17')
-      .select('id, student_id, field, department, completed_courses, uploaded_files, total_completed_count, total_score, payment_info, grade_at_2025_fall, status, rejection_reason, submitted_at, reviewed_at, reviewed_by, created_at, updated_at')
+      .select('id, student_id, field, department, completed_courses, uploaded_files, total_completed_count, total_score, approved_score, admin_comment, payment_info, grade_at_2025_fall, status, rejection_reason, submitted_at, reviewed_at, reviewed_by, created_at, updated_at')
       .eq('id', submissionId)
       .single();
     if (error || !data) return null;
@@ -1559,6 +1625,8 @@ export const AppProvider = ({ children }) => {
       completedCourses: data.completed_courses || [],
       totalCompletedCount: data.total_completed_count,
       totalScore: data.total_score,
+      approvedScore: data.approved_score ?? null,
+      adminComment: data.admin_comment || '',
       uploadedFiles: data.uploaded_files || [],
       hasUploadedFiles: (data.uploaded_files || []).length > 0,
       paymentInfo: data.payment_info || null,
@@ -1605,6 +1673,7 @@ export const AppProvider = ({ children }) => {
       submitCoreCourses,
       approveCoreCourses,
       rejectCoreCourses,
+      partialApproveCoreCourses,
       getCoreCoursesByDepartment,
       getStudentSubmission,
       nonCurricularPrograms,

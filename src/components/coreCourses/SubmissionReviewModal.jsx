@@ -86,9 +86,11 @@ function AiAnalysisResult({ result, onClose }) {
 }
 
 // ─── 메인 모달 컴포넌트 ──────────────────────────────────────────────────────
-function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove, onReject }) {
+function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove, onReject, onPartialApprove }) {
   const [decision, setDecision] = useState('approve');
   const [rejectionReason, setRejectionReason] = useState('');
+  const [adminComment, setAdminComment] = useState('');
+  const [partialScore, setPartialScore] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [viewMode, setViewMode] = useState('split');
   const [selectedFileIndex, setSelectedFileIndex] = useState(0);
@@ -236,10 +238,24 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
       alert('반려 사유를 입력해주세요.');
       return;
     }
+    if (decision === 'partial') {
+      const score = Number(partialScore);
+      if (!partialScore || isNaN(score) || score < 0) {
+        alert('유효한 점수를 입력해주세요. (0 이상의 숫자)');
+        return;
+      }
+    }
     setIsProcessing(true);
     try {
       if (decision === 'approve') {
         await onApprove(submission.id);
+      } else if (decision === 'partial') {
+        if (onPartialApprove) {
+          await onPartialApprove(submission.id, Number(partialScore), adminComment);
+        } else {
+          alert('일부 승인 기능이 연결되지 않았습니다.');
+          return;
+        }
       } else {
         await onReject(submission.id, rejectionReason);
       }
@@ -484,36 +500,89 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
                   <div className="border-t bg-white p-4">
                     <h3 className="font-bold text-gray-900 mb-3">🔍 관리자 검토</h3>
                     <div className="space-y-3">
-                      <div className="flex gap-4">
+                      <div className="flex gap-3 flex-wrap">
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input type="radio" name="decision" value="approve" checked={decision === 'approve'} onChange={(e) => setDecision(e.target.value)} className="w-4 h-4 text-green-600" />
                           <span className="font-medium text-gray-900">✅ 승인</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input type="radio" name="decision" value="partial" checked={decision === 'partial'} onChange={(e) => setDecision(e.target.value)} className="w-4 h-4 text-yellow-500" />
+                          <span className="font-medium text-gray-900">🔶 일부 승인</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input type="radio" name="decision" value="reject" checked={decision === 'reject'} onChange={(e) => setDecision(e.target.value)} className="w-4 h-4 text-red-600" />
                           <span className="font-medium text-gray-900">❌ 반려</span>
                         </label>
                       </div>
+
+                      {decision === 'partial' && (
+                        <div className="space-y-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              수동 점수 입력 <span className="text-red-500">*</span>
+                              <span className="text-gray-400 font-normal ml-1">(자동계산: {submission.totalScore}점)</span>
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={partialScore}
+                              onChange={(e) => setPartialScore(e.target.value)}
+                              placeholder="부여할 점수 입력"
+                              className="w-full px-3 py-2 text-sm border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-400 bg-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">코멘트 (선택)</label>
+                            <textarea
+                              value={adminComment}
+                              onChange={(e) => setAdminComment(e.target.value)}
+                              rows="2"
+                              placeholder="일부 승인 사유 또는 안내 메시지..."
+                              className="w-full px-3 py-2 text-sm border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-400 bg-white resize-none"
+                            />
+                          </div>
+                        </div>
+                      )}
+
                       {decision === 'reject' && (
                         <div>
                           <label className="block text-xs font-medium text-gray-700 mb-1">반려 사유 <span className="text-red-500">*</span></label>
-                          <textarea value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} rows="2" placeholder="반려 사유를 입력해주세요..." className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" />
+                          <textarea value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} rows="2" placeholder="반려 사유를 입력해주세요..." className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 resize-none" />
                         </div>
                       )}
-                      <button onClick={handleSubmit} disabled={isProcessing} className={`w-full px-4 py-2 rounded-lg font-bold text-white ${decision === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} disabled:opacity-50 disabled:cursor-not-allowed`}>
-                        {isProcessing ? '처리 중...' : decision === 'approve' ? '✅ 승인하기' : '❌ 반려하기'}
+
+                      <button
+                        onClick={handleSubmit}
+                        disabled={isProcessing}
+                        className={`w-full px-4 py-2 rounded-lg font-bold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                          decision === 'approve' ? 'bg-green-600 hover:bg-green-700' :
+                          decision === 'partial' ? 'bg-yellow-500 hover:bg-yellow-600' :
+                          'bg-red-600 hover:bg-red-700'
+                        }`}
+                      >
+                        {isProcessing ? '처리 중...' :
+                          decision === 'approve' ? '✅ 승인하기' :
+                          decision === 'partial' ? `🔶 일부 승인 (${partialScore || '?'}점)` :
+                          '❌ 반려하기'}
                       </button>
                     </div>
                   </div>
                 )}
 
                 {submission.status !== 'pending' && (
-                  <div className={`p-4 m-4 rounded-lg ${submission.status === 'approved' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                  <div className={`p-4 m-4 rounded-lg ${
+                    submission.status === 'approved' ? 'bg-green-50 border border-green-200' :
+                    submission.status === 'partial' ? 'bg-yellow-50 border border-yellow-200' :
+                    'bg-red-50 border border-red-200'
+                  }`}>
                     <div className="font-semibold text-gray-900 mb-1">
-                      {submission.status === 'approved' ? '✅ 승인 완료' : '❌ 반려됨'}
+                      {submission.status === 'approved' ? '✅ 승인 완료' :
+                       submission.status === 'partial' ? '🔶 일부 승인' : '❌ 반려됨'}
                     </div>
                     <div className="text-sm text-gray-600">
-                      {submission.status === 'approved' ? `${submission.totalScore}점이 학생에게 반영되었습니다.` : `반려 사유: ${submission.rejectionReason}`}
+                      {submission.status === 'approved' ? `${submission.totalScore}점이 학생에게 반영되었습니다.` :
+                       submission.status === 'partial' ? `${submission.approvedScore ?? submission.totalScore}점이 학생에게 반영되었습니다.${submission.adminComment ? ` / ${submission.adminComment}` : ''}` :
+                       `반려 사유: ${submission.rejectionReason}`}
                     </div>
                     <div className="text-xs text-gray-500 mt-2">처리일: {formatDate(submission.reviewedAt)}</div>
                   </div>
@@ -632,36 +701,89 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
                 <div className="border-t pt-6">
                   <h3 className="font-bold text-gray-900 mb-4">🔍 관리자 검토</h3>
                   <div className="space-y-4">
-                    <div className="flex gap-4">
+                    <div className="flex gap-4 flex-wrap">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input type="radio" name="decision" value="approve" checked={decision === 'approve'} onChange={(e) => setDecision(e.target.value)} className="w-4 h-4 text-green-600" />
                         <span className="font-medium text-gray-900">✅ 승인</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="decision" value="partial" checked={decision === 'partial'} onChange={(e) => setDecision(e.target.value)} className="w-4 h-4 text-yellow-500" />
+                        <span className="font-medium text-gray-900">🔶 일부 승인</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input type="radio" name="decision" value="reject" checked={decision === 'reject'} onChange={(e) => setDecision(e.target.value)} className="w-4 h-4 text-red-600" />
                         <span className="font-medium text-gray-900">❌ 반려</span>
                       </label>
                     </div>
+
+                    {decision === 'partial' && (
+                      <div className="space-y-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            수동 점수 입력 <span className="text-red-500">*</span>
+                            <span className="text-gray-400 font-normal ml-1">(자동계산: {submission.totalScore}점)</span>
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={partialScore}
+                            onChange={(e) => setPartialScore(e.target.value)}
+                            placeholder="부여할 점수를 입력하세요"
+                            className="w-full px-4 py-2 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-400 bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">코멘트 (선택)</label>
+                          <textarea
+                            value={adminComment}
+                            onChange={(e) => setAdminComment(e.target.value)}
+                            rows="3"
+                            placeholder="일부 승인 사유 또는 학생에게 전달할 안내 메시지..."
+                            className="w-full px-4 py-2 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-400 bg-white resize-none"
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     {decision === 'reject' && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">반려 사유 <span className="text-red-500">*</span></label>
-                        <textarea value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} rows="3" placeholder="반려 사유를 입력해주세요..." className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" />
+                        <textarea value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} rows="3" placeholder="반려 사유를 입력해주세요..." className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 resize-none" />
                       </div>
                     )}
-                    <button onClick={handleSubmit} disabled={isProcessing} className={`flex-1 w-full px-6 py-3 rounded-lg font-bold text-white ${decision === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} disabled:opacity-50 disabled:cursor-not-allowed`}>
-                      {isProcessing ? '처리 중...' : decision === 'approve' ? '✅ 승인하기' : '❌ 반려하기'}
+
+                    <button
+                      onClick={handleSubmit}
+                      disabled={isProcessing}
+                      className={`flex-1 w-full px-6 py-3 rounded-lg font-bold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                        decision === 'approve' ? 'bg-green-600 hover:bg-green-700' :
+                        decision === 'partial' ? 'bg-yellow-500 hover:bg-yellow-600' :
+                        'bg-red-600 hover:bg-red-700'
+                      }`}
+                    >
+                      {isProcessing ? '처리 중...' :
+                        decision === 'approve' ? '✅ 승인하기' :
+                        decision === 'partial' ? `🔶 일부 승인 (${partialScore || '?'}점)` :
+                        '❌ 반려하기'}
                     </button>
                   </div>
                 </div>
               )}
 
               {submission.status !== 'pending' && (
-                <div className={`p-4 rounded-lg ${submission.status === 'approved' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                <div className={`p-4 rounded-lg ${
+                  submission.status === 'approved' ? 'bg-green-50 border border-green-200' :
+                  submission.status === 'partial' ? 'bg-yellow-50 border border-yellow-200' :
+                  'bg-red-50 border border-red-200'
+                }`}>
                   <div className="font-semibold text-gray-900 mb-1">
-                    {submission.status === 'approved' ? '✅ 승인 완료' : '❌ 반려됨'}
+                    {submission.status === 'approved' ? '✅ 승인 완료' :
+                     submission.status === 'partial' ? '🔶 일부 승인' : '❌ 반려됨'}
                   </div>
                   <div className="text-sm text-gray-600">
-                    {submission.status === 'approved' ? `${submission.totalScore}점이 학생에게 반영되었습니다.` : `반려 사유: ${submission.rejectionReason}`}
+                    {submission.status === 'approved' ? `${submission.totalScore}점이 학생에게 반영되었습니다.` :
+                     submission.status === 'partial' ? `${submission.approvedScore ?? submission.totalScore}점이 학생에게 반영되었습니다.${submission.adminComment ? ` / ${submission.adminComment}` : ''}` :
+                     `반려 사유: ${submission.rejectionReason}`}
                   </div>
                   <div className="text-xs text-gray-500 mt-2">처리일: {formatDate(submission.reviewedAt)}</div>
                 </div>
