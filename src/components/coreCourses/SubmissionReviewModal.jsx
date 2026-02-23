@@ -320,8 +320,17 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
         <div className="bg-gradient-to-r from-blue-50 to-purple-50 px-6 py-3 border-b">
           <div className="flex items-center justify-around text-center">
             <div>
-              <div className="text-xs text-gray-600 mb-1">총점</div>
-              <div className="text-2xl font-bold text-blue-600">{submission.totalScore}점</div>
+              <div className="text-xs text-gray-600 mb-1">
+                {submission.status === 'partial' ? '승인 점수 (일부승인)' : '총점'}
+              </div>
+              <div className="text-2xl font-bold text-blue-600">
+                {submission.status === 'partial' && submission.approvedScore != null
+                  ? submission.approvedScore
+                  : submission.totalScore}점
+              </div>
+              {submission.status === 'partial' && (
+                <div className="text-xs text-gray-400 mt-0.5">자동계산: {submission.totalScore}점</div>
+              )}
             </div>
             <div className="h-8 w-px bg-gray-300"></div>
             <div>

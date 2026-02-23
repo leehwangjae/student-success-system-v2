@@ -166,7 +166,9 @@ function CoreCoursesReviewPage() {
         '학과': student.department,
         '재학년도': submission?.gradeAt2025Fall || '-',
         '이수과목수': submission?.totalCompletedCount || 0,
-        '점수': submission?.totalScore || 0,
+        '점수': submission?.status === 'partial' && submission?.approvedScore != null
+          ? submission.approvedScore
+          : (submission?.totalScore || 0),
         '제출상태': submission ? SUBMISSION_STATUS_LABEL[submission.status] : '미제출',
         '제출일시': submission ? formatDate(submission.submittedAt) : '-'
       }));
@@ -488,7 +490,11 @@ function CoreCoursesReviewPage() {
                         {submission ? `${submission.totalCompletedCount}개` : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-semibold text-blue-600">
-                        {submission ? `${submission.totalScore}점` : '-'}
+                        {submission ? (
+                          submission.status === 'partial' && submission.approvedScore != null
+                            ? <span title={`자동계산: ${submission.totalScore}점`}>{submission.approvedScore}점 🔶</span>
+                            : `${submission.totalScore}점`
+                        ) : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {(submission?.hasUploadedFiles || submission?.transcriptFileName) ? (
