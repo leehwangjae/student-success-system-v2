@@ -103,6 +103,58 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
   const completedCourses = submission.completedCourses || [];
   const uploadedFiles = submission.uploadedFiles || submission.uploaded_files || [];
 
+  // PDF를 이미지(base64 PNG)로 변환하는 함수
+  const convertPdfToImages = async (fileUrl, fileData) => {
+    // pdf.js CDN 동적 로드
+    if (!window.pdfjsLib) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    const pdfjsLib = window.pdfjsLib;
+    let pdfData;
+
+    if (fileUrl) {
+      // Storage URL → fetch로 ArrayBuffer 변환
+      const res = await fetch(fileUrl);
+      const arrayBuffer = await res.arrayBuffer();
+      pdfData = new Uint8Array(arrayBuffer);
+    } else if (fileData) {
+      // base64 → Uint8Array 변환
+      const base64 = fileData.includes('base64,') ? fileData.split('base64,')[1] : fileData;
+      const binary = atob(base64);
+      pdfData = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) pdfData[i] = binary.charCodeAt(i);
+    } else {
+      throw new Error('PDF 데이터를 읽을 수 없습니다.');
+    }
+
+    const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+    const images = [];
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 2.0 }); // 고해상도
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      // PNG base64로 변환 (data: prefix 제거)
+      const dataUrl = canvas.toDataURL('image/png');
+      images.push(dataUrl.split('base64,')[1]);
+    }
+
+    return images;
+  };
+
   // AI 자동 대조 함수
   const handleAiAnalysis = async () => {
     if (!uploadedFiles || uploadedFiles.length === 0) {
@@ -122,7 +174,6 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
       const file = uploadedFiles[selectedFileIndex];
       if (!file) throw new Error('선택된 파일이 없습니다.');
 
-      // Storage URL 방식 또는 base64 방식 모두 지원
       const fileData = file.data || file.fileData;
       const fileUrl = file.url;
       const fileName = file.name || file.fileName;
@@ -133,6 +184,23 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+      let requestBody;
+      const fileNameLower = fileName.toLowerCase();
+      const isPdf = fileNameLower.endsWith('.pdf');
+
+      if (isPdf) {
+        // PDF → 이미지 변환 후 전송
+        const imageDataList = await convertPdfToImages(fileUrl, fileData);
+        requestBody = { imageDataList, fileName, checkedCourses: completedCourses.map(c => ({ courseName: c.courseName, courseCode: c.courseCode })) };
+      } else if (fileUrl) {
+        // 이미지 Storage URL → URL 직접 전송
+        requestBody = { fileUrl, fileName, checkedCourses: completedCourses.map(c => ({ courseName: c.courseName, courseCode: c.courseCode })) };
+      } else {
+        // 이미지 base64 → imageDataList로 전송
+        const base64 = fileData.includes('base64,') ? fileData.split('base64,')[1] : fileData;
+        requestBody = { imageDataList: [base64], fileName, checkedCourses: completedCourses.map(c => ({ courseName: c.courseName, courseCode: c.courseCode })) };
+      }
+
       const response = await fetch(
         `${supabaseUrl}/functions/v1/analyze-certificate`,
         {
@@ -142,15 +210,7 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
             'Authorization': `Bearer ${supabaseKey}`,
             'apikey': supabaseKey,
           },
-          body: JSON.stringify({
-            fileData: fileData || null,
-            fileUrl: fileUrl || null,
-            fileName,
-            checkedCourses: completedCourses.map(c => ({
-              courseName: c.courseName,
-              courseCode: c.courseCode,
-            })),
-          }),
+          body: JSON.stringify(requestBody),
         }
       );
 
