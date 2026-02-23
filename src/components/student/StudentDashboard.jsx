@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
+import { supabase } from '../../lib/supabase';
 import MyInfo from './MyInfo';
 import ProgramList from './ProgramList';
 import MyApplications from './MyApplications';
@@ -8,6 +9,36 @@ import NoticeList from './NoticeList';
 function StudentDashboard() {
   const { currentUser } = useAppContext();
   const [activeTab, setActiveTab] = React.useState('myInfo');
+
+  // DB에서 최신 점수 로드 (localStorage 캐시 대신 실시간 조회)
+  const [liveScores, setLiveScores] = useState(null);
+
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    const load = async () => {
+      const { data } = await supabase
+        .from('users_2025_11_27_07_17')
+        .select('non_curricular_score, core_subject_score, industry_score')
+        .eq('id', currentUser.id)
+        .single();
+      if (data) {
+        setLiveScores({
+          nonCurricularScore: data.non_curricular_score || 0,
+          coreSubjectScore: data.core_subject_score || 0,
+          industryScore: data.industry_score || 0,
+          total: (data.non_curricular_score || 0) + (data.core_subject_score || 0) + (data.industry_score || 0),
+        });
+      }
+    };
+    load();
+  }, [currentUser?.id]);
+
+  const scores = liveScores || {
+    nonCurricularScore: currentUser?.nonCurricularScore || 0,
+    coreSubjectScore: currentUser?.coreSubjectScore || 0,
+    industryScore: currentUser?.industryScore || 0,
+    total: currentUser?.total || 0,
+  };
 
   return (
     <div>
@@ -43,7 +74,7 @@ function StudentDashboard() {
           {/* 학생성공지수 */}
           <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-md p-6 text-white">
             <h3 className="text-xl font-bold mb-2">학생성공지수</h3>
-            <p className="text-5xl font-bold mb-2">{currentUser.total}</p>
+            <p className="text-5xl font-bold mb-2">{scores.total}</p>
             <p className="text-blue-100">총점</p>
           </div>
 
@@ -53,15 +84,15 @@ function StudentDashboard() {
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">비교과</span>
-                <span className="text-xl font-bold text-blue-600">{currentUser.nonCurricularScore}</span>
+                <span className="text-xl font-bold text-blue-600">{scores.nonCurricularScore}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">핵심교과</span>
-                <span className="text-xl font-bold text-green-600">{currentUser.coreSubjectScore}</span>
+                <span className="text-xl font-bold text-green-600">{scores.coreSubjectScore}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">산학협력</span>
-                <span className="text-xl font-bold text-purple-600">{currentUser.industryScore}</span>
+                <span className="text-xl font-bold text-purple-600">{scores.industryScore}</span>
               </div>
             </div>
           </div>
