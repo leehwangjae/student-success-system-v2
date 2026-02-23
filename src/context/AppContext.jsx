@@ -798,7 +798,7 @@ export const AppProvider = ({ children }) => {
     try {
       const { data, error } = await supabase
         .from('non_curricular_submissions_2025_11_27_07_17')
-        .select('id, student_id, completed_programs, certificate_files, total_program_count, total_score, status, rejection_reason, submitted_at, reviewed_at, created_at, updated_at');
+        .select('id, student_id, completed_programs, certificate_files, total_program_count, total_score, approved_score, admin_comment, status, rejection_reason, submitted_at, reviewed_at, created_at, updated_at');
 
       if (error) {
         setNonCurricularSubmissions([]);
@@ -813,6 +813,8 @@ export const AppProvider = ({ children }) => {
         hasCertificateFiles: (sub.certificate_files || []).length > 0,
         totalProgramCount: sub.total_program_count || 0,
         totalScore: sub.total_score || 0,
+        approvedScore: sub.approved_score ?? null,
+        adminComment: sub.admin_comment || '',
         status: sub.status,
         rejectionReason: sub.rejection_reason,
         submittedAt: sub.submitted_at,
@@ -1299,6 +1301,61 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  // 비교과 프로그램 일부 승인 (수동 점수 입력)
+  const partialApproveNonCurricularPrograms = async (submissionId, approvedScore, adminComment = '') => {
+    try {
+      let submission = nonCurricularSubmissions.find(s => s.id === submissionId);
+      if (!submission) {
+        const { data: subData, error: subFetchErr } = await supabase
+          .from('non_curricular_submissions_2025_11_27_07_17')
+          .select('id, student_id, total_score')
+          .eq('id', submissionId)
+          .single();
+        if (subFetchErr || !subData) throw new Error('제출 데이터를 찾을 수 없습니다.');
+        submission = { id: subData.id, studentId: subData.student_id, totalScore: subData.total_score };
+      }
+
+      // 학생 이름 조회
+      let studentName = students.find(s => s.id === submission.studentId)?.name;
+      if (!studentName) {
+        const { data: userData } = await supabase
+          .from('users_2025_11_27_07_17').select('name').eq('id', submission.studentId).single();
+        studentName = userData?.name || '학생';
+      }
+
+      // 학생 비교과 점수 업데이트 (수동 입력 점수)
+      const { error: userError } = await supabase
+        .from('users_2025_11_27_07_17')
+        .update({ non_curricular_score: approvedScore })
+        .eq('id', submission.studentId);
+      if (userError) throw userError;
+
+      // 제출 상태를 'partial'로 변경
+      const { error: submissionError } = await supabase
+        .from('non_curricular_submissions_2025_11_27_07_17')
+        .update({
+          status: 'partial',
+          approved_score: approvedScore,
+          admin_comment: adminComment || null,
+          reviewed_at: new Date().toISOString()
+        })
+        .eq('id', submissionId);
+      if (submissionError) throw submissionError;
+
+      await Promise.all([
+        loadNonCurricularSubmissionsFromSupabase(),
+        loadStudentsFromSupabase()
+      ]);
+
+      return {
+        success: true,
+        message: `${studentName} 학생의 비교과 프로그램 ${approvedScore}점이 일부 승인되었습니다.`
+      };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
   // 비교과 프로그램 반려
   const rejectNonCurricularPrograms = async (submissionId, reason) => {
     try {
@@ -1588,7 +1645,7 @@ export const AppProvider = ({ children }) => {
   const fetchNonCurricularSubmissionDetail = async (submissionId) => {
     const { data, error } = await supabase
       .from('non_curricular_submissions_2025_11_27_07_17')
-      .select('id, student_id, completed_programs, certificate_files, total_program_count, total_score, status, rejection_reason, submitted_at, reviewed_at, created_at, updated_at')
+      .select('id, student_id, completed_programs, certificate_files, total_program_count, total_score, approved_score, admin_comment, status, rejection_reason, submitted_at, reviewed_at, created_at, updated_at')
       .eq('id', submissionId)
       .single();
     if (error || !data) return null;
@@ -1600,6 +1657,8 @@ export const AppProvider = ({ children }) => {
       hasCertificateFiles: (data.certificate_files || []).length > 0,
       totalProgramCount: data.total_program_count || 0,
       totalScore: data.total_score || 0,
+      approvedScore: data.approved_score ?? null,
+      adminComment: data.admin_comment || '',
       status: data.status,
       rejectionReason: data.rejection_reason,
       submittedAt: data.submitted_at,
@@ -1684,6 +1743,7 @@ export const AppProvider = ({ children }) => {
       submitNonCurricularPrograms,
       approveNonCurricularPrograms,
       rejectNonCurricularPrograms,
+      partialApproveNonCurricularPrograms,
       getNonCurricularSubmission,
       fetchNonCurricularSubmissionDetail,
       fetchCoreCoursesSubmissionDetail,

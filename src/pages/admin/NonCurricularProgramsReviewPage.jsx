@@ -13,6 +13,7 @@ function NonCurricularProgramsReviewPage() {
     nonCurricularSubmissions,
     approveNonCurricularPrograms,
     rejectNonCurricularPrograms,
+    partialApproveNonCurricularPrograms,
     fetchNonCurricularSubmissionDetail,
   } = useAppContext();
 
@@ -127,6 +128,15 @@ function NonCurricularProgramsReviewPage() {
     }
   };
 
+  const handlePartialApprove = async (submissionId, approvedScore, adminComment) => {
+    const result = await partialApproveNonCurricularPrograms(submissionId, approvedScore, adminComment);
+    if (result.success) {
+      showAlert(`🔶 일부 승인이 완료되었습니다.\n${approvedScore}점이 학생에게 반영되었습니다.`);
+    } else {
+      showAlert(`일부 승인 실패: ${result.error}`);
+    }
+  };
+
   // 엑셀 다운로드 함수
   const handleExcelDownload = () => {
     try {
@@ -135,7 +145,9 @@ function NonCurricularProgramsReviewPage() {
         '이름': student.name,
         '학과': student.department,
         '이수프로그램수': submission?.totalProgramCount || 0,
-        '점수': submission?.totalScore || 0,
+        '점수': submission?.status === 'partial' && submission?.approvedScore != null
+          ? submission.approvedScore
+          : (submission?.totalScore || 0),
         '제출상태': submission ? SUBMISSION_STATUS_LABEL[submission.status] : '미제출',
         '제출일시': submission ? formatDate(submission.submitted_at) : '-'
       }));
@@ -433,7 +445,11 @@ function NonCurricularProgramsReviewPage() {
                         {submission ? `${submission.totalProgramCount}개` : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-semibold text-blue-600">
-                        {submission ? `${submission.totalScore}점` : '-'}
+                        {submission ? (
+                          submission.status === 'partial' && submission.approvedScore != null
+                            ? <span title={`자동계산: ${submission.totalScore}점`}>{submission.approvedScore}점 🔶</span>
+                            : `${submission.totalScore}점`
+                        ) : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {submission?.hasCertificateFiles ? (
@@ -478,6 +494,7 @@ function NonCurricularProgramsReviewPage() {
           student={reviewingSubmission.student}
           onApprove={handleApprove}
           onReject={handleReject}
+          onPartialApprove={handlePartialApprove}
         />
       )}
     </div>

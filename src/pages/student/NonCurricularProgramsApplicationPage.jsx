@@ -182,6 +182,7 @@ function NonCurricularProgramsApplicationPage() {
   // 제출 상태 확인
   const submission = getNonCurricularSubmission(currentUser?.id);
   const isApproved = submission?.status === 'approved';
+  const isPartial = submission?.status === 'partial';
   const isPending = submission?.status === 'pending';
   const isRejected = submission?.status === 'rejected';
 
@@ -190,7 +191,7 @@ function NonCurricularProgramsApplicationPage() {
   const periodInfo = applicationPeriods?.nonCurricular;
   const periodActive = periodInfo?.isActive;
 
-  const canEdit = !isApproved && withinPeriod; // 승인됨 or 기간 외면 수정 불가
+  const canEdit = !isApproved && !isPartial && withinPeriod; // 승인됨(전체/일부) or 기간 외면 수정 불가
 
   if (!currentUser) {
     return <div className="p-6">로그인이 필요합니다.</div>;
@@ -276,17 +277,18 @@ function NonCurricularProgramsApplicationPage() {
         {submission && (
           <div className={`rounded-xl shadow-sm p-4 mb-6 ${
             isApproved ? 'bg-green-50 border border-green-200' :
-            isPending ? 'bg-yellow-50 border border-yellow-200' :
+            isPartial  ? 'bg-yellow-50 border border-yellow-300' :
+            isPending  ? 'bg-blue-50 border border-blue-200' :
             isRejected ? 'bg-red-50 border border-red-200' :
             'bg-gray-50 border border-gray-200'
           }`}>
             <div className="flex items-center gap-3">
               <div className="text-2xl">
-                {isApproved ? '✅' : isPending ? '🔄' : isRejected ? '❌' : '📝'}
+                {isApproved ? '✅' : isPartial ? '🔶' : isPending ? '🔄' : isRejected ? '❌' : '📝'}
               </div>
               <div className="flex-1">
                 <div className="font-semibold text-gray-900">
-                  제출 상태: {SUBMISSION_STATUS_LABEL[submission.status]}
+                  제출 상태: {isPartial ? '일부 승인' : SUBMISSION_STATUS_LABEL[submission.status]}
                 </div>
                 {isPending && (
                   <div className="text-sm text-gray-600 mt-1">
@@ -296,6 +298,14 @@ function NonCurricularProgramsApplicationPage() {
                 {isApproved && (
                   <div className="text-sm text-green-700 mt-1">
                     {submission.totalScore}점이 반영되었습니다.
+                  </div>
+                )}
+                {isPartial && (
+                  <div className="text-sm text-yellow-800 mt-1">
+                    <span className="font-bold">{submission.approvedScore ?? submission.totalScore}점</span>이 반영되었습니다.
+                    {submission.adminComment && (
+                      <div className="text-xs text-yellow-700 mt-1">💬 {submission.adminComment}</div>
+                    )}
                   </div>
                 )}
                 {isRejected && (
