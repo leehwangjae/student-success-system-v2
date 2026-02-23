@@ -1,111 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { SUBMISSION_STATUS_LABEL, POINTS_PER_COURSE } from './constants';
-import { formatDate, formatFileSize, downloadBase64File } from '../../utils/coreCoursesHelpers';
+import { formatDate, formatFileSize } from '../../utils/coreCoursesHelpers';
+import { getFilePreviewUrl, downloadFile } from '../../utils/storageHelpers';
 
-// ─── AI 자동 대조 결과 컴포넌트 ───────────────────────────────────────────────
-function AiAnalysisResult({ result, onClose }) {
-  if (!result) return null;
-  const { results = [], summary = {} } = result;
-
-  return (
-    <div className="mt-4 border-2 border-purple-300 rounded-xl overflow-hidden">
-      {/* 헤더 */}
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">🤖</span>
-          <span className="font-bold text-sm">AI 자동 대조 결과</span>
-          {summary.documentType && (
-            <span className="text-xs bg-white bg-opacity-20 px-2 py-0.5 rounded-full">
-              {summary.documentType}
-            </span>
-          )}
-        </div>
-        <button
-          onClick={onClose}
-          className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-1 transition-colors"
-          title="결과 닫기"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-
-      {/* 요약 */}
-      <div className="bg-purple-50 px-4 py-3 border-b border-purple-200">
-        <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-1">
-            <span className="text-gray-600">전체:</span>
-            <span className="font-bold text-gray-900">{summary.totalChecked}과목</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="text-green-600">✅ 확인됨:</span>
-            <span className="font-bold text-green-700">{summary.foundCount}과목</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="text-red-600">❌ 미확인:</span>
-            <span className="font-bold text-red-700">{summary.notFoundCount}과목</span>
-          </div>
-          <div className={`ml-auto px-3 py-1 rounded-full text-xs font-bold ${
-            summary.overallValid
-              ? 'bg-green-100 text-green-700'
-              : 'bg-red-100 text-red-700'
-          }`}>
-            {summary.overallValid ? '✅ 증빙 유효' : '⚠️ 검토 필요'}
-          </div>
-        </div>
-      </div>
-
-      {/* 과목별 결과 */}
-      <div className="bg-white p-3 space-y-1.5 max-h-64 overflow-y-auto">
-        {results.map((item, idx) => (
-          <div
-            key={idx}
-            className={`flex items-start gap-2 p-2.5 rounded-lg border ${
-              item.found
-                ? 'bg-green-50 border-green-200'
-                : 'bg-red-50 border-red-200'
-            }`}
-          >
-            <span className="text-base mt-0.5 flex-shrink-0">
-              {item.found ? '✅' : '❌'}
-            </span>
-            <div className="flex-1 min-w-0">
-              <div className="font-medium text-gray-900 text-sm truncate">
-                {item.courseName}
-              </div>
-              <div className="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
-                <span>{item.courseCode}</span>
-                {item.confidence && (
-                  <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-                    item.confidence === 'high' ? 'bg-blue-100 text-blue-700' :
-                    item.confidence === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-gray-100 text-gray-600'
-                  }`}>
-                    {item.confidence === 'high' ? '확실' :
-                     item.confidence === 'medium' ? '유사' : '불확실'}
-                  </span>
-                )}
-                {item.note && (
-                  <span className="text-gray-400 italic text-xs">{item.note}</span>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* 주의 문구 */}
-      <div className="bg-yellow-50 border-t border-yellow-200 px-4 py-2">
-        <p className="text-xs text-yellow-700">
-          ⚠️ AI 분석은 참고용입니다. 최종 판단은 관리자가 직접 확인하세요.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// ─── 메인 모달 컴포넌트 ──────────────────────────────────────────────────────
 function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove, onReject }) {
   const [decision, setDecision] = useState('approve'); // approve / reject
   const [rejectionReason, setRejectionReason] = useState('');
@@ -113,116 +10,15 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
   const [viewMode, setViewMode] = useState('split'); // split / list / document
   const [selectedFileIndex, setSelectedFileIndex] = useState(0);
 
-  // ── AI 자동 대조 상태
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState(null);
-  const [analysisError, setAnalysisError] = useState(null);
-
   if (!isOpen || !submission || !student) return null;
 
   const completedCourses = submission.completedCourses || [];
   const uploadedFiles = submission.uploadedFiles || submission.uploaded_files || [];
 
-  // ── AI 자동 대조 함수 ────────────────────────────────────────────────────
-  const handleAiAnalysis = async () => {
-    if (!uploadedFiles || uploadedFiles.length === 0) {
-      alert('분석할 파일이 없습니다.');
-      return;
-    }
-    if (!completedCourses || completedCourses.length === 0) {
-      alert('체크된 과목이 없습니다.');
-      return;
-    }
-
-    setIsAnalyzing(true);
-    setAnalysisError(null);
-    setAnalysisResult(null);
-
-    try {
-      const file = uploadedFiles[selectedFileIndex];
-      if (!file) throw new Error('선택된 파일이 없습니다.');
-
-      const fileData = file.data || file.fileData;
-      const fileName = file.name || file.fileName;
-
-      if (!fileData || !fileName) throw new Error('파일 데이터를 읽을 수 없습니다.');
-
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-      const response = await fetch(
-        `${supabaseUrl}/functions/v1/analyze-certificate`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseKey}`,
-            'apikey': supabaseKey,
-          },
-          body: JSON.stringify({
-            fileData,
-            fileName,
-            checkedCourses: completedCourses.map(c => ({
-              courseName: c.courseName,
-              courseCode: c.courseCode,
-            })),
-          }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || 'AI 분석에 실패했습니다.');
-      }
-
-      setAnalysisResult(result.data);
-    } catch (err) {
-      console.error('[AI 분석 오류]', err);
-      setAnalysisError(err.message || 'AI 분석 중 오류가 발생했습니다.');
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
-  // 파일 미리보기 URL 생성
+  // 파일 미리보기 URL 생성 (Storage URL 및 기존 base64 모두 지원)
   const previewUrl = useMemo(() => {
-    // 업로드된 파일만 처리
     if (!uploadedFiles || uploadedFiles.length === 0 || selectedFileIndex >= uploadedFiles.length) return null;
-    const file = uploadedFiles[selectedFileIndex];
-    if (!file) return null;
-
-    const fileData = file.data || file.fileData;
-    const fileName = file.name || file.fileName;
-
-    if (!fileData || !fileName) return null;
-
-    const fileNameLower = fileName.toLowerCase();
-    let mimeType = '';
-
-    if (fileNameLower.endsWith('.pdf')) {
-      mimeType = 'application/pdf';
-    } else if (fileNameLower.endsWith('.png')) {
-      mimeType = 'image/png';
-    } else if (fileNameLower.endsWith('.jpg') || fileNameLower.endsWith('.jpeg')) {
-      mimeType = 'image/jpeg';
-    } else if (fileNameLower.endsWith('.gif')) {
-      mimeType = 'image/gif';
-    } else {
-      return null; // 지원하지 않는 형식
-    }
-
-    try {
-      // base64 문자열에서 data URL prefix 제거
-      const base64Data = fileData.includes('base64,')
-        ? fileData.split('base64,')[1]
-        : fileData;
-
-      return `data:${mimeType};base64,${base64Data}`;
-    } catch (error) {
-      console.error('Preview URL 생성 실패:', error);
-      return null;
-    }
+    return getFilePreviewUrl(uploadedFiles[selectedFileIndex]);
   }, [uploadedFiles, selectedFileIndex]);
 
   const handleSubmit = async () => {
@@ -248,20 +44,12 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
 
   const handleDownload = () => {
     const file = uploadedFiles[selectedFileIndex];
-    if (file) {
-      const fileData = file.data || file.fileData;
-      const fileName = file.name || file.fileName;
-      if (fileData && fileName) {
-        downloadBase64File(fileData, fileName);
-      }
-    }
+    if (file) downloadFile(file);
   };
 
   const handleDownloadAllUploadedFiles = () => {
     uploadedFiles.forEach(file => {
-      if (file && file.fileData && file.fileName) {
-        downloadBase64File(file.fileData, file.fileName);
-      }
+      if (file) downloadFile(file);
     });
   };
 
@@ -384,11 +172,7 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
                       {uploadedFiles.map((file, index) => (
                         <button
                           key={index}
-                          onClick={() => {
-                            setSelectedFileIndex(index);
-                            setAnalysisResult(null);
-                            setAnalysisError(null);
-                          }}
+                          onClick={() => setSelectedFileIndex(index)}
                           className={`px-3 py-1 text-xs rounded-lg font-medium whitespace-nowrap transition-colors ${
                             selectedFileIndex === index
                               ? 'bg-blue-600 text-white'
@@ -453,93 +237,30 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
               {/* 오른쪽: 과목 목록 및 검토 (1/3) */}
               <div className="w-1/3 flex flex-col overflow-hidden">
                 <div className="flex-1 overflow-auto p-4">
-                  {/* ── AI 자동 대조 버튼 ── */}
-                  <div className="mb-4">
-                    <button
-                      onClick={handleAiAnalysis}
-                      disabled={isAnalyzing || uploadedFiles.length === 0 || completedCourses.length === 0}
-                      className={`w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm ${
-                        isAnalyzing
-                          ? 'bg-purple-100 text-purple-400 cursor-not-allowed'
-                          : 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 hover:shadow-md'
-                      }`}
-                    >
-                      {isAnalyzing ? (
-                        <>
-                          <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                          </svg>
-                          AI 분석 중... (10~30초)
-                        </>
-                      ) : (
-                        <>
-                          🤖 AI 자동 대조
-                        </>
-                      )}
-                    </button>
-                    <p className="text-xs text-gray-400 text-center mt-1">
-                      현재 선택된 파일({uploadedFiles[selectedFileIndex]?.name?.substring(0, 20) || '없음'})을 분석합니다
-                    </p>
-                  </div>
-
-                  {/* AI 오류 표시 */}
-                  {analysisError && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-sm text-red-700 font-medium">❌ 분석 실패</p>
-                      <p className="text-xs text-red-600 mt-1">{analysisError}</p>
-                    </div>
-                  )}
-
-                  {/* AI 분석 결과 */}
-                  {analysisResult && (
-                    <AiAnalysisResult
-                      result={analysisResult}
-                      onClose={() => setAnalysisResult(null)}
-                    />
-                  )}
-
                   {/* 이수 과목 목록 */}
-                  <div className={analysisResult ? 'mt-4' : ''}>
+                  <div className="mb-6">
                     <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
                       ✅ 이수 과목 목록
                       <span className="text-sm font-normal text-gray-600">({completedCourses.length}개)</span>
                     </h3>
                     <div className="space-y-2">
-                      {completedCourses.map((course, index) => {
-                        // AI 결과가 있을 경우 과목별 매칭 표시
-                        const aiResult = analysisResult?.results?.find(
-                          r => r.courseCode === course.courseCode || r.courseName === course.courseName
-                        );
-                        return (
-                          <div key={index} className={`p-3 rounded-lg border transition-colors ${
-                            aiResult
-                              ? aiResult.found
-                                ? 'bg-green-50 border-green-300'
-                                : 'bg-red-50 border-red-300'
-                              : 'bg-green-50 border-green-200 hover:bg-green-100'
-                          }`}>
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="font-medium text-gray-900 mb-1 flex items-center gap-1.5">
-                                  {aiResult && (
-                                    <span>{aiResult.found ? '✅' : '❌'}</span>
-                                  )}
-                                  {course.courseName}
-                                </div>
-                                <div className="text-xs text-gray-600 space-x-2">
-                                  <span className="inline-block px-2 py-0.5 bg-white rounded">
-                                    {course.courseType}
-                                  </span>
-                                  <span>{course.courseCode}</span>
-                                  <span>{course.credits}학점</span>
-                                </div>
+                      {completedCourses.map((course, index) => (
+                        <div key={index} className="p-3 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="font-medium text-gray-900 mb-1">{course.courseName}</div>
+                              <div className="text-xs text-gray-600 space-x-2">
+                                <span className="inline-block px-2 py-0.5 bg-white rounded">
+                                  {course.courseType}
+                                </span>
+                                <span>{course.courseCode}</span>
+                                <span>{course.credits}학점</span>
                               </div>
-                              <div className="text-green-600 font-bold text-lg ml-2">{POINTS_PER_COURSE}점</div>
                             </div>
+                            <div className="text-green-600 font-bold text-lg ml-2">{POINTS_PER_COURSE}점</div>
                           </div>
-                        );
-                      })}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -774,11 +495,7 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
                         <button
                           onClick={() => {
                             setSelectedFileIndex(index);
-                            const fileData = file.data || file.fileData;
-                            const fileName = file.name || file.fileName;
-                            if (fileData && fileName) {
-                              downloadBase64File(fileData, fileName);
-                            }
+                            downloadFile(file);
                           }}
                           className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
                         >
