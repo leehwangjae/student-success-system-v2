@@ -9,7 +9,7 @@ import html2canvas from 'html2canvas';
 import 'jspdf-autotable';
 
 function StudentManagement() {
-  const { students, setStudents, deleteStudent } = useAppContext();
+  const { students, setStudents, deleteStudent, coreCoursesSubmissions } = useAppContext();
   const [filter, setFilter] = useState('전체');
   const [showStudentModal, setShowStudentModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
@@ -597,6 +597,7 @@ function StudentManagement() {
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">이메일</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">전화번호</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">재학년도</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">총점</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">개인정보동의</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">지급정보</th>
@@ -625,6 +626,12 @@ function StudentManagement() {
                   <td className="px-6 py-4 font-medium">{student.name}</td>
                   <td className="px-6 py-4 text-gray-600 text-sm">{student.email || '-'}</td>
                   <td className="px-6 py-4 text-gray-600 text-sm">{student.phone || '-'}</td>
+                  <td className="px-6 py-4 text-gray-600 text-sm">
+                    {(() => {
+                      const sub = coreCoursesSubmissions.find(s => s.studentId === student.id);
+                      return sub?.gradeAt2025Fall || '-';
+                    })()}
+                  </td>
                   <td className="px-6 py-4">
                     <span className="font-bold text-blue-600">{student.total}</span>
                   </td>
