@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
+import { supabase } from '../../lib/supabase';
 import { downloadExcel, downloadStudentTemplate } from '../../utils/helpers';
 import { getDepartmentField } from '../../utils/constants';
 import StudentModal from '../modals/StudentModal';
@@ -526,11 +527,17 @@ function StudentManagement() {
             📄 동의서 PDF ({selectedStudents.length})
           </button>
           <button
-            onClick={() => {
-              const enriched = getFilteredStudents().map(s => {
-                const sub = coreCoursesSubmissions.find(cs => cs.studentId === s.id);
-                return { ...s, gradeAt2025Fall: sub?.gradeAt2025Fall || '-' };
-              });
+            onClick={async () => {
+              // DB에서 직접 재학년도 조회 (캐시 미반영 방지)
+              const { data: subRows } = await supabase
+                .from('core_courses_submissions_2025_11_27_07_17')
+                .select('student_id, grade_at_2025_fall');
+              const gradeMap = {};
+              (subRows || []).forEach(r => { gradeMap[r.student_id] = r.grade_at_2025_fall; });
+              const enriched = getFilteredStudents().map(s => ({
+                ...s,
+                gradeAt2025Fall: gradeMap[s.id] || '-'
+              }));
               downloadExcel(enriched, filter);
             }}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"

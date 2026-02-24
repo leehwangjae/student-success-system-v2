@@ -1,24 +1,39 @@
+// CSV 셀 값 이스케이프 (쉼표·따옴표 포함 시 따옴표로 감쌈)
+const escapeCsvCell = (value) => {
+  const str = value == null ? '' : String(value);
+  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+    return '"' + str.replace(/"/g, '""') + '"';
+  }
+  return str;
+};
+
+// 숫자처럼 보이는 문자열(전화번호·계좌번호·학번 등)을 텍스트로 강제 처리
+const asText = (value) => {
+  if (value == null || value === '') return '';
+  return `="${String(value)}"`;
+};
+
 // 엑셀 다운로드 함수
 export const downloadExcel = (students, filterName) => {
   const header = ['학번', '이름', '학과', '분야', '이메일', '전화번호', '재학년도', '비교과', '핵심교과', '산학협력', '총점', '개인정보동의', '동의일자', '은행명', '계좌번호', '예금주', '비고'];
   const rows = students.map(s => [
-    s.studentId,
-    s.name,
-    s.department,
-    s.field,
-    s.email,
-    s.phone,
-    s.gradeAt2025Fall || '-',
+    asText(s.studentId),
+    escapeCsvCell(s.name),
+    escapeCsvCell(s.department),
+    escapeCsvCell(s.field),
+    escapeCsvCell(s.email),
+    asText(s.phone),
+    escapeCsvCell(s.gradeAt2025Fall || '-'),
     s.nonCurricularScore,
     s.coreSubjectScore,
     s.industryScore,
     s.total,
     s.privacy_consented ? '동의완료' : '미동의',
     s.privacy_consented_at ? new Date(s.privacy_consented_at).toLocaleDateString('ko-KR') : '',
-    s.bankName || '',
-    s.accountNumber || '',
-    s.accountHolder || '',
-    s.memo || ''
+    escapeCsvCell(s.bankName || ''),
+    asText(s.accountNumber),
+    escapeCsvCell(s.accountHolder || ''),
+    escapeCsvCell(s.memo || '')
   ]);
 
   const csvContent = [
