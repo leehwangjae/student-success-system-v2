@@ -10,7 +10,7 @@ import html2canvas from 'html2canvas';
 import 'jspdf-autotable';
 
 function StudentManagement() {
-  const { students, setStudents, deleteStudent, coreCoursesSubmissions } = useAppContext();
+  const { students, setStudents, deleteStudent, coreCoursesSubmissions, setCoreCoursesSubmissions } = useAppContext();
   const [filter, setFilter] = useState('전체');
   const [showStudentModal, setShowStudentModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
@@ -19,6 +19,8 @@ function StudentManagement() {
   const [excelPreviewData, setExcelPreviewData] = useState([]);
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [editingGradeStudentId, setEditingGradeStudentId] = useState(null); // 재학년도 편집 중인 student.id
+  const [gradeUpdateLoading, setGradeUpdateLoading] = useState(false);
 
   const getFilteredStudents = () => {
     let filtered = students;
@@ -65,6 +67,27 @@ function StudentManagement() {
     }
 
     return filtered;
+  };
+
+  // 재학년도 인라인 수정
+  const handleGradeChange = async (studentId, newGrade) => {
+    setGradeUpdateLoading(true);
+    try {
+      const { error } = await supabase
+        .from('core_courses_submissions_2025_11_27_07_17')
+        .update({ grade_at_2025_fall: newGrade, updated_at: new Date().toISOString() })
+        .eq('student_id', studentId);
+      if (error) throw error;
+      // 로컬 캐시 동기화
+      setCoreCoursesSubmissions(prev =>
+        prev.map(s => s.studentId === studentId ? { ...s, gradeAt2025Fall: newGrade } : s)
+      );
+    } catch (err) {
+      alert('재학년도 수정 중 오류가 발생했습니다: ' + err.message);
+    } finally {
+      setGradeUpdateLoading(false);
+      setEditingGradeStudentId(null);
+    }
   };
 
   const handleSort = (key) => {
@@ -642,7 +665,43 @@ function StudentManagement() {
                   <td className="px-6 py-4 text-gray-600 text-sm">
                     {(() => {
                       const sub = coreCoursesSubmissions.find(s => s.studentId === student.id);
-                      return sub?.gradeAt2025Fall || '-';
+                      const currentGrade = sub?.gradeAt2025Fall || null;
+                      const isEditing = editingGradeStudentId === student.id;
+
+                      if (!sub) {
+                        // 교과목 제출 자체가 없는 학생
+                        return <span className="text-gray-400">-</span>;
+                      }
+
+                      if (isEditing) {
+                        return (
+                          <select
+                            autoFocus
+                            defaultValue={currentGrade || '2학년'}
+                            disabled={gradeUpdateLoading}
+                            onChange={(e) => handleGradeChange(student.id, e.target.value)}
+                            onBlur={() => setEditingGradeStudentId(null)}
+                            className="border border-blue-400 rounded px-1 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                          >
+                            <option value="2학년">2학년</option>
+                            <option value="3학년">3학년</option>
+                            <option value="4학년">4학년</option>
+                          </select>
+                        );
+                      }
+
+                      return (
+                        <button
+                          onClick={() => setEditingGradeStudentId(student.id)}
+                          title="클릭하여 수정"
+                          className="flex items-center gap-1 group"
+                        >
+                          <span className={`font-medium ${currentGrade ? 'text-gray-700' : 'text-gray-400'}`}>
+                            {currentGrade || '-'}
+                          </span>
+                          <span className="text-gray-300 group-hover:text-blue-400 text-xs transition-colors">✏️</span>
+                        </button>
+                      );
                     })()}
                   </td>
                   <td className="px-6 py-4">

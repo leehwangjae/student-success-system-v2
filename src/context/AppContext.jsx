@@ -1711,6 +1711,7 @@ export const AppProvider = ({ children }) => {
       pendingUsers,
       coreCourses,
       coreCoursesSubmissions,
+      setCoreCoursesSubmissions,
       login,
       addOrUpdateStudent,
       deleteStudent,
