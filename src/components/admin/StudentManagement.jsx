@@ -526,7 +526,13 @@ function StudentManagement() {
             📄 동의서 PDF ({selectedStudents.length})
           </button>
           <button
-            onClick={() => downloadExcel(getFilteredStudents(), filter)}
+            onClick={() => {
+              const enriched = getFilteredStudents().map(s => {
+                const sub = coreCoursesSubmissions.find(cs => cs.studentId === s.id);
+                return { ...s, gradeAt2025Fall: sub?.gradeAt2025Fall || '-' };
+              });
+              downloadExcel(enriched, filter);
+            }}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
           >
             📥 엑셀 다운로드
