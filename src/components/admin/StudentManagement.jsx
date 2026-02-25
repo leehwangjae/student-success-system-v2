@@ -501,6 +501,56 @@ function StudentManagement() {
     }
   };
 
+  // RISE인재지원금 선발자 명단 학번 목록 (바이오 29명 + 반도체 22명 + 물류 17명)
+  const RISE_SELECTED_STUDENT_IDS = [
+    // 바이오
+    '202102486','202102497','202302453','202302451','202302496','202102572','202302513',
+    '202202550','202202557','202102548','202302534','202102541','202102525','202102535',
+    '202102549','202102546','202302510','202302525','202302508','202302557','202202533',
+    '202302561','202002526','202202562','202202545','202102576','202102515','202002582',
+    '202202540',
+    // 반도체
+    '202101194','202101593','202201238','202301253','201901339','202101214','202101237',
+    '202301248','202101154','202101152','202101233','202101208','202101215','202301211',
+    '202100065','202101199','202302880','202301189','202001337','202001211','202102889',
+    '202100252',
+    // 물류
+    '202402624','202400810','202202604','202202614','202402629','202202611','202102580',
+    '202102585','202102609','202102601','202200830','202302567','202302604','202100773',
+    '201900208','202200788','202202598',
+  ];
+
+  // RISE 선발자 명단 학생들의 개인정보 동의서 일괄 다운로드
+  const downloadRiseSelectedConsentPDFs = async () => {
+    const riseStudents = students.filter(s =>
+      RISE_SELECTED_STUDENT_IDS.includes(String(s.studentId || s.student_id))
+      && s.privacy_consented
+    );
+
+    if (riseStudents.length === 0) {
+      alert('선발자 명단에 해당하는 학생 중 개인정보동의가 완료된 학생이 없습니다.');
+      return;
+    }
+
+    const notConsented = RISE_SELECTED_STUDENT_IDS.filter(sid =>
+      !students.find(s => String(s.studentId || s.student_id) === sid)
+      || students.find(s => String(s.studentId || s.student_id) === sid && !s.privacy_consented)
+    );
+
+    const confirmed = window.confirm(
+      `RISE 선발자 ${riseStudents.length}명의 개인정보 동의서를 다운로드합니다.\n` +
+      (notConsented.length > 0 ? `※ 미동의 또는 미등록 ${notConsented.length}명은 제외됩니다.\n` : '') +
+      `\n계속하시겠습니까?`
+    );
+    if (!confirmed) return;
+
+    for (const student of riseStudents) {
+      await downloadPrivacyConsentPDF(student);
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+    alert(`${riseStudents.length}명의 개인정보 동의서 다운로드가 완료되었습니다.`);
+  };
+
   // 선택된 학생들의 개인정보 동의서 일괄 다운로드
   const downloadSelectedConsentPDFs = async () => {
     if (selectedStudents.length === 0) {
@@ -538,6 +588,12 @@ function StudentManagement() {
           </select>
         </div>
         <div className="flex space-x-2">
+          <button
+            onClick={downloadRiseSelectedConsentPDFs}
+            className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm font-medium"
+          >
+            🏆 RISE 선발자 동의서 ({RISE_SELECTED_STUDENT_IDS.length}명)
+          </button>
           <button
             onClick={downloadSelectedConsentPDFs}
             disabled={selectedStudents.length === 0}
