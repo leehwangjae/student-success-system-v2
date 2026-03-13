@@ -1321,6 +1321,67 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  // ── 만족도 조사 ──────────────────────────────────────────────────
+
+  const submitSurvey = async (surveyData) => {
+    try {
+      const { data: existing } = await supabase
+        .from('satisfaction_survey')
+        .select('id')
+        .eq('student_id', surveyData.studentId)
+        .maybeSingle();
+
+      const payload = {
+        scores: surveyData.scores,
+        notes: surveyData.notes,
+        general_opinion: surveyData.generalOpinion || '',
+        submitted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      let error;
+      if (existing) {
+        ({ error } = await supabase
+          .from('satisfaction_survey')
+          .update(payload)
+          .eq('student_id', surveyData.studentId));
+      } else {
+        ({ error } = await supabase
+          .from('satisfaction_survey')
+          .insert([{ student_id: surveyData.studentId, ...payload }]));
+      }
+
+      if (error) throw error;
+      return { success: true };
+    } catch (error) {
+      console.error('설문 제출 실패:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const getSurveySubmission = async (studentId) => {
+    try {
+      const { data, error } = await supabase
+        .from('satisfaction_survey')
+        .select('id, student_id, scores, notes, general_opinion, submitted_at, updated_at')
+        .eq('student_id', studentId)
+        .maybeSingle();
+
+      if (error || !data) return null;
+      return {
+        id: data.id,
+        studentId: data.student_id,
+        scores: data.scores || {},
+        notes: data.notes || {},
+        generalOpinion: data.general_opinion || '',
+        submittedAt: data.submitted_at,
+        updatedAt: data.updated_at,
+      };
+    } catch {
+      return null;
+    }
+  };
+
   // ── 질문게시판 ──────────────────────────────────────────────────
 
   const loadQuestionPostsFromSupabase = async () => {
@@ -1628,6 +1689,8 @@ export const AppProvider = ({ children }) => {
       deleteQuestionPost,
       answerQuestionPost,
       adminDeleteQuestionPost,
+      submitSurvey,
+      getSurveySubmission,
     }}>
       {children}
     </AppContext.Provider>
