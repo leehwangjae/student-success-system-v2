@@ -22,6 +22,7 @@ import {
 import NonCurricularProgramsApplicationPage from './student/NonCurricularProgramsApplicationPage';
 import CoreCoursesCheckPage from './student/CoreCoursesCheckPage';
 import QuestionBoardPage from './student/QuestionBoardPage';
+import SurveyPage from './student/SurveyPage';
 import MyInfo from '../components/student/MyInfo';
 
 function StudentPage() {
@@ -571,6 +572,16 @@ function StudentPage() {
             >
               💬<br />질문게시판
             </button>
+            <button
+              onClick={() => setActiveTab('survey')}
+              className={`flex-1 px-3 py-4 font-semibold text-center leading-tight text-sm ${
+                activeTab === 'survey'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-600 hover:text-blue-600'
+              }`}
+            >
+              📊<br />만족도 조사
+            </button>
           </div>
         </div>
 
@@ -582,6 +593,7 @@ function StudentPage() {
           {activeTab === 'coreCourses' && <CoreCoursesCheckPage />}
           {activeTab === 'nonCurricular' && <NonCurricularProgramsApplicationPage />}
           {activeTab === 'questionBoard' && <QuestionBoardPage />}
+          {activeTab === 'survey' && <SurveyPage />}
         </div>
       </div>
 
