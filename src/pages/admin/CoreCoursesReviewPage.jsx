@@ -142,11 +142,20 @@ function CoreCoursesReviewPage() {
     }
   };
 
-  // PDF URL → base64 이미지 배열 변환
+  // PDF URL → base64 이미지 배열 변환 (CDN 방식 — SubmissionReviewModal과 동일)
   const convertPdfUrlToImages = async (url) => {
-    const pdfjsLib = await import('pdfjs-dist');
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
+    if (!window.pdfjsLib) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+    const pdfjsLib = window.pdfjsLib;
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
