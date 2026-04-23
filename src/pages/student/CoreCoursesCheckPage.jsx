@@ -1,17 +1,16 @@
 /**
  * 핵심 교과목 이수 현황 페이지
- * @version 3.3
- * @description 교과과정 이수표 업로드 시 AI가 학년(재학년도) 자동 추출
- * @date 2026-04-23
+ * @version 3.2
+ * @description 지급 정보 입력 필드 추가 (은행명, 계좌번호, 예금주)
+ * @date 2026-02-12
  */
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { supabase } from '../../lib/supabase';
-import {
-  POINTS_PER_COURSE,
-  MAX_COURSES,
+import { 
+  POINTS_PER_COURSE, 
+  MAX_COURSES, 
   FILE_UPLOAD_CONFIG,
-  SUBMISSION_STATUS_LABEL
+  SUBMISSION_STATUS_LABEL 
 } from '../../components/coreCourses/constants';
 import {
   calculateCoreCoursesScore,
@@ -41,10 +40,8 @@ function CoreCoursesCheckPage() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 재학년도 (기본값: 2학년, 이수표 업로드 시 AI 자동 추출)
+  // 재학년도 선택 (기본값: 2학년)
   const [selectedGrade, setSelectedGrade] = useState('2학년');
-  const [isExtractingGrade, setIsExtractingGrade] = useState(false);
-  const [gradeSource, setGradeSource] = useState('manual'); // 'auto' | 'manual'
 
   // 지급 관련 정보
   const [paymentInfo, setPaymentInfo] = useState({
@@ -95,7 +92,6 @@ function CoreCoursesCheckPage() {
     } else {
       // 제출 데이터가 없을 경우 초기화
       setSelectedGrade('2학년');
-      setGradeSource('manual');
       setCompletedCourses([]);
       setUploadedFiles([]);
       setPaymentInfo({
@@ -111,27 +107,35 @@ function CoreCoursesCheckPage() {
     const existing = completedCourses.find(c => c.courseId === course.id);
 
     if (existing && existing.isCompleted) {
+      // 체크 해제
       setCompletedCourses(prev =>
         prev.map(c =>
           c.courseId === course.id ? { ...c, isCompleted: false } : c
         )
       );
     } else {
+      // 체크
+      // 중복 체크
       if (isDuplicateCourse(course.courseCode, completedCourses, course.id)) {
         showAlert('⚠️ 이미 동일 과목을 선택하셨습니다. (학수번호 중복)');
         return;
       }
+
+      // 최대 개수 체크
       if (!canAddMoreCourses(completedCourses)) {
         showAlert(`⚠️ 최대 ${MAX_COURSES}과목까지만 선택 가능합니다.`);
         return;
       }
+
       if (existing) {
+        // 이미 있지만 체크 해제 상태 → 다시 체크
         setCompletedCourses(prev =>
           prev.map(c =>
             c.courseId === course.id ? { ...c, isCompleted: true } : c
           )
         );
       } else {
+        // 새로 추가
         setCompletedCourses(prev => [
           ...prev,
           {
@@ -143,62 +147,6 @@ function CoreCoursesCheckPage() {
           }
         ]);
       }
-    }
-  };
-
-  // PDF를 이미지 배열(base64)로 변환 (CDN 방식 — SubmissionReviewModal과 동일)
-  const convertPdfToImages = async (file) => {
-    if (!window.pdfjsLib) {
-      await new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-        script.onload = resolve;
-        script.onerror = reject;
-        document.head.appendChild(script);
-      });
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
-        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    }
-    const pdfjsLib = window.pdfjsLib;
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    const images = [];
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const viewport = page.getViewport({ scale: 2.0 });
-      const canvas = document.createElement('canvas');
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-      images.push(canvas.toDataURL('image/png').split('base64,')[1]);
-    }
-    return images;
-  };
-
-  // 이수표에서 학년 자동 추출
-  const extractGradeFromFile = async (file, storageUrl) => {
-    setIsExtractingGrade(true);
-    try {
-      let body;
-      if (file.type === 'application/pdf') {
-        const imageDataList = await convertPdfToImages(file);
-        body = { mode: 'extractGrade', imageDataList, fileName: file.name };
-      } else {
-        body = { mode: 'extractGrade', fileUrl: storageUrl, fileName: file.name };
-      }
-
-      const { data, error } = await supabase.functions.invoke('analyze-certificate', { body });
-      if (error) throw error;
-
-      if (data?.success && data?.data?.grade) {
-        setSelectedGrade(data.data.grade);
-        setGradeSource('auto');
-      }
-    } catch (err) {
-      console.error('학년 자동 추출 실패:', err);
-      // 실패해도 수동 선택 유지 — 사용자에게 별도 알림 없이 드롭다운으로 폴백
-    } finally {
-      setIsExtractingGrade(false);
     }
   };
 
@@ -234,11 +182,6 @@ function CoreCoursesCheckPage() {
             uploadedAt: new Date().toISOString()
           }
         ]);
-
-        // 첫 번째 파일 업로드 시에만 학년 자동 추출 (아직 자동 추출 전인 경우)
-        if (uploadedFiles.length === 0 && gradeSource !== 'auto') {
-          extractGradeFromFile(file, url);
-        }
       } catch (error) {
         showAlert(`${file.name} 업로드 중 오류가 발생했습니다.`);
         console.error('File upload error:', error);
@@ -324,7 +267,7 @@ function CoreCoursesCheckPage() {
   const periodInfo = applicationPeriods?.coreCourses;
   const periodActive = periodInfo?.isActive;
 
-  const canEdit = !isApproved && !isPartial && withinPeriod;
+  const canEdit = !isApproved && !isPartial && withinPeriod; // 승인됨(전체/일부) or 기간 외면 수정 불가
 
   if (!currentUser) {
     return <div className="p-6">로그인이 필요합니다.</div>;
@@ -478,55 +421,32 @@ function CoreCoursesCheckPage() {
           </div>
         )}
 
-        {/* 재학년도 - AI 자동 추출 (v3.3) */}
+        {/* 재학년도 선택 */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border-2 border-purple-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="text-2xl">📅</div>
               <div>
                 <h3 className="font-bold text-gray-900">25년 2학기 기준 재학년도</h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  {isExtractingGrade
-                    ? '이수표에서 학년 추출 중...'
-                    : gradeSource === 'auto'
-                    ? '이수표에서 자동 추출됨 ✓'
-                    : '이수표 업로드 후 자동으로 설정됩니다'}
-                </p>
+                <p className="text-sm text-gray-600 mt-1">현재 학년을 선택해주세요</p>
               </div>
             </div>
             <div className="w-48">
-              {isExtractingGrade ? (
-                <div className="flex items-center justify-center h-12 border-2 border-purple-300 rounded-lg bg-purple-50">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-600"></div>
-                  <span className="ml-2 text-sm text-purple-700">추출 중...</span>
-                </div>
-              ) : (
-                <select
-                  value={selectedGrade}
-                  onChange={(e) => { setSelectedGrade(e.target.value); setGradeSource('manual'); }}
-                  disabled={!canEdit}
-                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed font-semibold text-gray-900 ${
-                    gradeSource === 'auto'
-                      ? 'border-green-400 bg-green-50'
-                      : 'border-purple-300'
-                  }`}
-                >
-                  <option value="2학년">2학년</option>
-                  <option value="3학년">3학년</option>
-                  <option value="4학년">4학년</option>
-                </select>
-              )}
+              <select
+                value={selectedGrade}
+                onChange={(e) => setSelectedGrade(e.target.value)}
+                disabled={!canEdit}
+                className="w-full px-4 py-3 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed font-semibold text-gray-900"
+              >
+                <option value="2학년">2학년</option>
+                <option value="3학년">3학년</option>
+                <option value="4학년">4학년</option>
+              </select>
             </div>
           </div>
-          <div className={`mt-3 border rounded-lg p-3 ${
-            gradeSource === 'auto'
-              ? 'bg-green-50 border-green-200'
-              : 'bg-purple-50 border-purple-200'
-          }`}>
-            <p className={`text-sm ${gradeSource === 'auto' ? 'text-green-800' : 'text-purple-800'}`}>
-              {gradeSource === 'auto'
-                ? `✅ 이수표 분석을 통해 ${selectedGrade}로 자동 설정되었습니다. 잘못된 경우 직접 변경하세요.`
-                : '💡 이수표를 업로드하면 학년이 자동으로 추출됩니다. 업로드 후에도 직접 변경이 가능합니다.'}
+          <div className="mt-3 bg-purple-50 border border-purple-200 rounded-lg p-3">
+            <p className="text-sm text-purple-800">
+              💡 25년 2학기 기준으로 현재 재학 중인 학년을 선택해주세요.
             </p>
           </div>
         </div>
@@ -587,7 +507,7 @@ function CoreCoursesCheckPage() {
             <h3 className="font-bold text-gray-900">
               📎 교과과정 이수표 업로드 <span className="text-red-500">*</span>
             </h3>
-            <span className="text-xs text-gray-400">v3.3</span>
+            <span className="text-xs text-gray-400">v3.2</span>
           </div>
 
           {/* 업로드된 파일 목록 */}
@@ -647,8 +567,6 @@ function CoreCoursesCheckPage() {
                   <span className="text-blue-600 font-medium">파일 선택</span> 또는 드래그 앤 드롭
                   <br />
                   PDF, JPG, PNG (최대 10MB) · 여러 파일 선택 가능
-                  <br />
-                  <span className="text-purple-600 font-medium">첫 번째 파일에서 학년이 자동 추출됩니다</span>
                 </div>
               </label>
             </div>
@@ -664,6 +582,7 @@ function CoreCoursesCheckPage() {
             <span className="text-xs text-blue-600 font-bold">v3.2 NEW</span>
           </div>
 
+          {/* 신규 필드 안내 */}
           <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
             <div className="flex gap-2">
               <div className="text-blue-600">ℹ️</div>
@@ -741,6 +660,7 @@ function CoreCoursesCheckPage() {
             </div>
           </div>
 
+          {/* 안내 메시지 */}
           <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
             <div className="flex gap-2">
               <div className="text-yellow-600">⚠️</div>
@@ -757,7 +677,7 @@ function CoreCoursesCheckPage() {
           </div>
         </div>
 
-        {/* 신청 기간 외 안내 */}
+        {/* 신청 기간 외 안내 (승인 전이지만 기간이 끝난 경우) */}
         {!isApproved && !withinPeriod && periodActive && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
             <div className="flex gap-3">
@@ -774,6 +694,7 @@ function CoreCoursesCheckPage() {
         {canEdit && (
           <div className="bg-white rounded-xl shadow-sm p-6">
             {isPending ? (
+              // 검토 중일 때: 수정하기 버튼
               <button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
@@ -805,7 +726,7 @@ function CoreCoursesCheckPage() {
           </div>
         )}
 
-        {/* 안내사항 */}
+        {/* 주의사항 */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-6">
           <div className="flex gap-3">
             <div className="text-blue-600 text-xl">ℹ️</div>
@@ -817,7 +738,6 @@ function CoreCoursesCheckPage() {
                 <li>• 최대 {MAX_COURSES}과목({MAX_COURSES * POINTS_PER_COURSE}점)까지 인정됩니다.</li>
                 <li>• 과목당 {POINTS_PER_COURSE}점이 부여됩니다.</li>
                 <li>• 교과과정 이수표, 개인정보동의서, 지급 정보는 필수 입력 사항입니다.</li>
-                <li>• 이수표 업로드 시 학년이 자동으로 추출됩니다. 잘못된 경우 직접 수정하세요.</li>
                 <li>• 제출 후에도 관리자 승인 전까지는 수정이 가능합니다.</li>
               </ul>
             </div>

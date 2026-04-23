@@ -1,10 +1,7 @@
 // ============================================================
 // Supabase Edge Function: analyze-certificate
-// 교과과정 이수 증빙 파일을 OpenAI Vision으로 분석
-//
-// mode: 'extractGrade' → 이수표에서 학년(재학년도) 자동 추출
-// mode: 없음(기본)    → 학생이 체크한 과목 목록과 자동 대조
-//
+// 교과과정 이수 증빙 파일을 OpenAI Vision으로 분석하여
+// 학생이 체크한 과목 목록과 자동 대조합니다.
 // PDF는 프론트에서 이미지로 변환 후 전달받습니다.
 // ============================================================
 
@@ -28,115 +25,14 @@ serve(async (req) => {
       throw new Error("OPENAI_API_KEY가 설정되지 않았습니다.");
     }
 
-    const { mode, imageDataList, fileUrl, fileName, checkedCourses } = await req.json();
+    // imageDataList: 이미지 base64 배열 (PDF 여러 페이지 지원)
+    // fileUrl: Storage URL (이미지 파일인 경우)
+    // fileName, checkedCourses
+    const { imageDataList, fileUrl, fileName, checkedCourses } = await req.json();
 
     if (!fileName) throw new Error("파일 이름이 없습니다.");
+    if (!checkedCourses || checkedCourses.length === 0) throw new Error("체크된 과목 목록이 없습니다.");
     if (!imageDataList && !fileUrl) throw new Error("이미지 데이터가 없습니다.");
-
-    // 이미지 콘텐츠 구성 (공통)
-    const imageContents: unknown[] = [];
-
-    if (fileUrl) {
-      imageContents.push({
-        type: "image_url",
-        image_url: { url: fileUrl, detail: "high" },
-      });
-    } else if (imageDataList && imageDataList.length > 0) {
-      for (const imgData of imageDataList) {
-        const base64 = imgData.includes("base64,")
-          ? imgData.split("base64,")[1]
-          : imgData;
-        imageContents.push({
-          type: "image_url",
-          image_url: {
-            url: `data:image/png;base64,${base64}`,
-            detail: "high",
-          },
-        });
-      }
-    }
-
-    if (imageContents.length === 0) throw new Error("분석할 이미지가 없습니다.");
-
-    // ── 학년 추출 모드 ──────────────────────────────────────────
-    if (mode === "extractGrade") {
-      const systemPrompt = `당신은 대학교 교과과정 이수표를 분석하는 전문가입니다.
-이수표 문서에서 학생의 현재 학년(재학년도) 정보를 정확하게 추출해주세요.`;
-
-      const userPrompt = `이 교과과정 이수표에서 학생의 학년(재학년도)을 추출해주세요.
-
-추출 규칙:
-1. 문서에 "2학년", "3학년", "4학년" 등의 학년 정보를 찾아주세요.
-2. 학년이 숫자로만 적혀있으면 "N학년" 형태로 변환하세요. (예: "3" → "3학년")
-3. 명확히 판단하기 어려운 경우 confidence를 "low"로 설정하세요.
-4. 반드시 아래 JSON 형식으로만 응답하세요 (다른 텍스트 없이):
-{"grade": "3학년", "confidence": "high"}`;
-
-      const messages = [
-        { role: "system", content: systemPrompt },
-        {
-          role: "user",
-          content: [
-            ...imageContents,
-            { type: "text", text: userPrompt },
-          ],
-        },
-      ];
-
-      console.log(`[analyze-certificate] 학년 추출 시작: ${fileName}`);
-
-      const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${OPENAI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "gpt-4o",
-          messages,
-          max_tokens: 100,
-          temperature: 0.1,
-        }),
-      });
-
-      if (!openaiResponse.ok) {
-        const errorBody = await openaiResponse.text();
-        if (openaiResponse.status === 401) throw new Error("OpenAI API Key가 유효하지 않습니다.");
-        if (openaiResponse.status === 429) throw new Error("OpenAI API 요청 한도를 초과했습니다.");
-        throw new Error(`OpenAI API 오류 (${openaiResponse.status}): ${errorBody}`);
-      }
-
-      const openaiData = await openaiResponse.json();
-      const content = openaiData.choices?.[0]?.message?.content;
-      if (!content) throw new Error("AI 응답이 비어 있습니다.");
-
-      let gradeResult;
-      try {
-        const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/) ||
-                          content.match(/\{[\s\S]*\}/);
-        const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : content;
-        gradeResult = JSON.parse(jsonStr.trim());
-      } catch {
-        throw new Error("AI 응답을 파싱할 수 없습니다.");
-      }
-
-      const validGrades = ["2학년", "3학년", "4학년"];
-      if (!validGrades.includes(gradeResult.grade)) {
-        throw new Error(`유효하지 않은 학년 값: ${gradeResult.grade}`);
-      }
-
-      console.log(`[analyze-certificate] 학년 추출 완료: ${gradeResult.grade} (신뢰도: ${gradeResult.confidence})`);
-
-      return new Response(
-        JSON.stringify({ success: true, data: gradeResult }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // ── 기존 교과목 대조 모드 ──────────────────────────────────
-    if (!checkedCourses || checkedCourses.length === 0) {
-      throw new Error("체크된 과목 목록이 없습니다.");
-    }
 
     const courseNameList = checkedCourses
       .map((c: { courseName: string; courseCode: string }, i: number) =>
@@ -175,6 +71,35 @@ ${courseNameList}
     "overallValid": true
   }
 }`;
+
+    // 이미지 콘텐츠 구성 (여러 장 지원)
+    const imageContents: unknown[] = [];
+
+    if (fileUrl) {
+      // Storage URL 방식 (이미지 파일)
+      imageContents.push({
+        type: "image_url",
+        image_url: { url: fileUrl, detail: "high" },
+      });
+    } else if (imageDataList && imageDataList.length > 0) {
+      // base64 이미지 배열 방식 (PDF 변환 포함)
+      for (const imgData of imageDataList) {
+        const base64 = imgData.includes("base64,")
+          ? imgData.split("base64,")[1]
+          : imgData;
+        imageContents.push({
+          type: "image_url",
+          image_url: {
+            url: `data:image/png;base64,${base64}`,
+            detail: "high",
+          },
+        });
+      }
+    }
+
+    if (imageContents.length === 0) {
+      throw new Error("분석할 이미지가 없습니다.");
+    }
 
     const messages = [
       { role: "system", content: systemPrompt },
