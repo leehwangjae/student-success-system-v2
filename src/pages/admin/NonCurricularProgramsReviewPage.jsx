@@ -12,6 +12,7 @@ function NonCurricularProgramsReviewPage() {
     students,
     nonCurricularPrograms,
     nonCurricularSubmissions,
+    coreCoursesSubmissions,
     approveNonCurricularPrograms,
     rejectNonCurricularPrograms,
     partialApproveNonCurricularPrograms,
@@ -82,6 +83,15 @@ function NonCurricularProgramsReviewPage() {
         aVal = a.student.name || '';
         bVal = b.student.name || '';
         return sortConfig.direction === 'asc' ? aVal.localeCompare(bVal, 'ko') : bVal.localeCompare(aVal, 'ko');
+      } else if (sortConfig.key === 'grade') {
+        const gradeOrder = { '2학년': 2, '3학년': 3, '4학년': 4 };
+        const getGrade = (item) => {
+          const sub = coreCoursesSubmissions.find(s => s.studentId === item.student.id);
+          return gradeOrder[sub?.gradeAt2025Fall] || 0;
+        };
+        aVal = getGrade(a);
+        bVal = getGrade(b);
+        return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
       } else if (sortConfig.key === 'score') {
         const getScore = (item) => {
           if (!item.submission) return -1;
@@ -402,6 +412,12 @@ function NonCurricularProgramsReviewPage() {
                     >
                       이름 <span className="text-xs">{getSortIcon('name')}</span>
                     </th>
+                    <th
+                      className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                      onClick={() => handleSort('grade')}
+                    >
+                      재학년도 <span className="text-xs">{getSortIcon('grade')}</span>
+                    </th>
                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">이수 프로그램</th>
                     <th
                       className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
@@ -419,6 +435,15 @@ function NonCurricularProgramsReviewPage() {
                     <tr key={student.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.studentId}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{student.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">
+                        {(() => {
+                          const coreSub = coreCoursesSubmissions.find(s => s.studentId === student.id);
+                          const grade = coreSub?.gradeAt2025Fall;
+                          return grade
+                            ? <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full font-medium">{grade}</span>
+                            : <span className="text-gray-400">-</span>;
+                        })()}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">
                         {submission ? `${submission.totalProgramCount}개` : '-'}
                       </td>
