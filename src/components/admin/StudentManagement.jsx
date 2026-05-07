@@ -50,6 +50,21 @@ function StudentManagement() {
           bValue = b.studentId || b.student_id || '';
         }
 
+        // 재학년도 정렬
+        if (sortConfig.key === 'gradeAt2025Fall') {
+          const subA = coreCoursesSubmissions.find(s => s.studentId === a.id);
+          const subB = coreCoursesSubmissions.find(s => s.studentId === b.id);
+          const gradeOrder = { '2학년': 2, '3학년': 3, '4학년': 4 };
+          aValue = gradeOrder[subA?.gradeAt2025Fall] || 0;
+          bValue = gradeOrder[subB?.gradeAt2025Fall] || 0;
+        }
+
+        // 총점 정렬
+        if (sortConfig.key === 'total') {
+          aValue = Number(a.total) || 0;
+          bValue = Number(b.total) || 0;
+        }
+
         // 문자열 비교
         if (typeof aValue === 'string') {
           aValue = aValue.toLowerCase();
@@ -599,6 +614,7 @@ function StudentManagement() {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
+                <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700 whitespace-nowrap">순번</th>
                 <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700 whitespace-nowrap">
                   <input
                     type="checkbox"
@@ -633,16 +649,27 @@ function StudentManagement() {
                 </th>
                 <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">이메일</th>
                 <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">전화번호</th>
-                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">재학년도</th>
-                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">총점</th>
+                <th
+                  className="px-3 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap"
+                  onClick={() => handleSort('gradeAt2025Fall')}
+                >
+                  재학년도 <span className="text-xs">{getSortIcon('gradeAt2025Fall')}</span>
+                </th>
+                <th
+                  className="px-3 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap"
+                  onClick={() => handleSort('total')}
+                >
+                  총점 <span className="text-xs">{getSortIcon('total')}</span>
+                </th>
                 <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">개인정보동의</th>
                 <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">지급정보</th>
                 <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700 whitespace-nowrap">관리</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {getFilteredStudents().map(student => (
+              {getFilteredStudents().map((student, index) => (
                 <tr key={student.id} className="hover:bg-gray-50">
+                  <td className="px-3 py-3 text-center whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
                   <td className="px-3 py-3 text-center whitespace-nowrap">
                     <input
                       type="checkbox"

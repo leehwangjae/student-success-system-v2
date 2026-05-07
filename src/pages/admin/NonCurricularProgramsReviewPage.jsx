@@ -27,6 +27,20 @@ function NonCurricularProgramsReviewPage() {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [showProgramStats, setShowProgramStats] = useState(false);
 
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+
+  const handleSort = (key) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const getSortIcon = (key) => {
+    if (sortConfig.key !== key) return '↕';
+    return sortConfig.direction === 'asc' ? '↑' : '↓';
+  };
+
   // 필터링된 학생 목록
   const filteredStudents = useMemo(() => {
     return students.filter(s => s.field === selectedField);
@@ -58,6 +72,29 @@ function NonCurricularProgramsReviewPage() {
       item.student.name.toLowerCase().includes(term)
     );
   }, [statusFilteredData, searchTerm]);
+
+  // 정렬 처리
+  const sortedData = useMemo(() => {
+    if (!sortConfig.key) return searchFilteredData;
+    return [...searchFilteredData].sort((a, b) => {
+      let aVal, bVal;
+      if (sortConfig.key === 'name') {
+        aVal = a.student.name || '';
+        bVal = b.student.name || '';
+        return sortConfig.direction === 'asc' ? aVal.localeCompare(bVal, 'ko') : bVal.localeCompare(aVal, 'ko');
+      } else if (sortConfig.key === 'score') {
+        const getScore = (item) => {
+          if (!item.submission) return -1;
+          return item.submission.status === 'partial' && item.submission.approvedScore != null
+            ? item.submission.approvedScore : (item.submission.totalScore || 0);
+        };
+        aVal = getScore(a);
+        bVal = getScore(b);
+        return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+      return 0;
+    });
+  }, [searchFilteredData, sortConfig]);
 
   // 통계 계산
   const stats = useMemo(() => {
@@ -358,13 +395,27 @@ function NonCurricularProgramsReviewPage() {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b">
                   <tr>
-                    {['학번', '이름', '이수 프로그램', '점수', '증빙파일', '제출 상태', '관리'].map((h, i) => (
-                      <th key={h} className={`px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider ${i < 2 ? 'text-left' : 'text-center'}`}>{h}</th>
-                    ))}
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">학번</th>
+                    <th
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                      onClick={() => handleSort('name')}
+                    >
+                      이름 <span className="text-xs">{getSortIcon('name')}</span>
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">이수 프로그램</th>
+                    <th
+                      className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                      onClick={() => handleSort('score')}
+                    >
+                      점수 <span className="text-xs">{getSortIcon('score')}</span>
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">증빙파일</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">제출 상태</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">관리</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {searchFilteredData.map(({ student, submission }) => (
+                  {sortedData.map(({ student, submission }) => (
                     <tr key={student.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.studentId}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{student.name}</td>
