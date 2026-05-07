@@ -1806,6 +1806,7 @@ export const AppProvider = ({ children }) => {
       partialApproveNonCurricularPrograms,
       getNonCurricularSubmission,
       fetchNonCurricularSubmissionDetail,
+      loadNonCurricularSubmissionsFromSupabase,
       fetchCoreCoursesSubmissionDetail,
       applicationPeriods,
       saveApplicationPeriod,

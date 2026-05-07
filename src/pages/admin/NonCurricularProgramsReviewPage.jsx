@@ -17,6 +17,7 @@ function NonCurricularProgramsReviewPage() {
     rejectNonCurricularPrograms,
     partialApproveNonCurricularPrograms,
     fetchNonCurricularSubmissionDetail,
+    loadNonCurricularSubmissionsFromSupabase,
   } = useAppContext();
 
   const { showAlert } = useModalStore();
@@ -195,8 +196,11 @@ function NonCurricularProgramsReviewPage() {
 
     if (error) throw new Error(error.message);
 
-    // 모달 데이터 갱신
-    const freshDetail = await fetchNonCurricularSubmissionDetail(submissionId);
+    // 모달 데이터 갱신 + global context 갱신 (stale 캐시 방지)
+    const [freshDetail] = await Promise.all([
+      fetchNonCurricularSubmissionDetail(submissionId),
+      loadNonCurricularSubmissionsFromSupabase(),
+    ]);
     if (freshDetail) {
       setReviewingSubmission(prev => ({ ...prev, submission: freshDetail }));
     }
