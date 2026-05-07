@@ -532,7 +532,8 @@ function StudentDetailModal({ isOpen, onClose, student, readOnly = true }) {
           })()}
           {activeTab === 'coreSubject' && (() => {
             const sub = (coreCoursesSubmissions || []).find(s => s.studentId === student.id);
-            const courses = sub?.completedCourses || [];
+            const courses = (sub?.completedCourses || []).filter(c => c.isCompleted);
+            const POINTS_PER = 5;
             return (
               <div className="space-y-3">
                 <h3 className="text-lg font-bold mb-3">📚 전략산업 교과 이수 내역</h3>
@@ -547,15 +548,15 @@ function StudentDetailModal({ isOpen, onClose, student, readOnly = true }) {
                       <div className="flex gap-2 mt-1 text-xs text-gray-500">
                         <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded">{c.courseType}</span>
                         {c.courseCode && <span>{c.courseCode}</span>}
-                        {c.credits && <span>{c.credits}학점</span>}
                       </div>
                     </div>
-                    <span className="text-lg font-bold text-blue-600">{c.score ?? c.credits ?? '-'}점</span>
+                    <span className="text-lg font-bold text-blue-600">{POINTS_PER}점</span>
                   </div>
                 ))}
                 {sub && (
                   <div className="mt-4 pt-3 border-t text-right text-sm text-gray-500">
                     합계: <span className="font-bold text-blue-600">{student.coreSubjectScore}점</span>
+                    {' · '}{courses.length}과목 × {POINTS_PER}점
                     {' · '}제출 상태: <span className="font-medium">{sub.status === 'approved' ? '✅ 승인' : sub.status === 'partial' ? '🔶 일부승인' : sub.status === 'pending' ? '⏳ 검토 대기' : '❌ 반려'}</span>
                   </div>
                 )}
