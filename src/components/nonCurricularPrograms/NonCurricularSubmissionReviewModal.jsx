@@ -37,7 +37,7 @@ function NonCurricularSubmissionReviewModal({
     const field = student?.field;
     return (nonCurricularPrograms || [])
       .filter(p => (!field || p.field === field))
-      .filter(p => !editedPrograms.some(ep => ep.programId === p.id));
+      .filter(p => !editedPrograms.some(ep => String(ep.programId) === String(p.id)));
   }, [nonCurricularPrograms, editedPrograms, student]);
 
   const previewUrl = useMemo(() => {
@@ -111,7 +111,7 @@ function NonCurricularSubmissionReviewModal({
   // 프로그램 추가
   const handleAddProgram = () => {
     if (!selectedProgramToAdd) return;
-    const program = (nonCurricularPrograms || []).find(p => p.id === selectedProgramToAdd);
+    const program = (nonCurricularPrograms || []).find(p => String(p.id) === String(selectedProgramToAdd));
     if (!program) return;
     setEditedPrograms(prev => [
       ...prev,
@@ -265,7 +265,7 @@ function NonCurricularSubmissionReviewModal({
             >
               <option value="">추가할 프로그램 선택...</option>
               {availablePrograms.map(p => (
-                <option key={p.id} value={p.id}>
+                <option key={p.id} value={String(p.id)}>
                   [{p.category}] {p.program_name} ({p.score}점)
                 </option>
               ))}
