@@ -9,7 +9,8 @@ function StudentDetailModal({ isOpen, onClose, student, readOnly = true }) {
     addHistoryEntry,
     updateHistoryEntry,
     deleteHistoryEntry,
-    updateStudentScore
+    updateStudentScore,
+    nonCurricularSubmissions
   } = useAppContext();
 
   const { showConfirm, showAlert } = useModalStore();
@@ -423,24 +424,33 @@ function StudentDetailModal({ isOpen, onClose, student, readOnly = true }) {
         </div>
 
         {/* 점수 카드 */}
-        <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-6 grid grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg p-4 text-center shadow-sm">
-            <p className="text-sm text-gray-600 mb-1">비교과</p>
-            <p className="text-2xl font-bold text-purple-600">{student.nonCurricularScore}</p>
-          </div>
-          <div className="bg-white rounded-lg p-4 text-center shadow-sm">
-            <p className="text-sm text-gray-600 mb-1">전략산업 교과</p>
-            <p className="text-2xl font-bold text-blue-600">{student.coreSubjectScore}</p>
-          </div>
-          <div className="bg-white rounded-lg p-4 text-center shadow-sm">
-            <p className="text-sm text-gray-600 mb-1">산학협력</p>
-            <p className="text-2xl font-bold text-green-600">{student.industryScore}</p>
-          </div>
-          <div className="bg-white rounded-lg p-4 text-center shadow-sm">
-            <p className="text-sm text-gray-600 mb-1">총점</p>
-            <p className="text-2xl font-bold text-indigo-600">{student.total}</p>
-          </div>
-        </div>
+        {(() => {
+          const nonCurSub = (nonCurricularSubmissions || []).find(s => s.studentId === student.id);
+          const programs = nonCurSub?.completedPrograms || [];
+          const jobScore      = programs.reduce((s, p) => p.category === '취업역량' ? s + (p.score || 0) : s, 0);
+          const industryScore = programs.reduce((s, p) => p.category === '산학협력' ? s + (p.score || 0) : s, 0);
+          return (
+            <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-6 grid grid-cols-4 gap-4">
+              <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                <p className="text-sm text-gray-600 mb-1">취업역량 비교과</p>
+                <p className="text-2xl font-bold text-purple-600">{jobScore}</p>
+                {nonCurSub && <p className="text-xs text-gray-400 mt-1">승인: {student.nonCurricularScore}점</p>}
+              </div>
+              <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                <p className="text-sm text-gray-600 mb-1">전략산업 교과</p>
+                <p className="text-2xl font-bold text-blue-600">{student.coreSubjectScore}</p>
+              </div>
+              <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                <p className="text-sm text-gray-600 mb-1">산학협력 비교과</p>
+                <p className="text-2xl font-bold text-green-600">{industryScore}</p>
+              </div>
+              <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                <p className="text-sm text-gray-600 mb-1">총점</p>
+                <p className="text-2xl font-bold text-indigo-600">{student.total}</p>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* 탭 */}
         <div className="flex border-b bg-white">

@@ -463,29 +463,49 @@ function NonCurricularSubmissionReviewModal({
         </div>
       )}
 
-      {submission.status !== 'pending' && (
-        <div className={`${compact ? 'p-4 m-4' : 'p-4'} rounded-lg ${
-          submission.status === 'approved' ? 'bg-green-50 border border-green-200' :
-          submission.status === 'partial'  ? 'bg-yellow-50 border border-yellow-200' :
-          'bg-red-50 border border-red-200'
-        }`}>
-          <div className="font-semibold text-gray-900 mb-1">
-            {submission.status === 'approved' ? '✅ 승인 완료' :
-             submission.status === 'partial'  ? '🔶 일부 승인' : '❌ 반려됨'}
+      {submission.status !== 'pending' && (() => {
+        const rawScores = calcCategoryScores(completedPrograms);
+        const finalScore = submission.status === 'partial' && submission.approvedScore != null
+          ? submission.approvedScore : submission.totalScore;
+        return (
+          <div className={`${compact ? 'p-4 m-4' : 'p-4'} rounded-lg ${
+            submission.status === 'approved' ? 'bg-green-50 border border-green-200' :
+            submission.status === 'partial'  ? 'bg-yellow-50 border border-yellow-200' :
+            'bg-red-50 border border-red-200'
+          }`}>
+            <div className="font-semibold text-gray-900 mb-1">
+              {submission.status === 'approved' ? '✅ 승인 완료' :
+               submission.status === 'partial'  ? '🔶 일부 승인' : '❌ 반려됨'}
+            </div>
+            {submission.status !== 'rejected' ? (
+              <>
+                <div className="text-sm text-gray-600">
+                  {finalScore}점이 학생에게 반영되었습니다.
+                  {submission.adminComment ? ` / ${submission.adminComment}` : ''}
+                </div>
+                <div className="mt-2 flex gap-3 text-xs">
+                  <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full font-medium">
+                    취업역량 {rawScores.job}점
+                  </span>
+                  <span className="text-gray-400 self-center">+</span>
+                  <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full font-medium">
+                    산학협력 {rawScores.industry}점
+                  </span>
+                  <span className="text-gray-400 self-center">=</span>
+                  <span className="text-gray-500 self-center font-medium">자동계산 {submission.totalScore}점</span>
+                </div>
+              </>
+            ) : (
+              <div className="text-sm text-gray-600">
+                반려 사유: {submission.rejectionReason || submission.rejection_reason}
+              </div>
+            )}
+            <div className="text-xs text-gray-500 mt-2">
+              처리일: {formatDate(submission.reviewedAt || submission.reviewed_at)}
+            </div>
           </div>
-          <div className="text-sm text-gray-600">
-            {submission.status === 'approved'
-              ? `${submission.totalScore}점이 학생에게 반영되었습니다.`
-              : submission.status === 'partial'
-              ? `${submission.approvedScore ?? submission.totalScore}점이 학생에게 반영되었습니다.${submission.adminComment ? ` / ${submission.adminComment}` : ''}`
-              : `반려 사유: ${submission.rejectionReason || submission.rejection_reason}`
-            }
-          </div>
-          <div className="text-xs text-gray-500 mt-2">
-            처리일: {formatDate(submission.reviewedAt || submission.reviewed_at)}
-          </div>
-        </div>
-      )}
+        );
+      })()}
     </>
   );
 
@@ -508,6 +528,13 @@ function NonCurricularSubmissionReviewModal({
         : submission.totalScore);
 
   const displayCount = isEditMode ? editedPrograms.length : submission.totalProgramCount;
+
+  // ── 카테고리별 점수 분리 ───────────────────────────────────────────────────
+  const calcCategoryScores = (programs) => ({
+    job:      programs.reduce((s, p) => p.category === '취업역량' ? s + (p.score || 0) : s, 0),
+    industry: programs.reduce((s, p) => p.category === '산학협력' ? s + (p.score || 0) : s, 0),
+  });
+  const categoryScores = calcCategoryScores(displayPrograms);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2">
@@ -584,6 +611,20 @@ function NonCurricularSubmissionReviewModal({
               {!isEditMode && submission.status === 'partial' && (
                 <div className="text-xs text-gray-400 mt-0.5">자동계산: {submission.totalScore}점</div>
               )}
+            </div>
+            <div className="h-8 w-px bg-gray-300"></div>
+            <div>
+              <div className="text-xs text-gray-600 mb-1">취업역량</div>
+              <div className={`text-lg font-bold ${isEditMode ? 'text-yellow-600' : 'text-blue-500'}`}>
+                {categoryScores.job}점
+              </div>
+            </div>
+            <div className="h-8 w-px bg-gray-300"></div>
+            <div>
+              <div className="text-xs text-gray-600 mb-1">산학협력</div>
+              <div className={`text-lg font-bold ${isEditMode ? 'text-yellow-600' : 'text-green-600'}`}>
+                {categoryScores.industry}점
+              </div>
             </div>
             <div className="h-8 w-px bg-gray-300"></div>
             <div>
