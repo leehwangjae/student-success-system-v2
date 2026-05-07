@@ -599,7 +599,7 @@ function StudentManagement() {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-3 py-4 text-center text-sm font-semibold text-gray-700">
+                <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700 whitespace-nowrap">
                   <input
                     type="checkbox"
                     onChange={handleSelectAll}
@@ -608,42 +608,42 @@ function StudentManagement() {
                   />
                 </th>
                 <th
-                  className="px-6 py-4 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none"
+                  className="px-3 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap"
                   onClick={() => handleSort('field')}
                 >
                   분야 <span className="text-xs">{getSortIcon('field')}</span>
                 </th>
                 <th
-                  className="px-6 py-4 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none"
+                  className="px-3 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap"
                   onClick={() => handleSort('department')}
                 >
                   학과 <span className="text-xs">{getSortIcon('department')}</span>
                 </th>
                 <th
-                  className="px-6 py-4 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none"
+                  className="px-3 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap"
                   onClick={() => handleSort('studentId')}
                 >
                   학번 <span className="text-xs">{getSortIcon('studentId')}</span>
                 </th>
                 <th
-                  className="px-6 py-4 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none"
+                  className="px-3 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap"
                   onClick={() => handleSort('name')}
                 >
                   이름 <span className="text-xs">{getSortIcon('name')}</span>
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">이메일</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">전화번호</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">재학년도</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">총점</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">개인정보동의</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">지급정보</th>
-                <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">관리</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">이메일</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">전화번호</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">재학년도</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">총점</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">개인정보동의</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">지급정보</th>
+                <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700 whitespace-nowrap">관리</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {getFilteredStudents().map(student => (
                 <tr key={student.id} className="hover:bg-gray-50">
-                  <td className="px-3 py-4 text-center">
+                  <td className="px-3 py-3 text-center whitespace-nowrap">
                     <input
                       type="checkbox"
                       checked={selectedStudents.includes(student.id)}
@@ -652,17 +652,17 @@ function StudentManagement() {
                       className="w-4 h-4 text-blue-600 rounded disabled:opacity-30"
                     />
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-3 py-3 whitespace-nowrap">
                     <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
                       {student.field}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-gray-600">{student.department}</td>
-                  <td className="px-6 py-4">{student.studentId || student.student_id}</td>
-                  <td className="px-6 py-4 font-medium">{student.name}</td>
-                  <td className="px-6 py-4 text-gray-600 text-sm">{student.email || '-'}</td>
-                  <td className="px-6 py-4 text-gray-600 text-sm">{student.phone || '-'}</td>
-                  <td className="px-6 py-4 text-gray-600 text-sm">
+                  <td className="px-3 py-3 text-gray-600 whitespace-nowrap">{student.department}</td>
+                  <td className="px-3 py-3 whitespace-nowrap">{student.studentId || student.student_id}</td>
+                  <td className="px-3 py-3 font-medium whitespace-nowrap">{student.name}</td>
+                  <td className="px-3 py-3 text-gray-600 text-sm whitespace-nowrap">{student.email || '-'}</td>
+                  <td className="px-3 py-3 text-gray-600 text-sm whitespace-nowrap">{student.phone || '-'}</td>
+                  <td className="px-3 py-3 text-gray-600 text-sm whitespace-nowrap">
                     {(() => {
                       const sub = coreCoursesSubmissions.find(s => s.studentId === student.id);
                       const currentGrade = sub?.gradeAt2025Fall || null;
@@ -704,10 +704,10 @@ function StudentManagement() {
                       );
                     })()}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-3 py-3 whitespace-nowrap">
                     <span className="font-bold text-blue-600">{student.total}</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-3 py-3 whitespace-nowrap">
                     {student.privacy_consented ? (
                       <div className="flex flex-col gap-1">
                         <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded inline-block w-fit">
@@ -729,14 +729,14 @@ function StudentManagement() {
                       <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">미동의</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-center">
+                  <td className="px-3 py-3 text-center whitespace-nowrap">
                     {student.bankName && student.accountNumber && student.accountHolder ? (
                       <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">✓ 등록</span>
                     ) : (
                       <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">미등록</span>
                     )}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-3 py-3 whitespace-nowrap">
                     <div className="flex justify-center space-x-2">
                       <button
                         onClick={() => setShowStudentDetail(student)}
