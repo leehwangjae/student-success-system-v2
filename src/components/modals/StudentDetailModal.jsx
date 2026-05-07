@@ -10,7 +10,8 @@ function StudentDetailModal({ isOpen, onClose, student, readOnly = true }) {
     updateHistoryEntry,
     deleteHistoryEntry,
     updateStudentScore,
-    nonCurricularSubmissions
+    nonCurricularSubmissions,
+    coreCoursesSubmissions
   } = useAppContext();
 
   const { showConfirm, showAlert } = useModalStore();
@@ -437,7 +438,6 @@ function StudentDetailModal({ isOpen, onClose, student, readOnly = true }) {
               <div className="bg-white rounded-lg p-4 text-center shadow-sm">
                 <p className="text-sm text-gray-600 mb-1">취업역량 비교과</p>
                 <p className="text-2xl font-bold text-purple-600">{jobScore}</p>
-                {nonCurSub && <p className="text-xs text-gray-400 mt-1">승인: {student.nonCurricularScore}점</p>}
               </div>
               <div className="bg-white rounded-lg p-4 text-center shadow-sm">
                 <p className="text-sm text-gray-600 mb-1">전략산업 교과</p>
@@ -502,9 +502,94 @@ function StudentDetailModal({ isOpen, onClose, student, readOnly = true }) {
         {/* 컨텐츠 */}
         <div className="flex-1 overflow-y-auto p-6">
           {activeTab === 'info' && renderInfoTab()}
-          {activeTab === 'nonCurricular' && renderHistoryTab('nonCurricularHistory', '비교과 활동', student.nonCurricularHistory)}
-          {activeTab === 'coreSubject' && renderHistoryTab('coreSubjectHistory', '전략산업 교과', student.coreSubjectHistory)}
-          {activeTab === 'industry' && renderHistoryTab('industryHistory', '산학협력', student.industryHistory)}
+          {activeTab === 'nonCurricular' && (() => {
+            const sub = (nonCurricularSubmissions || []).find(s => s.studentId === student.id);
+            const programs = (sub?.completedPrograms || []).filter(p => p.category === '취업역량');
+            return (
+              <div className="space-y-3">
+                <h3 className="text-lg font-bold mb-3">🎯 취업역량 비교과 활동</h3>
+                {programs.length === 0 ? (
+                  <div className="text-center py-12 bg-gray-50 rounded-lg">
+                    <p className="text-gray-500">이수한 취업역량 프로그램이 없습니다.</p>
+                  </div>
+                ) : programs.map((p, i) => (
+                  <div key={i} className="bg-white border border-gray-200 rounded-lg p-4 flex justify-between items-center">
+                    <div>
+                      <p className="font-semibold text-gray-800">{p.programName}</p>
+                      <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">{p.category}</span>
+                    </div>
+                    <span className="text-lg font-bold text-purple-600">{p.score}점</span>
+                  </div>
+                ))}
+                {sub && (
+                  <div className="mt-4 pt-3 border-t text-right text-sm text-gray-500">
+                    합계: <span className="font-bold text-purple-600">{programs.reduce((s, p) => s + (p.score || 0), 0)}점</span>
+                    {' · '}제출 상태: <span className="font-medium">{sub.status === 'approved' ? '✅ 승인' : sub.status === 'partial' ? '🔶 일부승인' : sub.status === 'pending' ? '⏳ 검토 대기' : '❌ 반려'}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+          {activeTab === 'coreSubject' && (() => {
+            const sub = (coreCoursesSubmissions || []).find(s => s.studentId === student.id);
+            const courses = sub?.completedCourses || [];
+            return (
+              <div className="space-y-3">
+                <h3 className="text-lg font-bold mb-3">📚 전략산업 교과 이수 내역</h3>
+                {courses.length === 0 ? (
+                  <div className="text-center py-12 bg-gray-50 rounded-lg">
+                    <p className="text-gray-500">이수한 전략산업 교과목이 없습니다.</p>
+                  </div>
+                ) : courses.map((c, i) => (
+                  <div key={i} className="bg-white border border-gray-200 rounded-lg p-4 flex justify-between items-center">
+                    <div>
+                      <p className="font-semibold text-gray-800">{c.courseName}</p>
+                      <div className="flex gap-2 mt-1 text-xs text-gray-500">
+                        <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded">{c.courseType}</span>
+                        {c.courseCode && <span>{c.courseCode}</span>}
+                        {c.credits && <span>{c.credits}학점</span>}
+                      </div>
+                    </div>
+                    <span className="text-lg font-bold text-blue-600">{c.score ?? c.credits ?? '-'}점</span>
+                  </div>
+                ))}
+                {sub && (
+                  <div className="mt-4 pt-3 border-t text-right text-sm text-gray-500">
+                    합계: <span className="font-bold text-blue-600">{student.coreSubjectScore}점</span>
+                    {' · '}제출 상태: <span className="font-medium">{sub.status === 'approved' ? '✅ 승인' : sub.status === 'partial' ? '🔶 일부승인' : sub.status === 'pending' ? '⏳ 검토 대기' : '❌ 반려'}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+          {activeTab === 'industry' && (() => {
+            const sub = (nonCurricularSubmissions || []).find(s => s.studentId === student.id);
+            const programs = (sub?.completedPrograms || []).filter(p => p.category === '산학협력');
+            return (
+              <div className="space-y-3">
+                <h3 className="text-lg font-bold mb-3">🏢 산학협력 비교과 활동</h3>
+                {programs.length === 0 ? (
+                  <div className="text-center py-12 bg-gray-50 rounded-lg">
+                    <p className="text-gray-500">이수한 산학협력 프로그램이 없습니다.</p>
+                  </div>
+                ) : programs.map((p, i) => (
+                  <div key={i} className="bg-white border border-gray-200 rounded-lg p-4 flex justify-between items-center">
+                    <div>
+                      <p className="font-semibold text-gray-800">{p.programName}</p>
+                      <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full">{p.category}</span>
+                    </div>
+                    <span className="text-lg font-bold text-green-600">{p.score}점</span>
+                  </div>
+                ))}
+                {sub && (
+                  <div className="mt-4 pt-3 border-t text-right text-sm text-gray-500">
+                    합계: <span className="font-bold text-green-600">{programs.reduce((s, p) => s + (p.score || 0), 0)}점</span>
+                    {' · '}제출 상태: <span className="font-medium">{sub.status === 'approved' ? '✅ 승인' : sub.status === 'partial' ? '🔶 일부승인' : sub.status === 'pending' ? '⏳ 검토 대기' : '❌ 반려'}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* 푸터 */}
