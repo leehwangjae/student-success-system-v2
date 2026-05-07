@@ -14,27 +14,33 @@ const asText = (value) => {
 };
 
 // 엑셀 다운로드 함수
-export const downloadExcel = (students, filterName) => {
-  const header = ['학번', '이름', '학과', '분야', '이메일', '전화번호', '재학년도', '비교과', '핵심교과', '산학협력', '총점', '개인정보동의', '동의일자', '은행명', '계좌번호', '예금주', '비고'];
-  const rows = students.map(s => [
-    asText(s.studentId),
-    escapeCsvCell(s.name),
-    escapeCsvCell(s.department),
-    escapeCsvCell(s.field),
-    escapeCsvCell(s.email),
-    asText(s.phone),
-    escapeCsvCell(s.gradeAt2025Fall || '-'),
-    s.nonCurricularScore,
-    s.coreSubjectScore,
-    s.industryScore,
-    s.total,
-    s.privacy_consented ? '동의완료' : '미동의',
-    s.privacy_consented_at ? new Date(s.privacy_consented_at).toLocaleDateString('ko-KR') : '',
-    escapeCsvCell(s.bankName || ''),
-    asText(s.accountNumber),
-    escapeCsvCell(s.accountHolder || ''),
-    escapeCsvCell(s.memo || '')
-  ]);
+export const downloadExcel = (students, filterName, nonCurricularSubmissions = []) => {
+  const header = ['학번', '이름', '학과', '분야', '이메일', '전화번호', '재학년도', '취업역량 비교과', '산학협력 비교과', '핵심교과', '총점', '개인정보동의', '동의일자', '은행명', '계좌번호', '예금주', '비고'];
+  const rows = students.map(s => {
+    const sub = nonCurricularSubmissions.find(sub => sub.studentId === s.id);
+    const programs = sub?.completedPrograms || [];
+    const jobScore      = programs.reduce((acc, p) => p.category === '취업역량' ? acc + (p.score || 0) : acc, 0);
+    const industryScore = programs.reduce((acc, p) => p.category === '산학협력' ? acc + (p.score || 0) : acc, 0);
+    return [
+      asText(s.studentId),
+      escapeCsvCell(s.name),
+      escapeCsvCell(s.department),
+      escapeCsvCell(s.field),
+      escapeCsvCell(s.email),
+      asText(s.phone),
+      escapeCsvCell(s.gradeAt2025Fall || '-'),
+      jobScore,
+      industryScore,
+      s.coreSubjectScore,
+      s.total,
+      s.privacy_consented ? '동의완료' : '미동의',
+      s.privacy_consented_at ? new Date(s.privacy_consented_at).toLocaleDateString('ko-KR') : '',
+      escapeCsvCell(s.bankName || ''),
+      asText(s.accountNumber),
+      escapeCsvCell(s.accountHolder || ''),
+      escapeCsvCell(s.memo || '')
+    ];
+  });
 
   const csvContent = [
     header.join(','),

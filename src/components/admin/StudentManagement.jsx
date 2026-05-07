@@ -10,7 +10,7 @@ import html2canvas from 'html2canvas';
 import 'jspdf-autotable';
 
 function StudentManagement() {
-  const { students, setStudents, deleteStudent, coreCoursesSubmissions, setCoreCoursesSubmissions } = useAppContext();
+  const { students, setStudents, deleteStudent, coreCoursesSubmissions, setCoreCoursesSubmissions, nonCurricularSubmissions } = useAppContext();
   const [filter, setFilter] = useState('전체');
   const [showStudentModal, setShowStudentModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
@@ -576,7 +576,7 @@ function StudentManagement() {
                 ...s,
                 gradeAt2025Fall: gradeMap[s.id] || '-'
               }));
-              downloadExcel(enriched, filter);
+              downloadExcel(enriched, filter, nonCurricularSubmissions);
             }}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
           >
