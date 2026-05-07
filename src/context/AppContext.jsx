@@ -73,6 +73,9 @@ export const AppProvider = ({ children }) => {
         total: (user.non_curricular_score || 0) +
                (user.core_subject_score || user.core_courses_score || 0) +
                (user.industry_score || 0),
+        nonCurricularHistory: user.non_curricular_history || [],
+        coreSubjectHistory: user.core_subject_history || [],
+        industryHistory: user.industry_history || [],
       }));
 
       setStudents(formattedStudents);

@@ -278,7 +278,9 @@ function StudentDetailModal({ isOpen, onClose, student, readOnly = true }) {
     </div>
   );
 
-  const renderHistoryTab = (historyType, title, historyData) => (
+  const renderHistoryTab = (historyType, title, historyData) => {
+    const safeData = historyData || [];
+    return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-bold">{title}</h3>
@@ -292,13 +294,13 @@ function StudentDetailModal({ isOpen, onClose, student, readOnly = true }) {
         )}
       </div>
 
-      {historyData.length === 0 ? (
+      {safeData.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-lg">
           <p className="text-gray-500">활동 내역이 없습니다.</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {historyData.map((activity) => (
+          {safeData.map((activity) => (
             <div key={activity.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
@@ -399,6 +401,7 @@ function StudentDetailModal({ isOpen, onClose, student, readOnly = true }) {
       )}
     </div>
   );
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
