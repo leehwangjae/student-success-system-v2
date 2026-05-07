@@ -820,7 +820,7 @@ function StudentManagement() {
       {showStudentDetail && (
         <StudentDetailModal
           isOpen={true}
-          student={showStudentDetail}
+          student={students.find(s => s.id === showStudentDetail.id) || showStudentDetail}
           onClose={() => setShowStudentDetail(null)}
         />
       )}

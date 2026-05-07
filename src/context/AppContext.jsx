@@ -1254,21 +1254,18 @@ export const AppProvider = ({ children }) => {
   // 비교과 프로그램 승인
   const approveNonCurricularPrograms = async (submissionId) => {
     try {
-      // nonCurricularSubmissions 배열 또는 DB에서 직접 조회
-      let submission = nonCurricularSubmissions.find(s => s.id === submissionId);
-      if (!submission) {
-        const { data: subData, error: subFetchErr } = await supabase
-          .from('non_curricular_submissions_2025_11_27_07_17')
-          .select('id, student_id, total_score')
-          .eq('id', submissionId)
-          .single();
-        if (subFetchErr || !subData) throw new Error('제출 데이터를 찾을 수 없습니다.');
-        submission = {
-          id: subData.id,
-          studentId: subData.student_id,
-          totalScore: subData.total_score,
-        };
-      }
+      // 항상 DB에서 최신 데이터 조회 (수정 후 캐시 stale 방지)
+      const { data: subData, error: subFetchErr } = await supabase
+        .from('non_curricular_submissions_2025_11_27_07_17')
+        .select('id, student_id, total_score')
+        .eq('id', submissionId)
+        .single();
+      if (subFetchErr || !subData) throw new Error('제출 데이터를 찾을 수 없습니다.');
+      const submission = {
+        id: subData.id,
+        studentId: subData.student_id,
+        totalScore: subData.total_score,
+      };
 
       // 학생 점수 업데이트
       const { error: userError } = await supabase
