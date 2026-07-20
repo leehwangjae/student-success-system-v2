@@ -21,7 +21,11 @@ function SignupPage() {
     department: FIELD_DEPARTMENTS['바이오'][0], // 기본값: 생명과학전공
     field: '바이오',
     email: '',
-    phone: ''
+    phone: '',
+    ssn: '',
+    bankName: '',
+    accountNumber: '',
+    accountHolder: ''
   });
 
   const handleChange = (e) => {
@@ -195,8 +199,12 @@ function SignupPage() {
         userData.non_curricular_history = [];
         userData.core_subject_history = [];
         userData.industry_history = [];
-        userData.privacy_consented = true; // 개인정보 동의 여부
-        userData.privacy_consented_at = new Date().toISOString(); // 동의 시각
+        userData.privacy_consented = true;
+        userData.privacy_consented_at = new Date().toISOString();
+        if (formData.ssn.trim()) userData.ssn = formData.ssn.trim();
+        if (formData.bankName.trim()) userData.bank_name = formData.bankName.trim();
+        if (formData.accountNumber.trim()) userData.account_number = formData.accountNumber.trim();
+        if (formData.accountHolder.trim()) userData.account_holder = formData.accountHolder.trim();
         userData.privacy_signature = signature || signatureImage; // 서명 이미지 (Base64) - 파라미터 우선 사용
       }
 
@@ -482,6 +490,59 @@ function SignupPage() {
                 required
               />
             </div>
+
+            {/* 지급 정보 (학생만) */}
+            {activeTab === 'student' && (
+              <div className="border border-gray-200 rounded-xl p-4 space-y-4 bg-gray-50">
+                <p className="text-sm font-semibold text-gray-700">💳 지급 정보 <span className="text-xs font-normal text-gray-400">(선택)</span></p>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">주민등록번호</label>
+                  <input
+                    type="text"
+                    name="ssn"
+                    value={formData.ssn}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="000000-0000000"
+                    maxLength="14"
+                  />
+                  <p className="mt-1 text-xs text-gray-400">형식: 생년월일(6자리)-뒷자리(7자리)</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">은행명</label>
+                  <input
+                    type="text"
+                    name="bankName"
+                    value={formData.bankName}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="예: 국민은행, 신한은행"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">계좌번호</label>
+                  <input
+                    type="text"
+                    name="accountNumber"
+                    value={formData.accountNumber}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="숫자만 입력 (하이픈 제외)"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">예금주명</label>
+                  <input
+                    type="text"
+                    name="accountHolder"
+                    value={formData.accountHolder}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="예금주 이름 (본인 명의)"
+                  />
+                </div>
+              </div>
+            )}
 
             {/* 에러 메시지 */}
             {errorMessage && (

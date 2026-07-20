@@ -11,6 +11,7 @@ function MyInfo() {
     total: 0
   });
   const [paymentInfoRegistered, setPaymentInfoRegistered] = useState(false);
+  const [paymentInfo, setPaymentInfo] = useState({ ssn: '', bankName: '', accountNumber: '', accountHolder: '' });
 
   // 학생 점수 및 지급 정보 로드
   useEffect(() => {
@@ -20,7 +21,7 @@ function MyInfo() {
       try {
         const { data, error } = await supabase
           .from('users_2025_11_27_07_17')
-          .select('non_curricular_score, core_subject_score, industry_score, bank_name, account_number, account_holder')
+          .select('non_curricular_score, core_subject_score, industry_score, bank_name, account_number, account_holder, ssn')
           .eq('id', currentUser.id)
           .single();
 
@@ -40,9 +41,14 @@ function MyInfo() {
 
         setStudentScores(scores);
 
-        // 지급 정보가 모두 입력되었는지 확인
         const hasPaymentInfo = data?.bank_name && data?.account_number && data?.account_holder;
         setPaymentInfoRegistered(!!hasPaymentInfo);
+        setPaymentInfo({
+          ssn: data?.ssn || '',
+          bankName: data?.bank_name || '',
+          accountNumber: data?.account_number || '',
+          accountHolder: data?.account_holder || ''
+        });
       } catch (error) {
         console.error('점수 로드 중 오류:', error);
       }
@@ -86,11 +92,32 @@ function MyInfo() {
             <p className="text-sm text-gray-600 mb-1">이메일</p>
             <p className="font-semibold">{currentUser.email || '-'}</p>
           </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">지급정보</p>
-            <p className={`font-semibold ${paymentInfoRegistered ? 'text-green-600' : 'text-gray-400'}`}>
-              {paymentInfoRegistered ? '✓ 등록' : '미등록'}
-            </p>
+        </div>
+
+        {/* 지급 정보 */}
+        <div className="mt-4 border-t border-gray-100 pt-4">
+          <p className="text-sm font-semibold text-gray-700 mb-3">💳 지급 정보</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="text-sm text-gray-600 mb-1">주민등록번호</p>
+              <p className="font-semibold">
+                {paymentInfo.ssn
+                  ? paymentInfo.ssn.replace(/^(\d{6})-(\d{7})$/, '$1-*******')
+                  : <span className="text-gray-400 font-normal">미등록</span>}
+              </p>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="text-sm text-gray-600 mb-1">은행명</p>
+              <p className="font-semibold">{paymentInfo.bankName || <span className="text-gray-400 font-normal">미등록</span>}</p>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="text-sm text-gray-600 mb-1">계좌번호</p>
+              <p className="font-semibold">{paymentInfo.accountNumber || <span className="text-gray-400 font-normal">미등록</span>}</p>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="text-sm text-gray-600 mb-1">예금주</p>
+              <p className="font-semibold">{paymentInfo.accountHolder || <span className="text-gray-400 font-normal">미등록</span>}</p>
+            </div>
           </div>
         </div>
       </div>
