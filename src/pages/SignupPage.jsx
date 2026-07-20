@@ -113,6 +113,31 @@ function SignupPage() {
         setErrorMessage('학과를 입력해주세요.');
         return false;
       }
+
+      if (!formData.ssn.trim()) {
+        setErrorMessage('주민등록번호를 입력해주세요.');
+        return false;
+      }
+      const ssnRegex = /^\d{6}-\d{7}$/;
+      if (!ssnRegex.test(formData.ssn.trim())) {
+        setErrorMessage('주민등록번호 형식이 올바르지 않습니다. (예: 000000-0000000)');
+        return false;
+      }
+
+      if (!formData.bankName.trim()) {
+        setErrorMessage('은행명을 입력해주세요.');
+        return false;
+      }
+
+      if (!formData.accountNumber.trim()) {
+        setErrorMessage('계좌번호를 입력해주세요.');
+        return false;
+      }
+
+      if (!formData.accountHolder.trim()) {
+        setErrorMessage('예금주명을 입력해주세요.');
+        return false;
+      }
     }
 
     return true;
@@ -201,10 +226,10 @@ function SignupPage() {
         userData.industry_history = [];
         userData.privacy_consented = true;
         userData.privacy_consented_at = new Date().toISOString();
-        if (formData.ssn.trim()) userData.ssn = formData.ssn.trim();
-        if (formData.bankName.trim()) userData.bank_name = formData.bankName.trim();
-        if (formData.accountNumber.trim()) userData.account_number = formData.accountNumber.trim();
-        if (formData.accountHolder.trim()) userData.account_holder = formData.accountHolder.trim();
+        userData.ssn = formData.ssn.trim();
+        userData.bank_name = formData.bankName.trim();
+        userData.account_number = formData.accountNumber.trim();
+        userData.account_holder = formData.accountHolder.trim();
         userData.privacy_signature = signature || signatureImage; // 서명 이미지 (Base64) - 파라미터 우선 사용
       }
 
@@ -494,7 +519,7 @@ function SignupPage() {
             {/* 지급 정보 (학생만) */}
             {activeTab === 'student' && (
               <div className="border border-gray-200 rounded-xl p-4 space-y-4 bg-gray-50">
-                <p className="text-sm font-semibold text-gray-700">💳 지급 정보 <span className="text-xs font-normal text-gray-400">(선택)</span></p>
+                <p className="text-sm font-semibold text-gray-700">💳 지급 정보 <span className="text-red-500 text-xs">*</span></p>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">주민등록번호</label>
                   <input
