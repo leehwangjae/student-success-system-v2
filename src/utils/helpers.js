@@ -15,7 +15,7 @@ const asText = (value) => {
 
 // 엑셀 다운로드 함수
 export const downloadExcel = (students, filterName, nonCurricularSubmissions = []) => {
-  const header = ['학번', '이름', '학과', '분야', '이메일', '전화번호', '재학년도', '취업역량 비교과', '산학협력 비교과', '핵심교과', '총점', '개인정보동의', '동의일자', '은행명', '계좌번호', '예금주', '비고'];
+  const header = ['학번', '이름', '학과', '분야', '이메일', '전화번호', '재학년도', '취업역량 비교과', '산학협력 비교과', '핵심교과', '총점', '개인정보동의', '동의일자', '주민등록번호', '은행명', '계좌번호', '예금주', '비고'];
   const rows = students.map(s => {
     const sub = nonCurricularSubmissions.find(sub => sub.studentId === s.id);
     const programs = sub?.completedPrograms || [];
@@ -35,6 +35,7 @@ export const downloadExcel = (students, filterName, nonCurricularSubmissions = [
       s.total,
       s.privacy_consented ? '동의완료' : '미동의',
       s.privacy_consented_at ? new Date(s.privacy_consented_at).toLocaleDateString('ko-KR') : '',
+      asText(s.ssn || ''),
       escapeCsvCell(s.bankName || ''),
       asText(s.accountNumber),
       escapeCsvCell(s.accountHolder || ''),
