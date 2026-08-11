@@ -86,7 +86,7 @@ function AiAnalysisResult({ result, onClose }) {
 }
 
 // ─── 메인 모달 컴포넌트 ──────────────────────────────────────────────────────
-function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove, onReject, onPartialApprove }) {
+function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove, onReject, onPartialApprove, onCancelApproval }) {
   const [decision, setDecision] = useState('approve');
   const [rejectionReason, setRejectionReason] = useState('');
   const [adminComment, setAdminComment] = useState('');
@@ -594,6 +594,24 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
                        `반려 사유: ${submission.rejectionReason}`}
                     </div>
                     <div className="text-xs text-gray-500 mt-2">처리일: {formatDate(submission.reviewedAt)}</div>
+                    {onCancelApproval && (submission.status === 'approved' || submission.status === 'partial' || submission.status === 'rejected') && (
+                      <button
+                        onClick={async () => {
+                          if (!window.confirm('승인을 취소하고 대기 상태로 되돌리시겠습니까?\n학생 점수도 함께 초기화됩니다.')) return;
+                          setIsProcessing(true);
+                          try {
+                            await onCancelApproval(submission.id);
+                            onClose();
+                          } finally {
+                            setIsProcessing(false);
+                          }
+                        }}
+                        disabled={isProcessing}
+                        className="mt-3 w-full px-4 py-2 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 text-sm disabled:opacity-50"
+                      >
+                        🔄 승인 취소 (재검토)
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -795,6 +813,24 @@ function SubmissionReviewModal({ isOpen, onClose, submission, student, onApprove
                      `반려 사유: ${submission.rejectionReason}`}
                   </div>
                   <div className="text-xs text-gray-500 mt-2">처리일: {formatDate(submission.reviewedAt)}</div>
+                  {onCancelApproval && (
+                    <button
+                      onClick={async () => {
+                        if (!window.confirm('승인을 취소하고 대기 상태로 되돌리시겠습니까?\n학생 점수도 함께 초기화됩니다.')) return;
+                        setIsProcessing(true);
+                        try {
+                          await onCancelApproval(submission.id);
+                          onClose();
+                        } finally {
+                          setIsProcessing(false);
+                        }
+                      }}
+                      disabled={isProcessing}
+                      className="mt-3 w-full px-4 py-2 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 text-sm disabled:opacity-50"
+                    >
+                      🔄 승인 취소 (재검토)
+                    </button>
+                  )}
                 </div>
               )}
             </div>

@@ -13,6 +13,7 @@ function CoreCoursesReviewPage() {
     coreCoursesSubmissions,
     approveCoreCourses,
     rejectCoreCourses,
+    cancelCoreCoursesApproval,
     partialApproveCoreCourses,
     fetchCoreCoursesSubmissionDetail,
   } = useAppContext();
@@ -196,6 +197,13 @@ function CoreCoursesReviewPage() {
       showAlert(`🔶 일부 승인이 완료되었습니다.\n${approvedScore}점이 학생에게 반영되었습니다.`);
     } else {
       showAlert(`일부 승인 실패: ${result.error}`);
+    }
+  };
+
+  const handleCancelApproval = async (submissionId) => {
+    const result = await cancelCoreCoursesApproval(submissionId);
+    if (!result.success) {
+      showAlert(`승인 취소 실패: ${result.error}`);
     }
   };
 
@@ -581,6 +589,7 @@ function CoreCoursesReviewPage() {
           onApprove={handleApprove}
           onReject={handleReject}
           onPartialApprove={handlePartialApprove}
+          onCancelApproval={handleCancelApproval}
         />
       )}
     </div>

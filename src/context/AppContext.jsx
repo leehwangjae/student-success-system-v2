@@ -1061,6 +1061,44 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const cancelCoreCoursesApproval = async (submissionId) => {
+    try {
+      const { data: subData, error: subFetchErr } = await supabase
+        .from('core_courses_submissions_2025_11_27_07_17')
+        .select('id, student_id')
+        .eq('id', submissionId)
+        .single();
+      if (subFetchErr || !subData) throw new Error('제출 데이터를 찾을 수 없습니다.');
+
+      const { error: userError } = await supabase
+        .from('users_2025_11_27_07_17')
+        .update({ core_subject_score: 0 })
+        .eq('id', subData.student_id);
+      if (userError) throw userError;
+
+      const { error: submissionError } = await supabase
+        .from('core_courses_submissions_2025_11_27_07_17')
+        .update({
+          status: 'pending',
+          reviewed_at: null,
+          rejection_reason: null,
+          approved_score: null,
+          admin_comment: null
+        })
+        .eq('id', submissionId);
+      if (submissionError) throw submissionError;
+
+      await Promise.all([
+        loadCoreCoursesSubmissionsFromSupabase(),
+        loadStudentsFromSupabase()
+      ]);
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
   // 핵심 교과목 일부 승인 (수동 점수 입력)
   const partialApproveCoreCourses = async (submissionId, approvedScore, adminComment = '') => {
     try {
@@ -1289,6 +1327,44 @@ export const AppProvider = ({ children }) => {
         })
         .eq('id', submissionId);
 
+      if (submissionError) throw submissionError;
+
+      await Promise.all([
+        loadNonCurricularSubmissionsFromSupabase(),
+        loadStudentsFromSupabase()
+      ]);
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  const cancelNonCurricularApproval = async (submissionId) => {
+    try {
+      const { data: subData, error: subFetchErr } = await supabase
+        .from('non_curricular_submissions_2025_11_27_07_17')
+        .select('id, student_id')
+        .eq('id', submissionId)
+        .single();
+      if (subFetchErr || !subData) throw new Error('제출 데이터를 찾을 수 없습니다.');
+
+      const { error: userError } = await supabase
+        .from('users_2025_11_27_07_17')
+        .update({ non_curricular_score: 0 })
+        .eq('id', subData.student_id);
+      if (userError) throw userError;
+
+      const { error: submissionError } = await supabase
+        .from('non_curricular_submissions_2025_11_27_07_17')
+        .update({
+          status: 'pending',
+          reviewed_at: null,
+          rejection_reason: null,
+          approved_score: null,
+          admin_comment: null
+        })
+        .eq('id', submissionId);
       if (submissionError) throw submissionError;
 
       await Promise.all([
@@ -1795,6 +1871,7 @@ export const AppProvider = ({ children }) => {
       submitCoreCourses,
       approveCoreCourses,
       rejectCoreCourses,
+      cancelCoreCoursesApproval,
       partialApproveCoreCourses,
       getCoreCoursesByDepartment,
       getStudentSubmission,
@@ -1806,6 +1883,7 @@ export const AppProvider = ({ children }) => {
       submitNonCurricularPrograms,
       approveNonCurricularPrograms,
       rejectNonCurricularPrograms,
+      cancelNonCurricularApproval,
       partialApproveNonCurricularPrograms,
       getNonCurricularSubmission,
       fetchNonCurricularSubmissionDetail,

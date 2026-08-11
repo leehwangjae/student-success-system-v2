@@ -6,6 +6,7 @@ import { getFilePreviewUrl, downloadFile } from '../../utils/storageHelpers';
 function NonCurricularSubmissionReviewModal({
   isOpen, onClose, submission, student,
   onApprove, onReject, onPartialApprove,
+  onCancelApproval,
   onUpdate,            // 관리자 수정 콜백 (submissionId, { completedPrograms })
   nonCurricularPrograms // 전체 프로그램 목록 (추가 선택용)
 }) {
@@ -503,6 +504,22 @@ function NonCurricularSubmissionReviewModal({
             <div className="text-xs text-gray-500 mt-2">
               처리일: {formatDate(submission.reviewedAt || submission.reviewed_at)}
             </div>
+            {onCancelApproval && (
+              <button
+                onClick={async () => {
+                  if (!window.confirm('승인을 취소하고 대기 상태로 되돌리시겠습니까?\n학생 점수도 함께 초기화됩니다.')) return;
+                  try {
+                    await onCancelApproval(submission.id);
+                    onClose();
+                  } catch (err) {
+                    alert('승인 취소에 실패했습니다.');
+                  }
+                }}
+                className="mt-3 w-full px-4 py-2 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 text-sm"
+              >
+                🔄 승인 취소 (재검토)
+              </button>
+            )}
           </div>
         );
       })()}
