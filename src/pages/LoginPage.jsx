@@ -131,9 +131,13 @@ function LoginPage() {
         name: user.name,
         email: user.email,
         role: user.role || user.account_type,
+        accountType: user.account_type,
         studentId: user.student_id || user.username,
         department: user.department,
-        field: user.field
+        field: user.field,
+        faculty: user.faculty,
+        position: user.position,
+        lab_name: user.lab_name
       };
 
       setCurrentUser(userData);
@@ -143,12 +147,13 @@ function LoginPage() {
       console.log('🎯 페이지 전환 시작...');
 
       // 역할에 따라 페이지 이동
-      if (user.role === 'admin' || user.role === 'master' || user.account_type === 'admin') {
-        console.log('➡️ 관리자 페이지로 이동');
-        navigate('/admin');
+      if (user.role === 'master') {
+        console.log('➡️ 마스터 페이지로 이동');
+        navigate('/master/approval');
       } else {
-        console.log('➡️ 학생 페이지로 이동');
-        navigate('/student');
+        // 학생, 교수, 관리자 모두 서비스 선택 화면으로
+        console.log('➡️ 서비스 선택 화면으로 이동');
+        navigate('/services');
       }
 
     } catch (error) {
