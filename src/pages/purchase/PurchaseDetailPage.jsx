@@ -112,7 +112,8 @@ function PurchaseDetailPage() {
       if (error) throw error;
 
       // 사진 업로드
-      await uploadAttachment(receiptFile, id, currentUser.id, 'receipt_photo', firstOrder.id, receipt.id);
+      const { error: uploadErr } = await uploadAttachment(receiptFile, id, currentUser.id, 'receipt_photo', firstOrder.id, receipt.id);
+      if (uploadErr) throw uploadErr;
       alert('수령 보고가 제출되었습니다.');
       setShowReceiptForm(false);
       await load();
