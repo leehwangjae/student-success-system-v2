@@ -289,6 +289,52 @@ function PurchaseDetailPage() {
           </Card>
         )}
 
+        {/* 신청자: 제출된 수령 보고 내역 (receipt_review 또는 반려 후 재제출 대기) */}
+        {!isAdmin && (request.receipts || []).length > 0 && (
+          <Card title="📦 제출된 수령 보고">
+            {[...(request.receipts || [])].reverse().map((r, i) => {
+              const photos = (request.attachments || []).filter(
+                a => a.attachment_type === 'receipt_photo' && a.receipt_id === r.id
+              );
+              return (
+                <div key={i} className={`rounded-xl p-3 text-sm space-y-2 ${
+                  r.review_status === 'confirmed' ? 'bg-green-50' :
+                  r.review_status === 'needs_revision' ? 'bg-orange-50' : 'bg-indigo-50'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">수령일: {r.received_at || '-'}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                      r.review_status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                      r.review_status === 'needs_revision' ? 'bg-orange-100 text-orange-700' :
+                      'bg-indigo-100 text-indigo-700'
+                    }`}>
+                      {r.review_status === 'confirmed' ? '✅ 확인완료' :
+                       r.review_status === 'needs_revision' ? '❌ 반려됨' : '⏳ 검토대기'}
+                    </span>
+                  </div>
+                  {r.notes && <p className="text-gray-500 text-xs">비고: {r.notes}</p>}
+                  {photos.length > 0 ? photos.map(photo => {
+                    const url = receiptPhotoUrls[photo.id];
+                    return (
+                      <div key={photo.id} className="rounded-lg overflow-hidden border border-indigo-200">
+                        {url ? (
+                          <a href={url} target="_blank" rel="noreferrer">
+                            <img src={url} alt="수령 사진" className="w-full max-h-48 object-contain bg-white" />
+                          </a>
+                        ) : (
+                          <p className="text-xs text-gray-400 p-2">{photo.file_name}</p>
+                        )}
+                      </div>
+                    );
+                  }) : (
+                    <p className="text-xs text-gray-400">첨부 사진 없음</p>
+                  )}
+                </div>
+              );
+            })}
+          </Card>
+        )}
+
         {/* 신청자: 구매중 상태에서 수령 보고 */}
         {canSubmitReceipt && (
           <Card title="📦 물품 수령 보고">
