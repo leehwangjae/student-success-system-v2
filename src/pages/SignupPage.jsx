@@ -25,7 +25,10 @@ function SignupPage() {
     ssn: '',
     bankName: '',
     accountNumber: '',
-    accountHolder: ''
+    accountHolder: '',
+    faculty: '',
+    position: '',
+    lab_name: ''
   });
 
   const handleChange = (e) => {
@@ -140,6 +143,21 @@ function SignupPage() {
       }
     }
 
+    if (activeTab === 'professor') {
+      if (!formData.faculty.trim()) {
+        setErrorMessage('소속학부를 입력해주세요.');
+        return false;
+      }
+      if (!formData.position.trim()) {
+        setErrorMessage('직급을 입력해주세요.');
+        return false;
+      }
+      if (!formData.lab_name.trim()) {
+        setErrorMessage('연구실명을 입력해주세요.');
+        return false;
+      }
+    }
+
     return true;
   };
 
@@ -188,8 +206,10 @@ function SignupPage() {
       let roleValue;
       if (activeTab === 'student') {
         roleValue = 'student';
+      } else if (activeTab === 'professor') {
+        roleValue = 'professor';
       } else {
-        // admin이나 staff는 모두 'admin' role로 저장
+        // staff는 'admin' role로 저장
         roleValue = 'admin';
       }
 
@@ -199,18 +219,25 @@ function SignupPage() {
       console.log('✅ 비밀번호 해싱 완료');
 
       // 4. 회원가입 데이터 준비
-      // account_type 매핑: 'staff'는 DB에 'admin'으로 저장 (CHECK constraint 대응)
-      const accountTypeValue = activeTab === 'staff' ? 'admin' : activeTab;
+      // account_type 매핑: 'staff'는 DB에 'admin'으로 저장
+      let accountTypeValue;
+      if (activeTab === 'staff') {
+        accountTypeValue = 'admin';
+      } else if (activeTab === 'professor') {
+        accountTypeValue = 'professor';
+      } else {
+        accountTypeValue = activeTab; // 'student'
+      }
 
       const userData = {
         username: formData.username.trim(),
-        password: hashedPassword,  // 🔐 해싱된 비밀번호 저장
+        password: hashedPassword,
         name: formData.name.trim(),
         account_type: accountTypeValue,
-        role: roleValue,  // 🔥 매핑된 role 사용
-        status: 'approved',  // 즉시 승인 (관리자 승인 불필요)
-        email: formData.email.trim(),  // 필수 항목
-        phone: formData.phone.trim()   // 필수 항목
+        role: roleValue,
+        status: 'approved',
+        email: formData.email.trim(),
+        phone: formData.phone.trim()
       };
 
       // 학생인 경우 추가 필드
@@ -230,7 +257,14 @@ function SignupPage() {
         userData.bank_name = formData.bankName.trim();
         userData.account_number = formData.accountNumber.trim();
         userData.account_holder = formData.accountHolder.trim();
-        userData.privacy_signature = signature || signatureImage; // 서명 이미지 (Base64) - 파라미터 우선 사용
+        userData.privacy_signature = signature || signatureImage;
+      }
+
+      // 교수인 경우 추가 필드
+      if (activeTab === 'professor') {
+        userData.faculty = formData.faculty.trim();
+        userData.position = formData.position.trim();
+        userData.lab_name = formData.lab_name.trim();
       }
 
       console.log('회원가입 데이터 전송 중...');
@@ -328,9 +362,9 @@ function SignupPage() {
               학생
             </button>
             <button
-              onClick={() => setActiveTab('admin')}
+              onClick={() => setActiveTab('professor')}
               className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
-                activeTab === 'admin'
+                activeTab === 'professor'
                   ? 'bg-blue-600 text-white shadow-lg'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
@@ -515,6 +549,46 @@ function SignupPage() {
                 required
               />
             </div>
+
+            {/* 교수 전용 필드 */}
+            {activeTab === 'professor' && (
+              <div className="border border-blue-200 rounded-xl p-4 space-y-4 bg-blue-50">
+                <p className="text-sm font-semibold text-blue-800">🏫 교수 정보 <span className="text-red-500 text-xs">*</span></p>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">소속학부 <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    name="faculty"
+                    value={formData.faculty}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="예: 생명과학기술대학, 공과대학"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">직급 <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    name="position"
+                    value={formData.position}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="예: 교수, 부교수, 조교수"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">연구실명 <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    name="lab_name"
+                    value={formData.lab_name}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="예: 바이오화학연구실"
+                  />
+                </div>
+              </div>
+            )}
 
             {/* 지급 정보 (학생만) */}
             {activeTab === 'student' && (
