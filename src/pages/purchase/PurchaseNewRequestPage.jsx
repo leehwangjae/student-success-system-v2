@@ -109,6 +109,7 @@ function PurchaseNewRequestPage() {
       if (!item.item_name.trim()) return `${i + 1}번 품목명을 입력하세요.`;
       if (!item.unit_price || Number(item.unit_price) <= 0) return `${i + 1}번 품목의 단가를 입력하세요.`;
       if (!item.quantity || Number(item.quantity) <= 0) return `${i + 1}번 품목의 수량을 입력하세요.`;
+      if (!item.supplier_url?.trim()) return `${i + 1}번 품목의 구매처 정보를 입력하세요.`;
     }
     return null;
   };
@@ -374,7 +375,7 @@ function PurchaseNewRequestPage() {
                       {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                     </select>
                   </Field>
-                  <Field label="단가(원)" required>
+                  <Field label="단가(원, 부가세 포함)" required>
                     <input
                       type="number"
                       value={item.unit_price}
@@ -384,13 +385,13 @@ function PurchaseNewRequestPage() {
                     />
                   </Field>
                 </div>
-                <Field label="구매처 URL (선택)">
+                <Field label="구매처 정보 또는 URL" required>
                   <input
-                    type="url"
+                    type="text"
                     value={item.supplier_url}
                     onChange={(e) => handleItemChange(idx, 'supplier_url', e.target.value)}
                     className={inputClass}
-                    placeholder="https://..."
+                    placeholder="예: 쿠팡 / G마켓 / https://..."
                   />
                 </Field>
                 <div className="text-right text-sm font-semibold text-green-700">

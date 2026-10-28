@@ -25,7 +25,7 @@ function PurchaseAdminPage() {
   const {
     purchaseRequests, loadAllRequests, formatMoney,
     startReview, approveRequest, rejectRequest, requestRevision,
-    registerPurchaseOrder, closePurchaseOrder, confirmReceipt,
+    registerPurchaseOrder, closePurchaseOrder, confirmReceipt, rejectReceipt,
     purchaseSettings, loadPurchaseSettings, getBudgetStatus
   } = usePurchaseContext();
 
@@ -274,13 +274,13 @@ function PurchaseAdminPage() {
                         <button
                           onClick={() => openModal(req, 'order')}
                           className="px-2 py-1 bg-teal-100 text-teal-700 rounded text-xs hover:bg-teal-200"
-                        >구매등록</button>
+                        >구매중 처리</button>
                       )}
                       {req.status === 'receipt_review' && (
                         <button
-                          onClick={() => openModal(req, 'receipt')}
+                          onClick={() => navigate(`/purchase/${req.id}`)}
                           className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs hover:bg-purple-200"
-                        >수령확인</button>
+                        >수령검토</button>
                       )}
                     </td>
                   </tr>
