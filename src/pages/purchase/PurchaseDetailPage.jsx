@@ -25,7 +25,7 @@ function PurchaseDetailPage() {
   const { currentUser } = useAppContext();
   const {
     getRequestDetail, submitRequest, cancelRequest, resubmitRequest,
-    submitReceipt, confirmReceipt, rejectReceipt, uploadAttachment, formatMoney
+    submitReceipt, confirmReceipt, rejectReceipt, uploadAttachment, getAttachmentUrl, formatMoney
   } = usePurchaseContext();
 
   const [request, setRequest] = useState(null);
@@ -36,6 +36,7 @@ function PurchaseDetailPage() {
   const [uploading, setUploading] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectInput, setShowRejectInput] = useState(false);
+  const [receiptPhotoUrls, setReceiptPhotoUrls] = useState({});
   const fileRef = useRef();
 
   const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'master';
@@ -48,6 +49,17 @@ function PurchaseDetailPage() {
     setLoading(true);
     const { data } = await getRequestDetail(id);
     setRequest(data);
+    // receipt_photo 첨부파일 signed URL 미리 로드
+    if (data?.attachments) {
+      const photos = data.attachments.filter(a => a.attachment_type === 'receipt_photo');
+      const urls = {};
+      for (const photo of photos) {
+        if (photo.storage_path) {
+          urls[photo.id] = await getAttachmentUrl(photo.storage_path);
+        }
+      }
+      setReceiptPhotoUrls(urls);
+    }
     setLoading(false);
   };
 
@@ -254,14 +266,26 @@ function PurchaseDetailPage() {
         {/* 첨부파일 */}
         {(request.attachments || []).length > 0 && (
           <Card title="첨부파일">
-            {request.attachments.map((att, i) => (
-              <div key={i} className="flex items-center justify-between text-sm py-1">
-                <span>{att.file_name}</span>
-                <span className="text-xs text-gray-400">
-                  {att.attachment_type === 'estimate' ? '견적서' : att.attachment_type === 'receipt_photo' ? '수령사진' : '구매증빙'}
-                </span>
-              </div>
-            ))}
+            {request.attachments.map((att, i) => {
+              const typeLabel = att.attachment_type === 'estimate' ? '견적서' : att.attachment_type === 'receipt_photo' ? '수령사진' : '구매증빙';
+              const url = receiptPhotoUrls[att.id];
+              return (
+                <div key={i} className="flex items-center justify-between text-sm py-1.5 border-b border-gray-50 last:border-0">
+                  <span className="text-gray-700 truncate">{att.file_name}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs text-gray-400">{typeLabel}</span>
+                    {url ? (
+                      <a href={url} target="_blank" rel="noreferrer"
+                        className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+                        보기
+                      </a>
+                    ) : att.storage_path ? (
+                      <span className="text-xs text-gray-300">로딩중</span>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })}
           </Card>
         )}
 
@@ -343,7 +367,7 @@ function PurchaseDetailPage() {
           <Card title="📋 수령 보고 검토">
             {request.receipts.map((r, i) => (
               <div key={i} className="space-y-3">
-                <div className="bg-purple-50 rounded-xl p-3 text-sm space-y-1">
+                <div className="bg-purple-50 rounded-xl p-3 text-sm space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="font-medium">수령일: {r.received_at || '-'}</span>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${
@@ -354,7 +378,35 @@ function PurchaseDetailPage() {
                       {r.review_status === 'confirmed' ? '확인완료' : r.review_status === 'needs_revision' ? '반려됨' : '검토대기'}
                     </span>
                   </div>
-                  {r.notes && <p className="text-gray-500 text-xs">{r.notes}</p>}
+                  {r.notes && <p className="text-gray-500 text-xs">비고: {r.notes}</p>}
+                  {/* 수령 사진 표시 */}
+                  {(() => {
+                    const photos = (request.attachments || []).filter(
+                      a => a.attachment_type === 'receipt_photo' && a.receipt_id === r.id
+                    );
+                    if (photos.length === 0) return (
+                      <p className="text-xs text-orange-500">⚠️ 첨부된 수령 사진이 없습니다.</p>
+                    );
+                    return (
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-gray-600">수령 사진</p>
+                        {photos.map(photo => {
+                          const url = receiptPhotoUrls[photo.id];
+                          return (
+                            <div key={photo.id} className="rounded-lg overflow-hidden border border-purple-200">
+                              {url ? (
+                                <a href={url} target="_blank" rel="noreferrer">
+                                  <img src={url} alt="수령 사진" className="w-full max-h-64 object-contain bg-white" />
+                                </a>
+                              ) : (
+                                <p className="text-xs text-gray-400 p-2">{photo.file_name} (URL 로딩중...)</p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {r.review_status === 'pending' && (

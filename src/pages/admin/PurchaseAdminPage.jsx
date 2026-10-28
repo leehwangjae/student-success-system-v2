@@ -29,7 +29,7 @@ function PurchaseAdminPage() {
     purchaseSettings, loadPurchaseSettings, getBudgetStatus
   } = usePurchaseContext();
 
-  const [filterStatus, setFilterStatus] = useState('submitted');
+  const [filterStatus, setFilterStatus] = useState('all');
   const [filterYear, setFilterYear] = useState(new Date().getFullYear().toString());
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [modalMode, setModalMode] = useState(null); // 'review' | 'order' | 'receipt'
