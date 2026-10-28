@@ -25,7 +25,7 @@ function PurchaseDetailPage() {
   const { currentUser } = useAppContext();
   const {
     getRequestDetail, submitRequest, cancelRequest, resubmitRequest,
-    submitReceipt, uploadAttachment, formatMoney
+    submitReceipt, confirmReceipt, rejectReceipt, uploadAttachment, formatMoney
   } = usePurchaseContext();
 
   const [request, setRequest] = useState(null);
@@ -34,6 +34,8 @@ function PurchaseDetailPage() {
   const [receiptForm, setReceiptForm] = useState({ received_at: '', notes: '' });
   const [receiptFile, setReceiptFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [showRejectInput, setShowRejectInput] = useState(false);
   const fileRef = useRef();
 
   const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'master';
@@ -61,7 +63,8 @@ function PurchaseDetailPage() {
   const canCancel = ['draft', 'submitted'].includes(status);
   const canResubmit = status === 'needs_revision';
   const canEdit = status === 'draft' || status === 'needs_revision';
-  const canSubmitReceipt = status === 'awaiting_receipt' && !isAdmin;
+  // 신청자: 구매중(purchasing) 상태에서 수령 보고 가능
+  const canSubmitReceipt = status === 'purchasing' && !isAdmin;
 
   const handleSubmit = async () => {
     if (!window.confirm('신청서를 제출하시겠습니까?')) return;
@@ -108,6 +111,22 @@ function PurchaseDetailPage() {
     }
   };
 
+  const handleConfirmReceipt = async (receipt) => {
+    if (!window.confirm('수령을 확인하고 처리를 완료하시겠습니까?')) return;
+    const { error } = await confirmReceipt(receipt.id, id, currentUser.id, currentUser.name);
+    if (error) { alert('오류: ' + error.message); return; }
+    await load();
+  };
+
+  const handleRejectReceipt = async (receipt) => {
+    if (!rejectReason.trim()) { alert('반려 사유를 입력하세요.'); return; }
+    const { error } = await rejectReceipt(receipt.id, id, currentUser.id, currentUser.name, rejectReason);
+    if (error) { alert('오류: ' + error.message); return; }
+    setShowRejectInput(false);
+    setRejectReason('');
+    await load();
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm sticky top-0 z-10">
@@ -119,9 +138,16 @@ function PurchaseDetailPage() {
               <p className="text-xs text-gray-500">{request.request_no}</p>
             </div>
           </div>
-          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_COLOR[status] || 'bg-gray-100 text-gray-600'}`}>
-            {STATUS_LABELS[status] || status}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_COLOR[status] || 'bg-gray-100 text-gray-600'}`}>
+              {STATUS_LABELS[status] || status}
+            </span>
+            {status === 'purchasing' && !isAdmin && (
+              <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-indigo-100 text-indigo-700">
+                수령 대기
+              </span>
+            )}
+          </div>
         </div>
       </header>
 
@@ -239,15 +265,16 @@ function PurchaseDetailPage() {
           </Card>
         )}
 
-        {/* 수령 보고 폼 */}
+        {/* 신청자: 구매중 상태에서 수령 보고 */}
         {canSubmitReceipt && (
-          <Card title="수령 보고">
+          <Card title="📦 물품 수령 보고">
+            <p className="text-xs text-gray-500 mb-3">물품을 수령하신 후 수령 사진을 첨부하여 제출해주세요.</p>
             {!showReceiptForm ? (
               <button
                 onClick={() => setShowReceiptForm(true)}
                 className="w-full py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700"
               >
-                수령 보고하기
+                수령 사진 첨부 및 제출
               </button>
             ) : (
               <div className="space-y-3">
@@ -267,22 +294,35 @@ function PurchaseDetailPage() {
                     onChange={e => setReceiptForm(p => ({ ...p, notes: e.target.value }))}
                     rows={2}
                     className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm resize-none"
-                    placeholder="특이사항 입력"
+                    placeholder="특이사항 (선택)"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">수령 사진 <span className="text-red-500">*</span></label>
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={e => setReceiptFile(e.target.files[0])}
-                    className="w-full text-sm"
-                  />
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center hover:border-indigo-400 transition-colors">
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/jpg"
+                      onChange={e => setReceiptFile(e.target.files[0])}
+                      className="hidden"
+                      id="receipt-file"
+                    />
+                    <label htmlFor="receipt-file" className="cursor-pointer">
+                      {receiptFile ? (
+                        <p className="text-sm text-indigo-600 font-medium">📎 {receiptFile.name}</p>
+                      ) : (
+                        <>
+                          <p className="text-gray-400 text-sm">📷 사진을 선택하세요</p>
+                          <p className="text-xs text-gray-400 mt-1">JPG, PNG 지원</p>
+                        </>
+                      )}
+                    </label>
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setShowReceiptForm(false)}
+                    onClick={() => { setShowReceiptForm(false); setReceiptFile(null); }}
                     className="flex-1 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm"
                   >취소</button>
                   <button
@@ -295,6 +335,71 @@ function PurchaseDetailPage() {
                 </div>
               </div>
             )}
+          </Card>
+        )}
+
+        {/* 관리자: 수령 검토 (receipt_review 상태) */}
+        {isAdmin && status === 'receipt_review' && (request.receipts || []).length > 0 && (
+          <Card title="📋 수령 보고 검토">
+            {request.receipts.map((r, i) => (
+              <div key={i} className="space-y-3">
+                <div className="bg-purple-50 rounded-xl p-3 text-sm space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">수령일: {r.received_at || '-'}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                      r.review_status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                      r.review_status === 'needs_revision' ? 'bg-orange-100 text-orange-700' :
+                      'bg-gray-100 text-gray-600'
+                    }`}>
+                      {r.review_status === 'confirmed' ? '확인완료' : r.review_status === 'needs_revision' ? '반려됨' : '검토대기'}
+                    </span>
+                  </div>
+                  {r.notes && <p className="text-gray-500 text-xs">{r.notes}</p>}
+                </div>
+
+                {r.review_status === 'pending' && (
+                  <div className="space-y-2">
+                    {/* 완료 버튼 */}
+                    <button
+                      onClick={() => handleConfirmReceipt(r)}
+                      className="w-full py-2.5 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-700"
+                    >
+                      ✅ 수령 확인 완료 (처리 종결)
+                    </button>
+
+                    {/* 반려 버튼 */}
+                    {!showRejectInput ? (
+                      <button
+                        onClick={() => setShowRejectInput(true)}
+                        className="w-full py-2.5 bg-red-50 text-red-600 rounded-xl text-sm font-medium hover:bg-red-100 border border-red-200"
+                      >
+                        ❌ 수령 반려 (재수령 요청)
+                      </button>
+                    ) : (
+                      <div className="space-y-2">
+                        <textarea
+                          value={rejectReason}
+                          onChange={e => setRejectReason(e.target.value)}
+                          rows={2}
+                          className="w-full px-3 py-2.5 border border-red-200 rounded-lg text-sm resize-none"
+                          placeholder="반려 사유를 입력하세요 (신청자에게 전달됩니다)"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => { setShowRejectInput(false); setRejectReason(''); }}
+                            className="flex-1 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm"
+                          >취소</button>
+                          <button
+                            onClick={() => handleRejectReceipt(r)}
+                            className="flex-1 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600"
+                          >반려 확정</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
           </Card>
         )}
 

@@ -430,6 +430,20 @@ export function PurchaseProvider({ children }) {
     return await closeRequest(requestId, reviewerId, reviewerName);
   };
 
+  // 수령 반려 → 신청자가 다시 수령 보고 가능한 'purchasing' 상태로 복귀
+  const rejectReceipt = async (receiptId, requestId, reviewerId, reviewerName, reason) => {
+    await supabase
+      .from('purchase_receipts_2025_11_27_07_17')
+      .update({ review_status: 'needs_revision', reviewer_id: reviewerId, reviewed_at: new Date().toISOString() })
+      .eq('id', receiptId);
+    const { error } = await supabase
+      .from('purchase_requests_2025_11_27_07_17')
+      .update({ status: 'purchasing', updated_at: new Date().toISOString() })
+      .eq('id', requestId);
+    if (!error) await addHistory(requestId, reviewerId, reviewerName, `수령 반려 (재수령 요청)`, 'receipt_review', 'purchasing', reason);
+    return { error };
+  };
+
   // ─── 첨부파일 ────────────────────────────────────────────────────────────
 
   const uploadAttachment = async (file, requestId, uploaderId, attachmentType, orderId = null, receiptId = null) => {
@@ -516,6 +530,7 @@ export function PurchaseProvider({ children }) {
     closeRequest,
     submitReceipt,
     confirmReceipt,
+    rejectReceipt,
     uploadAttachment,
     getAttachmentUrl,
     formatMoney

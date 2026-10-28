@@ -161,6 +161,7 @@ function PurchaseMainPage() {
 function RequestCard({ req, formatMoney, onClick }) {
   const status = STATUS_LABELS[req.status] || { label: req.status, color: 'bg-gray-100 text-gray-600' };
   const itemCount = req.items?.length || 0;
+  const showReceiptBadge = req.status === 'purchasing';
 
   return (
     <div
@@ -173,6 +174,11 @@ function RequestCard({ req, formatMoney, onClick }) {
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${status.color}`}>
               {status.label}
             </span>
+            {showReceiptBadge && (
+              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-indigo-100 text-indigo-700">
+                수령 대기
+              </span>
+            )}
             <span className="text-xs text-gray-400">{req.request_no}</span>
           </div>
           <h3 className="font-semibold text-gray-800 truncate">{req.title}</h3>
