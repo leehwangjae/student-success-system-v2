@@ -26,7 +26,8 @@ function PurchaseAdminPage() {
     purchaseRequests, loadAllRequests, formatMoney,
     startReview, approveRequest, rejectRequest, requestRevision,
     registerPurchaseOrder, closePurchaseOrder, confirmReceipt, rejectReceipt,
-    purchaseSettings, loadPurchaseSettings, getBudgetStatus
+    purchaseSettings, loadPurchaseSettings, getBudgetStatus,
+    deletePurchaseRequest
   } = usePurchaseContext();
 
   const [filterStatus, setFilterStatus] = useState('all');
@@ -36,6 +37,7 @@ function PurchaseAdminPage() {
   const [formData, setFormData] = useState({});
   const [processing, setProcessing] = useState(false);
   const [budgetMap, setBudgetMap] = useState({});
+  const [selectedIds, setSelectedIds] = useState([]);
 
   useEffect(() => {
     loadAllRequests({ fiscal_year: filterYear, status: filterStatus === 'all' ? undefined : filterStatus });
@@ -74,6 +76,29 @@ function PurchaseAdminPage() {
   const reload = async () => {
     await loadAllRequests({ fiscal_year: filterYear, status: filterStatus === 'all' ? undefined : filterStatus });
     closeModal();
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIds(purchaseRequests.map(r => r.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectOne = (id) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!window.confirm(`선택한 ${selectedIds.length}건의 신청내역을 전체 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) return;
+    for (const id of selectedIds) {
+      await deletePurchaseRequest(id);
+    }
+    alert(`${selectedIds.length}건이 삭제되었습니다.`);
+    setSelectedIds([]);
+    await loadAllRequests({ fiscal_year: filterYear, status: filterStatus === 'all' ? undefined : filterStatus });
   };
 
   const handleStartReview = async (req) => {
@@ -232,9 +257,35 @@ function PurchaseAdminPage() {
           <div className="bg-white rounded-2xl p-10 text-center text-gray-400">해당 신청이 없습니다.</div>
         ) : (
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            {/* 선택 삭제 툴바 */}
+            {selectedIds.length > 0 && (
+              <div className="px-4 py-2 bg-red-50 border-b border-red-100 flex items-center gap-3">
+                <span className="text-sm text-red-700 font-medium">{selectedIds.length}건 선택됨</span>
+                <button
+                  onClick={handleBulkDelete}
+                  className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                >
+                  🗑 선택 삭제
+                </button>
+                <button
+                  onClick={() => setSelectedIds([])}
+                  className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300"
+                >
+                  선택 해제
+                </button>
+              </div>
+            )}
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-gray-500 bg-gray-50 border-b border-gray-100">
+                  <th className="py-3 px-3 text-center">
+                    <input
+                      type="checkbox"
+                      onChange={handleSelectAll}
+                      checked={selectedIds.length > 0 && selectedIds.length === purchaseRequests.length}
+                      className="w-4 h-4 text-blue-600 rounded"
+                    />
+                  </th>
                   <th className="text-left py-3 px-4">신청번호</th>
                   <th className="text-left py-3 px-4">제목</th>
                   <th className="text-left py-3 px-4">신청자</th>
@@ -247,6 +298,14 @@ function PurchaseAdminPage() {
               <tbody>
                 {purchaseRequests.map(req => (
                   <tr key={req.id} className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/purchase/${req.id}`)}>
+                    <td className="py-3 px-3 text-center" onClick={e => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(req.id)}
+                        onChange={() => handleSelectOne(req.id)}
+                        className="w-4 h-4 text-blue-600 rounded"
+                      />
+                    </td>
                     <td className="py-3 px-4 text-xs text-gray-500">{req.request_no}</td>
                     <td className="py-3 px-4 font-medium max-w-xs truncate">{req.title}</td>
                     <td className="py-3 px-4 text-gray-600">{req.applicant?.name || req.professor_name}</td>
