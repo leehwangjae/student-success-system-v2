@@ -208,9 +208,7 @@ function StudentManagement() {
   // 체크박스 전체 선택/해제
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      const allStudentIds = getFilteredStudents()
-        .filter(s => s.privacy_consented) // 동의한 학생만
-        .map(s => s.id);
+      const allStudentIds = getFilteredStudents().map(s => s.id);
       setSelectedStudents(allStudentIds);
     } else {
       setSelectedStudents([]);
@@ -224,6 +222,23 @@ function StudentManagement() {
         ? prev.filter(id => id !== studentId)
         : [...prev, studentId]
     );
+  };
+
+  // 선택된 학생 일괄 삭제
+  const handleBulkDelete = async () => {
+    if (selectedStudents.length === 0) return;
+    const confirmed = window.confirm(`선택한 ${selectedStudents.length}명의 학생을 전체 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`);
+    if (!confirmed) return;
+    try {
+      for (const studentId of selectedStudents) {
+        await deleteStudent(studentId);
+      }
+      alert(`${selectedStudents.length}명의 학생이 삭제되었습니다.`);
+      setSelectedStudents([]);
+    } catch (error) {
+      console.error('일괄 삭제 오류:', error);
+      alert('삭제 중 오류가 발생했습니다: ' + error.message);
+    }
   };
 
   // PDF 다운로드 함수
@@ -554,6 +569,17 @@ function StudentManagement() {
         </div>
         <div className="flex space-x-2">
           <button
+            onClick={handleBulkDelete}
+            disabled={selectedStudents.length === 0}
+            className={`px-4 py-2 rounded-lg ${
+              selectedStudents.length > 0
+                ? 'bg-red-600 text-white hover:bg-red-700'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+          >
+            🗑 선택 삭제 ({selectedStudents.length})
+          </button>
+          <button
             onClick={downloadSelectedConsentPDFs}
             disabled={selectedStudents.length === 0}
             className={`px-4 py-2 rounded-lg ${
@@ -619,7 +645,7 @@ function StudentManagement() {
                   <input
                     type="checkbox"
                     onChange={handleSelectAll}
-                    checked={selectedStudents.length > 0 && selectedStudents.length === getFilteredStudents().filter(s => s.privacy_consented).length}
+                    checked={selectedStudents.length > 0 && selectedStudents.length === getFilteredStudents().length}
                     className="w-4 h-4 text-blue-600 rounded"
                   />
                 </th>
@@ -675,8 +701,7 @@ function StudentManagement() {
                       type="checkbox"
                       checked={selectedStudents.includes(student.id)}
                       onChange={() => handleSelectStudent(student.id)}
-                      disabled={!student.privacy_consented}
-                      className="w-4 h-4 text-blue-600 rounded disabled:opacity-30"
+                      className="w-4 h-4 text-blue-600 rounded"
                     />
                   </td>
                   <td className="px-3 py-3 whitespace-nowrap">

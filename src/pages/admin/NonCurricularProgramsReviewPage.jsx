@@ -62,6 +62,7 @@ function NonCurricularProgramsReviewPage() {
     if (selectedStatus === 'all') return studentSubmissions;
     if (selectedStatus === 'pending') return studentSubmissions.filter(item => item.submission?.status === 'pending');
     if (selectedStatus === 'approved') return studentSubmissions.filter(item => item.submission?.status === 'approved');
+    if (selectedStatus === 'partial') return studentSubmissions.filter(item => item.submission?.status === 'partial');
     if (selectedStatus === 'rejected') return studentSubmissions.filter(item => item.submission?.status === 'rejected');
     return studentSubmissions;
   }, [studentSubmissions, selectedStatus]);
@@ -227,7 +228,7 @@ function NonCurricularProgramsReviewPage() {
         '점수': submission?.status === 'partial' && submission?.approvedScore != null
           ? submission.approvedScore : (submission?.totalScore || 0),
         '제출상태': submission ? SUBMISSION_STATUS_LABEL[submission.status] : '미제출',
-        '제출일시': submission ? formatDate(submission.submitted_at) : '-'
+        '제출일시': submission ? formatDate(submission.submittedAt || submission.submitted_at) : '-'
       }));
       const worksheet = XLSX.utils.json_to_sheet(excelData);
       const workbook = XLSX.utils.book_new();
@@ -272,11 +273,12 @@ function NonCurricularProgramsReviewPage() {
     const colors = {
       'pending': 'bg-yellow-100 text-yellow-800',
       'approved': 'bg-green-100 text-green-800',
+      'partial': 'bg-orange-100 text-orange-800',
       'rejected': 'bg-red-100 text-red-800'
     };
     return (
-      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${colors[status]}`}>
-        {SUBMISSION_STATUS_LABEL[status]}
+      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${colors[status] || 'bg-gray-100 text-gray-800'}`}>
+        {status === 'partial' ? '일부 승인' : (SUBMISSION_STATUS_LABEL[status] || status)}
       </span>
     );
   };
@@ -304,6 +306,7 @@ function NonCurricularProgramsReviewPage() {
                 <option value="all">전체</option>
                 <option value="pending">검토 대기</option>
                 <option value="approved">승인</option>
+                <option value="partial">일부 승인</option>
                 <option value="rejected">반려</option>
               </select>
             </div>
@@ -467,7 +470,7 @@ function NonCurricularProgramsReviewPage() {
                         ) : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
-                        {submission?.hasCertificateFiles
+                        {(submission?.hasCertificateFiles || submission?.certificateFiles?.length > 0)
                           ? <span className="text-green-600">📄 있음</span>
                           : <span className="text-red-600">❌</span>}
                       </td>

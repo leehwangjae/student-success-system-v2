@@ -6,6 +6,7 @@
  */
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
+import { supabase } from '../../lib/supabase';
 import { 
   POINTS_PER_COURSE, 
   MAX_COURSES, 
@@ -40,8 +41,10 @@ function CoreCoursesCheckPage() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 재학년도 선택 (기본값: 2학년)
+  // 재학년도 선택 (기본값: 2학년, 이수표 업로드 시 AI 자동 추출)
   const [selectedGrade, setSelectedGrade] = useState('2학년');
+  const [isExtractingGrade, setIsExtractingGrade] = useState(false);
+  const [gradeSource, setGradeSource] = useState('manual'); // 'auto' | 'manual'
 
   // 지급 관련 정보
   const [paymentInfo, setPaymentInfo] = useState({
@@ -78,6 +81,7 @@ function CoreCoursesCheckPage() {
       // 재학년도 로드
       if (submission.gradeAt2025Fall) {
         setSelectedGrade(submission.gradeAt2025Fall);
+        setGradeSource('manual');
       }
 
       // 지급 정보 로드
@@ -92,6 +96,7 @@ function CoreCoursesCheckPage() {
     } else {
       // 제출 데이터가 없을 경우 초기화
       setSelectedGrade('2학년');
+      setGradeSource('manual');
       setCompletedCourses([]);
       setUploadedFiles([]);
       setPaymentInfo({
@@ -150,10 +155,65 @@ function CoreCoursesCheckPage() {
     }
   };
 
+  // PDF를 이미지 배열(base64)로 변환
+  const convertPdfToImages = async (file) => {
+    if (!window.pdfjsLib) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const images = [];
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 2.0 });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+      images.push(canvas.toDataURL('image/png').split('base64,')[1]);
+    }
+
+    return images;
+  };
+
+  // 이수표에서 학년 자동 추출
+  const extractGradeFromFile = async (file, storageUrl) => {
+    setIsExtractingGrade(true);
+    try {
+      const body = file.type === 'application/pdf'
+        ? { mode: 'extractGrade', imageDataList: await convertPdfToImages(file), fileName: file.name }
+        : { mode: 'extractGrade', fileUrl: storageUrl, fileName: file.name };
+
+      const { data, error } = await supabase.functions.invoke('analyze-certificate', { body });
+      if (error) throw error;
+
+      if (data?.success && data?.data?.grade) {
+        setSelectedGrade(data.data.grade);
+        setGradeSource('auto');
+      }
+    } catch (err) {
+      console.error('학년 자동 추출 실패:', err);
+    } finally {
+      setIsExtractingGrade(false);
+    }
+  };
+
   // 여러 파일 선택
   const handleFileChange = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
+
+    let shouldExtractGrade = uploadedFiles.length === 0 && gradeSource !== 'auto';
 
     for (const file of files) {
       const validation = validateFile(
@@ -182,6 +242,11 @@ function CoreCoursesCheckPage() {
             uploadedAt: new Date().toISOString()
           }
         ]);
+
+        if (shouldExtractGrade) {
+          shouldExtractGrade = false;
+          extractGradeFromFile(file, url);
+        }
       } catch (error) {
         showAlert(`${file.name} 업로드 중 오류가 발생했습니다.`);
         console.error('File upload error:', error);
@@ -421,32 +486,55 @@ function CoreCoursesCheckPage() {
           </div>
         )}
 
-        {/* 재학년도 선택 */}
+        {/* 재학년도 - AI 자동 추출 */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border-2 border-purple-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="text-2xl">📅</div>
               <div>
                 <h3 className="font-bold text-gray-900">25년 2학기 기준 재학년도</h3>
-                <p className="text-sm text-gray-600 mt-1">현재 학년을 선택해주세요</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  {isExtractingGrade
+                    ? '이수표에서 학년 추출 중...'
+                    : gradeSource === 'auto'
+                    ? '이수표에서 자동 추출됨 ✓'
+                    : '이수표 업로드 후 자동으로 설정됩니다'}
+                </p>
               </div>
             </div>
             <div className="w-48">
-              <select
-                value={selectedGrade}
-                onChange={(e) => setSelectedGrade(e.target.value)}
-                disabled={!canEdit}
-                className="w-full px-4 py-3 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed font-semibold text-gray-900"
-              >
-                <option value="2학년">2학년</option>
-                <option value="3학년">3학년</option>
-                <option value="4학년">4학년</option>
-              </select>
+              {isExtractingGrade ? (
+                <div className="flex items-center justify-center h-12 border-2 border-purple-300 rounded-lg bg-purple-50">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-600"></div>
+                  <span className="ml-2 text-sm text-purple-700">추출 중...</span>
+                </div>
+              ) : (
+                <select
+                  value={selectedGrade}
+                  onChange={(e) => { setSelectedGrade(e.target.value); setGradeSource('manual'); }}
+                  disabled={!canEdit}
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed font-semibold text-gray-900 ${
+                    gradeSource === 'auto'
+                      ? 'border-green-400 bg-green-50'
+                      : 'border-purple-300'
+                  }`}
+                >
+                  <option value="2학년">2학년</option>
+                  <option value="3학년">3학년</option>
+                  <option value="4학년">4학년</option>
+                </select>
+              )}
             </div>
           </div>
-          <div className="mt-3 bg-purple-50 border border-purple-200 rounded-lg p-3">
-            <p className="text-sm text-purple-800">
-              💡 25년 2학기 기준으로 현재 재학 중인 학년을 선택해주세요.
+          <div className={`mt-3 border rounded-lg p-3 ${
+            gradeSource === 'auto'
+              ? 'bg-green-50 border-green-200'
+              : 'bg-purple-50 border-purple-200'
+          }`}>
+            <p className={`text-sm ${gradeSource === 'auto' ? 'text-green-800' : 'text-purple-800'}`}>
+              {gradeSource === 'auto'
+                ? `✅ 이수표 분석을 통해 ${selectedGrade}로 자동 설정되었습니다. 잘못된 경우 직접 변경하세요.`
+                : '💡 이수표를 업로드하면 학년이 자동으로 추출됩니다. 업로드 후에도 직접 변경이 가능합니다.'}
             </p>
           </div>
         </div>

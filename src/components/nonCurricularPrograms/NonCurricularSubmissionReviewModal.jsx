@@ -24,10 +24,8 @@ function NonCurricularSubmissionReviewModal({
   const [selectedProgramToAdd, setSelectedProgramToAdd] = useState('');
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
-  if (!isOpen || !submission || !student) return null;
-
-  const completedPrograms = submission.completedPrograms || [];
-  const certificateFiles = submission.certificateFiles || [];
+  const completedPrograms = submission?.completedPrograms || [];
+  const certificateFiles = submission?.certificateFiles || [];
 
   // 뷰 모드: completedPrograms / 수정 모드: editedPrograms
   const displayPrograms = isEditMode ? editedPrograms : completedPrograms;
@@ -45,6 +43,8 @@ function NonCurricularSubmissionReviewModal({
     if (!certificateFiles || certificateFiles.length === 0 || selectedFileIndex >= certificateFiles.length) return null;
     return getFilePreviewUrl(certificateFiles[selectedFileIndex]);
   }, [certificateFiles, selectedFileIndex]);
+
+  if (!isOpen || !submission || !student) return null;
 
   // ── 승인/반려 처리 ──────────────────────────────────────────────────────
   const handleSubmit = async () => {
@@ -310,6 +310,9 @@ function NonCurricularSubmissionReviewModal({
   // ── 증빙서류 뷰어 ────────────────────────────────────────────────────────
   const renderDocumentViewer = () => {
     const currentFile = certificateFiles[selectedFileIndex];
+    const currentFileName = currentFile?.fileName || currentFile?.name || '';
+    const currentFileSize = currentFile?.fileSize ?? currentFile?.size;
+
     return (
       <div className="flex flex-col h-full bg-gray-50">
         <div className="px-4 py-3 bg-gray-100 border-b">
@@ -344,7 +347,7 @@ function NonCurricularSubmissionReviewModal({
           {currentFile && (
             <div className="flex items-center justify-between mt-2">
               <p className="text-xs text-gray-600 truncate flex-1">
-                {currentFile.fileName} ({formatFileSize(currentFile.fileSize)})
+                {currentFileName} ({formatFileSize(currentFileSize || 0)})
               </p>
               <button
                 onClick={() => handleDownload(currentFile)}
@@ -357,7 +360,7 @@ function NonCurricularSubmissionReviewModal({
         </div>
         <div className="flex-1 overflow-auto p-4">
           {previewUrl ? (
-            currentFile.fileName.toLowerCase().endsWith('.pdf') ? (
+            currentFileName.toLowerCase().endsWith('.pdf') ? (
               <iframe src={previewUrl} className="w-full h-full border rounded-lg" title="PDF Viewer" />
             ) : (
               <img src={previewUrl} alt="증빙서류" className="w-full h-auto rounded-lg shadow-lg" />
@@ -710,8 +713,8 @@ function NonCurricularSubmissionReviewModal({
                           <div key={index} className="flex items-center gap-3 p-4 bg-gray-50 border border-gray-300 rounded-lg">
                             <div className="text-3xl">📄</div>
                             <div className="flex-1">
-                              <div className="font-medium text-gray-900">{file.fileName}</div>
-                              <div className="text-sm text-gray-600">{formatFileSize(file.fileSize)}</div>
+                              <div className="font-medium text-gray-900">{file.fileName || file.name}</div>
+                              <div className="text-sm text-gray-600">{formatFileSize((file.fileSize ?? file.size) || 0)}</div>
                             </div>
                             <button
                               onClick={() => handleDownload(file)}
