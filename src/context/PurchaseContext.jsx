@@ -503,8 +503,10 @@ export function PurchaseProvider({ children }) {
   };
 
   const deletePurchaseRequest = async (requestId) => {
-    // 첨부파일 → 품목 → 로그 → 신청 순으로 삭제
+    // 연관 테이블 순서대로 삭제 (외래키 제약 해소)
     await supabase.from('purchase_attachments_2025_11_27_07_17').delete().eq('request_id', requestId);
+    await supabase.from('purchase_receipts_2025_11_27_07_17').delete().eq('request_id', requestId);
+    await supabase.from('purchase_orders_2025_11_27_07_17').delete().eq('request_id', requestId);
     await supabase.from('purchase_request_items_2025_11_27_07_17').delete().eq('request_id', requestId);
     await supabase.from('purchase_history_2025_11_27_07_17').delete().eq('request_id', requestId);
     const { error } = await supabase.from('purchase_requests_2025_11_27_07_17').delete().eq('id', requestId);
