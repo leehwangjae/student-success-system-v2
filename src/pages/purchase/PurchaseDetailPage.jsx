@@ -228,15 +228,18 @@ function PurchaseDetailPage() {
                     <td className="py-2 pr-2 text-gray-500">{item.unit}</td>
                     <td className="py-2 pr-2 text-right">{formatMoney(item.unit_price)}</td>
                     <td className="py-2 pr-2 text-right font-semibold">{formatMoney(item.total_price)}</td>
-                    <td className="py-2 text-xs">
+                    <td className="py-2 text-xs max-w-[180px]">
                       {item.supplier_url ? (
                         item.supplier_url.startsWith('http') ? (
                           <a href={item.supplier_url} target="_blank" rel="noreferrer"
-                            className="text-blue-600 hover:text-blue-800 underline break-all">
+                            className="text-blue-600 hover:text-blue-800 underline block truncate"
+                            title={item.supplier_url}>
                             {item.supplier_url}
                           </a>
                         ) : (
-                          <span className="text-gray-600">{item.supplier_url}</span>
+                          <span className="text-gray-600 block truncate" title={item.supplier_url}>
+                            {item.supplier_url}
+                          </span>
                         )
                       ) : '-'}
                     </td>
