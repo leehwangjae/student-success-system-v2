@@ -61,15 +61,15 @@ export function PurchaseProvider({ children }) {
 
     const reservedTotal = (reserved || []).reduce((sum, r) => sum + (r.approved_amount || 0), 0);
 
-    // 집행액: closed 상태의 purchased_amount 합계
+    // 집행액: closed 상태의 purchased_amount 합계 (없으면 approved_amount 사용)
     const { data: closed } = await supabase
       .from('purchase_requests_2025_11_27_07_17')
-      .select('purchased_amount')
+      .select('purchased_amount, approved_amount')
       .eq('fiscal_year', fiscalYear)
       .eq('department_name', departmentName)
       .eq('status', 'closed');
 
-    const purchasedTotal = (closed || []).reduce((sum, r) => sum + (r.purchased_amount || 0), 0);
+    const purchasedTotal = (closed || []).reduce((sum, r) => sum + (r.purchased_amount || r.approved_amount || 0), 0);
 
     return {
       allocated,
@@ -379,13 +379,25 @@ export function PurchaseProvider({ children }) {
   };
 
   const closeRequest = async (requestId, adminId, adminName) => {
+    // purchased_amount가 없으면 approved_amount로 대체하여 집행 금액에 반영
+    const { data: req } = await supabase
+      .from('purchase_requests_2025_11_27_07_17')
+      .select('purchased_amount, approved_amount')
+      .eq('id', requestId)
+      .single();
+
+    const updateData = {
+      status: 'closed',
+      closed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    if (!req?.purchased_amount) {
+      updateData.purchased_amount = req?.approved_amount || 0;
+    }
+
     const { error } = await supabase
       .from('purchase_requests_2025_11_27_07_17')
-      .update({
-        status: 'closed',
-        closed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', requestId);
     if (!error) await addHistory(requestId, adminId, adminName, '처리 완료(종결)', 'receipt_review', 'closed');
     return { error };
